@@ -25,8 +25,9 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #'
 #' @section Column names:
 #' Column names are normalized in both tables before anything else: upper
-#' case, with every run of characters other than `A-Z` and `0-9` replaced by
-#' `_`, and `_` trimmed from the ends. So `unit price`, `Unit.Price` and
+#' case, with every run of characters other than letters and digits replaced
+#' by `_`, and `_` trimmed from the ends. Letters outside ASCII are kept, so
+#' `Größe` and `Grüße` stay two columns. So `unit price`, `Unit.Price` and
 #' `UNIT_PRICE` are one column, in either table. Two names in one table that
 #' normalize to the same thing are an error to fix before comparing. The
 #' result uses the normalized names; `attr(d, "name_map")` maps them back.

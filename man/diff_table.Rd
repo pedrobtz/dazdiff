@@ -111,8 +111,9 @@ swapping \code{x} and \code{y} swaps \code{only_x} with \code{only_y} and negate
 \section{Column names}{
 
 Column names are normalized in both tables before anything else: upper
-case, with every run of characters other than \code{A-Z} and \code{0-9} replaced by
-\verb{_}, and \verb{_} trimmed from the ends. So \verb{unit price}, \code{Unit.Price} and
+case, with every run of characters other than letters and digits replaced
+by \verb{_}, and \verb{_} trimmed from the ends. Letters outside ASCII are kept, so
+\code{Größe} and \code{Grüße} stay two columns. So \verb{unit price}, \code{Unit.Price} and
 \code{UNIT_PRICE} are one column, in either table. Two names in one table that
 normalize to the same thing are an error to fix before comparing. The
 result uses the normalized names; \code{attr(d, "name_map")} maps them back.

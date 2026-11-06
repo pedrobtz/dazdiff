@@ -17,9 +17,10 @@ First release.
   timestamp to a whole day -- are made by default, since storage such as
   Spark or Delta narrows types the same way. Each one is announced and
   recorded; `truncate = FALSE` refuses them.
-* Column names in both tables are normalized to `A-Z`, `0-9` and `_`, so
-  `amount` and `Amount` are one column. Two names in one table that
-  normalize to the same thing are an error.
+* Column names in both tables are normalized to upper-case letters, digits
+  and `_`, so `amount` and `Amount` are one column. Letters outside ASCII are
+  kept. Two names in one table that normalize to the same thing are an
+  error.
 * `by` names the row identity. `measures` chooses the compared columns, by
   type (`"numeric"`, `"numeric+integer"`) or by name. With no measures,
   `diff_table()` compares whole rows.

@@ -1,23 +1,38 @@
 # Column names ------------------------------------------------------------------
 #
 # Every user column is renamed before anything else happens, to a name made of
-# A-Z, 0-9 and `_` only. Two things follow from that:
+# upper-case letters, digits and `_` only. Two things follow from that:
 #
 # - The columns daffiz creates (`row_id`, `metric`, `value_x`, `status`,
-#   `key_seq`, ...) all contain a lowercase letter, so no user column can ever
-#   collide with one. A test asserts this for every internal name; keep it so.
+#   `key_seq`, ...) all contain a lowercase ASCII letter, which no normalized
+#   name does, so no user column can ever collide with one. A test asserts
+#   this for every internal name; keep it so.
 # - `amount` in one table and `AMOUNT` or `Amount` in the other are the same
 #   column. Storage such as Spark and Delta is case-insensitive about column
 #   names and often lowercases them, so a table that went through it still
 #   pairs with the one that did not.
 
-# Upper-case, then replace every run of characters outside A-Z and 0-9 with a
-# single `_`, then trim `_` from both ends. Trimming is what lets `amount ` (a
-# stray space in a CSV header) pair with `amount`. The regex runs with
-# perl = TRUE, whose character classes do not depend on the session locale.
+# Upper-case, then replace every run of characters that are not letters or
+# digits with a single `_`, then trim `_` from both ends. Trimming is what lets
+# `amount ` (a stray space in a CSV header) pair with `amount`.
+#
+# Letters outside ASCII are kept: erasing them made `Größe` and `Grüße` one
+# column (`GR_E`) across two tables, with no message, and left nothing of a
+# name written in Cyrillic or CJK. ASCII is upper-cased by table first, so `i`
+# becomes `I` in every locale (a Turkish locale's toupper() writes a dotted
+# capital); toupper() then handles the other letters. The regex runs with
+# perl = TRUE on UTF-8, whose Unicode classes do not depend on the locale.
 canonical_names <- function(nms) {
-  out <- gsub("[^A-Z0-9]+", "_", toupper(enc2utf8(nms)), perl = TRUE)
+  out <- gsub("[^\\p{L}\\p{N}]+", "_", upper_names(nms), perl = TRUE)
   gsub("^_+|_+$", "", out, perl = TRUE)
+}
+
+upper_names <- function(nms) {
+  toupper(chartr(
+    "abcdefghijklmnopqrstuvwxyz",
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    enc2utf8(nms)
+  ))
 }
 
 # One row per column of `dt`: `name` as the caller wrote it, `column` as it is
@@ -31,7 +46,7 @@ name_map <- function(dt) {
     name = nms,
     column = column,
     label = ifelse(
-      toupper(nms) == column,
+      upper_names(nms) == column,
       nms,
       sprintf("\"%s\" (%s)", nms, column)
     )

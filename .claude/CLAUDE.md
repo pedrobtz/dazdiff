@@ -86,8 +86,11 @@ purpose, because later checks reuse it. New tests are ordinary testthat
 
 Each is covered by a test.
 
-- **User column names are normalized to `A-Z`, `0-9` and `_`; every internal
-  column contains a lowercase letter.** That is what makes a collision
+- **User column names are normalized to upper-case letters, digits and `_`;
+  every internal column contains a lowercase ASCII letter.** ASCII is
+  upper-cased by table (`chartr()`), so no normalized name holds one in any
+  locale, Turkish included; non-ASCII letters are kept, since erasing them
+  paired `Größe` with `Grüße` across tables. That is what makes a collision
   between the two impossible (`test-names.R` asserts it for every internal
   name). A new internal column name must contain a lowercase letter. Names
   that normalize to nothing, or to the same thing within one table, are an

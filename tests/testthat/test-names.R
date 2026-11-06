@@ -1,11 +1,11 @@
-test_that("canonical_names keeps only A-Z, 0-9 and _", {
+test_that("canonical_names keeps only letters, digits and _", {
   nms <- c(
     "amount", "Unit Price", "unit.price", "unit-price", "unit  price",
     "amount ", " _id_ ", "prix_unité", "Q1", "2024", "%"
   )
   expect_identical(canonical_names(nms), c(
     "AMOUNT", "UNIT_PRICE", "UNIT_PRICE", "UNIT_PRICE", "UNIT_PRICE",
-    "AMOUNT", "ID", "PRIX_UNIT", "Q1", "2024", ""
+    "AMOUNT", "ID", "PRIX_UNIT\u00c9", "Q1", "2024", ""
   ))
 })
 
