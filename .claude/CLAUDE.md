@@ -133,6 +133,14 @@ Each is covered by a test.
   `"aggregate"`, and double key columns. data.table joins and groups NA and
   NaN as different keys (verified), so skipping the keys splits a row into
   `only_x` + `only_y`.
+- **Every zero in a double key is written as `+0`.** A join treats `-0` and
+  `0` as one key but keyed grouping keeps them apart, so a key holding both
+  slipped past the duplicate check and paired one row twice: a silent false
+  pass in the rows shape. `canonical_missing()` does it, and skips
+  `integer64`, whose `NA` has the bit pattern of `-0`.
+- **Roles are decided before casting, and only compared columns are cast.**
+  Roles depend on `x`'s types, which a cast never changes; casting first let
+  a column the call ignores refuse the comparison or report a truncation.
 - **The `%a` multiset encoding sorts the encoded strings, in radix (C
   locale) order, after `+ 0`.** `sort()` leaves NA and NaN in arrival order
   among themselves, and `%a` writes `-0` and `0` differently.
