@@ -37,17 +37,29 @@
 #' expected <- data.frame(id = 1:3, amount = c(10, 20, 30))
 #' actual <- data.frame(id = 1:3, amount = c(10, 20, 30 + 1e-9))
 #' expect_table_equal(actual, expected, tolerance = 1e-6)
-expect_table_equal <- function(object, expected, ...,
-                               rel_tol = sqrt(.Machine$double.eps),
-                               max_rows = 10L) {
+expect_table_equal <- function(
+  object,
+  expected,
+  ...,
+  rel_tol = sqrt(.Machine$double.eps),
+  max_rows = 10L
+) {
   if (!requireNamespace("testthat", quietly = TRUE)) {
     daffiz_abort(
       "daffiz_error_dependency",
       "expect_table_equal() requires the suggested package 'testthat'."
     )
   }
-  if (!is.numeric(max_rows) || length(max_rows) != 1L || is.na(max_rows) || max_rows < 0) {
-    daffiz_abort("daffiz_error_input", "`max_rows` must be a single number >= 0")
+  if (
+    !is.numeric(max_rows) ||
+      length(max_rows) != 1L ||
+      is.na(max_rows) ||
+      max_rows < 0
+  ) {
+    daffiz_abort(
+      "daffiz_error_input",
+      "`max_rows` must be a single number >= 0"
+    )
   }
   object_label <- deparse1(substitute(object))
   expected_label <- deparse1(substitute(expected))
@@ -64,7 +76,10 @@ expect_table_equal <- function(object, expected, ...,
   # arrival order. Without measures it does not warn, and pairing goes ahead.
   refuse_pairing <- is.null(dots$duplicates)
   d <- withCallingHandlers(
-    do.call(diff_table, c(list(expected, object), dots, list(rel_tol = rel_tol))),
+    do.call(
+      diff_table,
+      c(list(expected, object), dots, list(rel_tol = rel_tol))
+    ),
     daffiz_warning_duplicates = function(w) {
       if (refuse_pairing) {
         daffiz_abort(
@@ -88,14 +103,22 @@ expect_table_equal <- function(object, expected, ...,
   off <- d[status != "same"]
   shown <- utils::head(off, max_rows)
   msg <- paste0(
-    "`", object_label, "` does not match `", expected_label, "`: ",
-    format(nrow(off), big.mark = ","), " of ", format(nrow(d), big.mark = ","),
+    "`",
+    object_label,
+    "` does not match `",
+    expected_label,
+    "`: ",
+    format(nrow(off), big.mark = ","),
+    " of ",
+    format(nrow(d), big.mark = ","),
     " records differ.\n\n",
     paste(utils::capture.output(print(diff_summary(d))), collapse = "\n"),
     if (nrow(shown)) {
       paste0(
         "\n\n",
-        if (nrow(off) > nrow(shown)) sprintf("First %d records that differ:\n", nrow(shown)),
+        if (nrow(off) > nrow(shown)) {
+          sprintf("First %d records that differ:\n", nrow(shown))
+        },
         paste(utils::capture.output(print(shown)), collapse = "\n")
       )
     }

@@ -52,8 +52,12 @@ unique_by_key <- function(dt, along = "metric") {
 #' @param seq.name Name of the sequence column to add.
 #' @return \code{long}, invisibly, re-keyed on \code{by} plus \code{seq.name}.
 #' @noRd
-disambiguate_by_key <- function(long, by = key(long), along = "metric",
-                                seq.name = "key_seq") {
+disambiguate_by_key <- function(
+  long,
+  by = key(long),
+  along = "metric",
+  seq.name = "key_seq"
+) {
   if (!is.data.table(long)) {
     daffiz_abort("daffiz_error_input", "`long` must be a data.table")
   }
@@ -95,10 +99,14 @@ disambiguate_by_key <- function(long, by = key(long), along = "metric",
 #'   value. \code{\%a} writes them differently, so NaN is mapped to NA first.
 #' @return A data.table keyed by \code{by}, one row per key group and measure.
 #' @noRd
-aggregate_by_key <- function(long, by = key(long), along = "metric",
-                             value.name = "value",
-                             stats = c("moments", "exact"),
-                             nan_is_na = TRUE) {
+aggregate_by_key <- function(
+  long,
+  by = key(long),
+  along = "metric",
+  value.name = "value",
+  stats = c("moments", "exact"),
+  nan_is_na = TRUE
+) {
   if (!is.data.table(long)) {
     daffiz_abort("daffiz_error_input", "`long` must be a data.table")
   }
@@ -117,34 +125,43 @@ aggregate_by_key <- function(long, by = key(long), along = "metric",
 
   # The branch stays outside [: j must yield the same columns for every group.
   out <- if (stats == "moments") {
-    long[, {
-      v <- get(value.name)
-      .(
-        n_rows = .N,
-        n_na = sum(is.na(v)),
-        value_sum = safe(sum, v),
-        value_sumsq = safe(function(z) sum(z^2), v),
-        value_min = safe(min, v),
-        value_max = safe(max, v)
-      )
-    }, by = grp]
+    long[,
+      {
+        v <- get(value.name)
+        .(
+          n_rows = .N,
+          n_na = sum(is.na(v)),
+          value_sum = safe(sum, v),
+          value_sumsq = safe(function(z) sum(z^2), v),
+          value_min = safe(min, v),
+          value_max = safe(max, v)
+        )
+      },
+      by = grp
+    ]
   } else {
-    long[, {
-      # `+ 0` turns -0 into 0, which `==` already treats as equal but `%a`
-      # writes differently. The encoded strings are sorted, not the values:
-      # sort() leaves NA and NaN in arrival order among themselves, so the
-      # same multiset could otherwise encode two ways. Radix sorting is in the
-      # C locale, so the encoding does not depend on the session either.
-      v <- get(value.name) + 0
-      if (nan_is_na) {
-        v[is.nan(v)] <- NA_real_
-      }
-      .(
-        n_rows = .N,
-        n_na = sum(is.na(v)),
-        value_key = paste(sort(sprintf("%a", v), method = "radix"), collapse = "|")
-      )
-    }, by = grp]
+    long[,
+      {
+        # `+ 0` turns -0 into 0, which `==` already treats as equal but `%a`
+        # writes differently. The encoded strings are sorted, not the values:
+        # sort() leaves NA and NaN in arrival order among themselves, so the
+        # same multiset could otherwise encode two ways. Radix sorting is in the
+        # C locale, so the encoding does not depend on the session either.
+        v <- get(value.name) + 0
+        if (nan_is_na) {
+          v[is.nan(v)] <- NA_real_
+        }
+        .(
+          n_rows = .N,
+          n_na = sum(is.na(v)),
+          value_key = paste(
+            sort(sprintf("%a", v), method = "radix"),
+            collapse = "|"
+          )
+        )
+      },
+      by = grp
+    ]
   }
 
   setkeyv(out, by)[]
@@ -180,15 +197,22 @@ aggregate_by_key <- function(long, by = key(long), along = "metric",
 #' @param nan_is_na Whether NaN sorts as NA.
 #' @return An integer vector, one number per row of \code{dt}.
 #' @noRd
-virtual_key <- function(dt, how = c("position", "sorted"), groups = character(),
-                        sort_by = character(), nan_is_na = TRUE) {
+virtual_key <- function(
+  dt,
+  how = c("position", "sorted"),
+  groups = character(),
+  sort_by = character(),
+  nan_is_na = TRUE
+) {
   how <- match.arg(how)
   n <- nrow(dt)
   if (how == "position" || !n) {
     return(seq_len(n))
   }
 
-  keys <- lapply(as.list(dt)[c(groups, sort_by)], canonical_missing,
+  keys <- lapply(
+    as.list(dt)[c(groups, sort_by)],
+    canonical_missing,
     nan_to_na = nan_is_na
   )
   o <- do.call(order, c(unname(keys), list(method = "radix", na.last = TRUE)))

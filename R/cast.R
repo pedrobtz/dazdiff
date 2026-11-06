@@ -52,10 +52,24 @@ num_to_text <- function(v) {
 #' @return \code{v} converted to \code{to}, or an error naming the column, the
 #'   pair of types, the reason and up to three offending values.
 #' @noRd
-cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
-                       truncate = TRUE, nan_is_na = TRUE) {
-  if (!is.character(date_format) || length(date_format) != 1L || is.na(date_format)) {
-    daffiz_abort("daffiz_error_input", "`date_format` must be a single format string")
+cast_value <- function(
+  v,
+  to,
+  nm,
+  origin = NULL,
+  date_format = "%Y-%m-%d",
+  truncate = TRUE,
+  nan_is_na = TRUE
+) {
+  if (
+    !is.character(date_format) ||
+      length(date_format) != 1L ||
+      is.na(date_format)
+  ) {
+    daffiz_abort(
+      "daffiz_error_input",
+      "`date_format` must be a single format string"
+    )
   }
   from <- col_type(v)
   if (is.null(origin)) {
@@ -81,9 +95,14 @@ cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
   }
 
   hop <- function(value) {
-    cast_value(value, to, nm,
-      origin = origin, date_format = date_format,
-      truncate = truncate, nan_is_na = nan_is_na
+    cast_value(
+      value,
+      to,
+      nm,
+      origin = origin,
+      date_format = date_format,
+      truncate = truncate,
+      nan_is_na = nan_is_na
     )
   }
 
@@ -145,14 +164,17 @@ cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
   # NaN has no integer or Date form, so it becomes NA on the way. When NaN and
   # NA are the same missing value that loses nothing; when they are not, it
   # would turn a difference into a match.
-  if (!nan_is_na && to %in% c("integer", "Date") && is.double(v) && any(is.nan(v))) {
+  if (
+    !nan_is_na && to %in% c("integer", "Date") && is.double(v) && any(is.nan(v))
+  ) {
     refuse("NaN has no such form (nan_is_na = FALSE)")
   }
 
   # `lost` marks the values a cast truncated; `why` says what was dropped.
   lost <- NULL
   why <- NULL
-  out <- switch(to,
+  out <- switch(
+    to,
     # A Date goes back out through the same format it would be read in by, so
     # the two directions are inverse. A double is written the way a table of
     # text ids writes it (see num_to_text()). Everything else is
@@ -218,7 +240,10 @@ cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
       } else if (from == "character") {
         d <- suppressWarnings(as.Date(v, format = date_format))
         if (any(is.na(d) & !is.na(v))) {
-          refuse(sprintf("not a date in format %s", date_format), v[is.na(d) & !is.na(v)])
+          refuse(
+            sprintf("not a date in format %s", date_format),
+            v[is.na(d) & !is.na(v)]
+          )
         }
         # as.Date() stops at the end of the format and ignores whatever trails
         # it, so "2024-01-01junk" parses clean and "24-01-01" quietly becomes
@@ -254,9 +279,13 @@ cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
     # 1.5 against 1 among them.
     attr(out, "truncated") <- list(
       n = sum(lost),
-      examples = vapply(shown, function(i) {
-        paste(format(v[i]), "->", format(out[i]))
-      }, character(1L)),
+      examples = vapply(
+        shown,
+        function(i) {
+          paste(format(v[i]), "->", format(out[i]))
+        },
+        character(1L)
+      ),
       rows = at
     )
   }
@@ -269,9 +298,14 @@ cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
 }
 
 # The record of a cast that truncated nothing.
-truncated_empty <- function() data.table(
-  column = character(), n = integer(), examples = character(), rows = list()
-)
+truncated_empty <- function() {
+  data.table(
+    column = character(),
+    n = integer(),
+    examples = character(),
+    rows = list()
+  )
+}
 
 #' Cast a table's columns to a reference table's types
 #'
@@ -295,18 +329,30 @@ truncated_empty <- function() data.table(
 #'   spelling of names it has normalized.
 #' @return \code{y}, invisibly.
 #' @noRd
-cast_dt <- function(x, y, cols = intersect(names(x), names(y)),
-                    date_format = "%Y-%m-%d", truncate = TRUE, nan_is_na = TRUE,
-                    labels = NULL) {
+cast_dt <- function(
+  x,
+  y,
+  cols = intersect(names(x), names(y)),
+  date_format = "%Y-%m-%d",
+  truncate = TRUE,
+  nan_is_na = TRUE,
+  labels = NULL
+) {
   if (!is.data.frame(x) || !is.data.table(y)) {
-    daffiz_abort("daffiz_error_input", "`x` must be a data.frame and `y` a data.table")
+    daffiz_abort(
+      "daffiz_error_input",
+      "`x` must be a data.frame and `y` a data.table"
+    )
   }
 
   unknown <- setdiff(cols, intersect(names(x), names(y)))
   if (length(unknown)) {
     daffiz_abort(
       "daffiz_error_columns",
-      paste0("column(s) missing from x or y: ", paste(unknown, collapse = ", ")),
+      paste0(
+        "column(s) missing from x or y: ",
+        paste(unknown, collapse = ", ")
+      ),
       columns = unknown
     )
   }
@@ -329,11 +375,17 @@ cast_dt <- function(x, y, cols = intersect(names(x), names(y)),
   }
   values <- Map(
     function(nm, to) {
-      cast_value(y[[nm]], to, labels[[nm]],
-        date_format = date_format, truncate = truncate, nan_is_na = nan_is_na
+      cast_value(
+        y[[nm]],
+        to,
+        labels[[nm]],
+        date_format = date_format,
+        truncate = truncate,
+        nan_is_na = nan_is_na
       )
     },
-    cols, targets
+    cols,
+    targets
   )
 
   truncated <- rbindlist(c(
@@ -344,7 +396,9 @@ cast_dt <- function(x, y, cols = intersect(names(x), names(y)),
         return(NULL)
       }
       data.table(
-        column = labels[[nm]], n = t$n, examples = paste(t$examples, collapse = ", "),
+        column = labels[[nm]],
+        n = t$n,
+        examples = paste(t$examples, collapse = ", "),
         rows = list(t$rows)
       )
     })
@@ -361,10 +415,17 @@ cast_dt <- function(x, y, cols = intersect(names(x), names(y)),
     daffiz_inform(
       "daffiz_message_truncation",
       paste0(
-        "Truncated ", format(sum(truncated$n), big.mark = ","),
+        "Truncated ",
+        format(sum(truncated$n), big.mark = ","),
         " value(s) while casting to the reference types:\n",
-        paste0("  ", truncated$column, ": ", format(truncated$n, big.mark = ","),
-          " (", truncated$examples, ")",
+        paste0(
+          "  ",
+          truncated$column,
+          ": ",
+          format(truncated$n, big.mark = ","),
+          " (",
+          truncated$examples,
+          ")",
           collapse = "\n"
         )
       ),

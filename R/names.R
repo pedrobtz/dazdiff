@@ -30,7 +30,11 @@ name_map <- function(dt) {
   data.table(
     name = nms,
     column = column,
-    label = ifelse(toupper(nms) == column, nms, sprintf("\"%s\" (%s)", nms, column))
+    label = ifelse(
+      toupper(nms) == column,
+      nms,
+      sprintf("\"%s\" (%s)", nms, column)
+    )
   )
 }
 
@@ -49,12 +53,15 @@ check_names <- function(map, side, only = NULL) {
     daffiz_abort(
       "daffiz_error_columns",
       paste0(
-        "`", side, "` has column name(s) with no letter or digit, so nothing ",
+        "`",
+        side,
+        "` has column name(s) with no letter or digit, so nothing ",
         "is left of them after normalization: ",
         paste0("\"", empty, "\"", collapse = ", "),
         ". Rename these columns before comparing."
       ),
-      side = side, columns = empty
+      side = side,
+      columns = empty
     )
   }
   dup <- map[column %in% column[duplicated(column)]]
@@ -63,12 +70,15 @@ check_names <- function(map, side, only = NULL) {
     daffiz_abort(
       "daffiz_error_columns",
       paste0(
-        "`", side, "` has columns whose names are the same after ",
+        "`",
+        side,
+        "` has columns whose names are the same after ",
         "normalization to A-Z, 0-9 and _:\n",
         paste0("  ", groups$column, " <- ", groups$V1, collapse = "\n"),
         "\nRename or drop these columns before comparing."
       ),
-      side = side, columns = dup$name
+      side = side,
+      columns = dup$name
     )
   }
   invisible(map)

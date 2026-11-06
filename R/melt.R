@@ -33,10 +33,17 @@ select_measures <- function(dt, measures = "numeric") {
   # would then go cartesian and silently double every count.
   dup <- unique(measures[duplicated(measures)])
   unknown <- setdiff(measures, names(dt))
-  wrong <- setdiff(measures, c(unknown, names(dt)[types %in% c("numeric", "integer")]))
+  wrong <- setdiff(
+    measures,
+    c(unknown, names(dt)[types %in% c("numeric", "integer")])
+  )
   problems <- c(
-    if (length(dup)) paste0("named more than once: ", paste(dup, collapse = ", ")),
-    if (length(unknown)) paste0("not a column: ", paste(unknown, collapse = ", ")),
+    if (length(dup)) {
+      paste0("named more than once: ", paste(dup, collapse = ", "))
+    },
+    if (length(unknown)) {
+      paste0("not a column: ", paste(unknown, collapse = ", "))
+    },
     if (length(wrong)) {
       paste0(
         "not numeric or integer: ",
@@ -151,8 +158,12 @@ canonical_missing <- function(v, nan_to_na = FALSE) {
 #'   values. With no measures there is nothing to melt, and the indexed table
 #'   comes back as it is: one row per row.
 #' @noRd
-melt_dt <- function(dt, measures = "numeric",
-                    variable.name = "metric", value.name = "value") {
+melt_dt <- function(
+  dt,
+  measures = "numeric",
+  variable.name = "metric",
+  value.name = "value"
+) {
   if (!is.data.frame(dt)) {
     daffiz_abort("daffiz_error_input", "`dt` must be a data.frame")
   }

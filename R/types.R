@@ -145,7 +145,11 @@ cast_rules <- function(wide = TRUE) {
   }
   w <- dcast(CAST_RULES, from ~ to, value.var = "allowed")
   for (nm in setdiff(names(w), "from")) {
-    set(w, j = nm, value = fifelse(is.na(w[[nm]]), "=", fifelse(w[[nm]], "yes", "-")))
+    set(
+      w,
+      j = nm,
+      value = fifelse(is.na(w[[nm]]), "=", fifelse(w[[nm]], "yes", "-"))
+    )
   }
   setcolorder(w, c("from", CAST_TYPES))[order(match(from, CAST_FROM))]
 }

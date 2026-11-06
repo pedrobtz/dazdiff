@@ -74,7 +74,9 @@ merge_dry_run <- function(x, y, on = key(x)) {
     # alone leaves it at 1. That still breaks a one-to-one join under
     # all = TRUE, where the unmatched duplicates come through untouched, so the
     # gate asks about duplicates on the complete inputs too.
-    one_to_one = (!length(fanout) || max(fanout) == 1) && dups_x == 0L && dups_y == 0L
+    one_to_one = (!length(fanout) || max(fanout) == 1) &&
+      dups_x == 0L &&
+      dups_y == 0L
   )
 }
 
@@ -105,8 +107,14 @@ merge_dry_run <- function(x, y, on = key(x)) {
 #' @return For \code{mode = "new"}, the merged table. For \code{"in_place"},
 #'   \code{x}, invisibly.
 #' @noRd
-merge_dt <- function(x, y, on = key(x), mode = c("new", "in_place"),
-                     all = FALSE, suffix = "_y") {
+merge_dt <- function(
+  x,
+  y,
+  on = key(x),
+  mode = c("new", "in_place"),
+  all = FALSE,
+  suffix = "_y"
+) {
   if (!is.data.table(x) || !is.data.table(y)) {
     daffiz_abort("daffiz_error_input", "`x` and `y` must be data.tables")
   }
@@ -122,9 +130,17 @@ merge_dt <- function(x, y, on = key(x), mode = c("new", "in_place"),
     daffiz_abort(
       "daffiz_error_keys",
       paste0(
-        "keys are not one to one: ", n(dry$rows_x), " rows would become ",
-        n(dry$est_merge_rows), " (max fanout ", n(dry$max_fanout), "; ",
-        n(dry$dups_x), " duplicate key(s) in x, ", n(dry$dups_y), " in y). ",
+        "keys are not one to one: ",
+        n(dry$rows_x),
+        " rows would become ",
+        n(dry$est_merge_rows),
+        " (max fanout ",
+        n(dry$max_fanout),
+        "; ",
+        n(dry$dups_x),
+        " duplicate key(s) in x, ",
+        n(dry$dups_y),
+        " in y). ",
         "Use disambiguate_by_key() or aggregate_by_key() first."
       ),
       dry_run = dry
@@ -143,7 +159,8 @@ merge_dt <- function(x, y, on = key(x), mode = c("new", "in_place"),
       "daffiz_error_columns",
       sprintf(
         "suffix \"%s\" would write over existing column(s): %s. Pick another suffix.",
-        suffix, paste(clash, collapse = ", ")
+        suffix,
+        paste(clash, collapse = ", ")
       ),
       columns = clash
     )

@@ -37,7 +37,9 @@ daffiz_inform <- function(subclass, message, ...) {
 # Formats a character vector for inclusion in a message, bounded so that a
 # comparison of a very wide table still produces a readable error.
 fmt_names <- function(x, max_n = 10L) {
-  if (!length(x)) return("<none>")
+  if (!length(x)) {
+    return("<none>")
+  }
   shown <- utils::head(x, max_n)
   out <- paste(shown, collapse = ", ")
   if (length(x) > max_n) {
