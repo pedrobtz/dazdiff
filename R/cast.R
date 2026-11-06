@@ -265,7 +265,9 @@ cast_value <- function(
         num <- as.numeric(v)
         off <- num[!is.na(num) & abs(num) > .Machine$integer.max]
         if (length(off)) {
-          refuse("outside integer range", off)
+          # Written as num_to_text() writes it: pasted as a double, an
+          # integer64 of 3000000000 would read "3e+09".
+          refuse("outside integer range", num_to_text(off))
         }
         lost <- !is.na(num) & num != trunc(num)
         why <- "not a whole number"

@@ -296,3 +296,23 @@ test_that("normalize_dt() asks for `to` only for types it can convert", {
   err <- expect_error(normalize_dt(dt["span"]), class = "daffiz_error_types")
   expect_no_match(conditionMessage(err), "`to`", fixed = TRUE)
 })
+
+# Out-of-range values are written in full ----------------------------------
+
+test_that("an integer64 outside integer range is written as an integer", {
+  skip_if_not_installed("bit64")
+  err <- expect_error(
+    cast_value(bit64::as.integer64(3000000000), "integer", "id"),
+    class = "daffiz_error_cast"
+  )
+  expect_match(conditionMessage(err), "outside integer range: 3000000000", fixed = TRUE)
+  expect_match(conditionMessage(err), "integer64 -> integer", fixed = TRUE)
+})
+
+test_that("a double outside integer range is written in full", {
+  err <- expect_error(
+    cast_value(c(1e10, -Inf), "integer", "v"),
+    class = "daffiz_error_cast"
+  )
+  expect_match(conditionMessage(err), "10000000000, -Inf", fixed = TRUE)
+})
