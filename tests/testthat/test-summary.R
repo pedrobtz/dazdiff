@@ -9,6 +9,20 @@ test_that("diff_summary counts each status per measure, in x's column order", {
   expect_identical(s$n_only_x, c(1L, 1L))
   expect_identical(s$n_only_y, c(1L, 1L))
   expect_identical(s$max_abs_diff, c(0, 0.5))
+  # Over the two values found in both tables.
+  expect_identical(s$mean_abs_diff, c(0, 0.25))
+  expect_identical(s$rmse, c(0, sqrt(0.125)))
+})
+
+test_that("mean_abs_diff is the mean of the absolute differences, not their max", {
+  x <- data.table(id = 1:4, v = c(1, 2, 3, 4))
+  y <- data.table(id = 1:4, v = c(1, 3, 1, 8))
+  s <- diff_summary(diff_table(x, y))
+  # |diff| = 0, 1, 2, 4
+  expect_identical(s$max_abs_diff, 4)
+  expect_identical(s$mean_abs_diff, 7 / 4)
+  expect_equal(s$rmse, sqrt(21 / 4))
+  expect_equal(s$max_rel_diff, 2 / 3)
 })
 
 test_that("magnitudes keep a difference that overflows to Inf", {
@@ -39,10 +53,24 @@ test_that("diff_summary works on the groups and rows shapes", {
   expect_identical(names(g), c("metric", "n", "n_same", "n_changed", "n_only_x", "n_only_y"))
   expect_identical(g$n_same, 2L)
 
-  r <- suppressMessages(diff_table(data.table(k = c("a", "b")), data.table(k = c("a", "c"))))
+  expect_message(
+    r <- diff_table(data.table(k = c("a", "b")), data.table(k = c("a", "c"))),
+    class = "daffiz_message_no_measures"
+  )
   s <- diff_summary(r)
   expect_identical(nrow(s), 1L)
   expect_identical(c(s$n_same, s$n_only_x, s$n_only_y), c(1L, 1L, 1L))
+})
+
+test_that("diff_summary of an empty rows-shape result is one row of zeros", {
+  e <- data.table(k = character())
+  expect_message(d <- diff_table(e, e), class = "daffiz_message_no_measures")
+  expect_identical(attr(d, "shape"), "rows")
+  expect_identical(nrow(d), 0L)
+  expect_identical(
+    diff_summary(d),
+    data.table(n = 0L, n_same = 0L, n_changed = 0L, n_only_x = 0L, n_only_y = 0L)
+  )
 })
 
 test_that("diff_summary refuses anything but a diff_table() result", {
