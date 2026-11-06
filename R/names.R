@@ -73,7 +73,7 @@ check_names <- function(map, side, only = NULL) {
         "` has column name(s) with no letter or digit, so nothing ",
         "is left of them after normalization: ",
         paste0("\"", empty, "\"", collapse = ", "),
-        ". Rename these columns before comparing."
+        "; rename these columns before comparing"
       ),
       side = side,
       columns = empty

@@ -8,6 +8,12 @@
 # - a warning: the answer may be wrong (identity was invented);
 # - a message: an expected consequence of the settings the caller chose
 #   (values truncated by a cast, columns dropped or ignored).
+#
+# Wording follows base R for errors and warnings: they start in lower case
+# (or with a quoted name such as `by`) and do not end with a period; further
+# clauses follow a semicolon, not a new sentence. Messages are sentences,
+# capitalised and ending with a period, since they read as a note on a run
+# that went ahead.
 
 daffiz_abort <- function(subclass, message, ...) {
   cond <- structure(

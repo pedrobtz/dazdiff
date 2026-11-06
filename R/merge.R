@@ -140,8 +140,8 @@ merge_dt <- function(
         n(dry$dups_x),
         " duplicate key(s) in x, ",
         n(dry$dups_y),
-        " in y). ",
-        "Number the duplicates or aggregate them first (`duplicates` in diff_table())."
+        " in y); ",
+        "number the duplicates or aggregate them first (`duplicates` in diff_table())"
       ),
       dry_run = dry
     )
@@ -158,7 +158,7 @@ merge_dt <- function(
     daffiz_abort(
       "daffiz_error_columns",
       sprintf(
-        "suffix \"%s\" would write over existing column(s): %s. Pick another suffix.",
+        "suffix \"%s\" would write over existing column(s): %s; pick another suffix",
         suffix,
         paste(clash, collapse = ", ")
       ),

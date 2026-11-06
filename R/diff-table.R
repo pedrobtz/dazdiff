@@ -269,8 +269,7 @@ diff_table <- function(
         "daffiz_error_columns",
         paste0(
           "`y` is missing column(s) the benchmark `x` has: ",
-          fmt_names(only_x$label),
-          "."
+          fmt_names(only_x$label)
         ),
         columns = only_x$name
       )
@@ -290,7 +289,7 @@ diff_table <- function(
     daffiz_abort(
       "daffiz_error_columns",
       paste0(
-        "mode = \"equal\" needs the same columns in both tables.\n",
+        "mode = \"equal\" needs the same columns in both tables\n",
         "  only in `x`: ",
         fmt_names(only_x$label),
         "\n",
@@ -376,11 +375,11 @@ diff_table <- function(
     daffiz_abort(
       "daffiz_error_keys",
       paste0(
-        "The tables are not well-formed: they have no key column, since every ",
-        "column is a measure, so rows cannot be aligned. Name the key with ",
+        "the tables are not well-formed: they have no key column, since every ",
+        "column is a measure, so rows cannot be aligned; name the key with ",
         "`by`, leave some columns out of `measures`, or add a virtual key: ",
         "row_key = \"position\" pairs the rows as they come, and ",
-        "row_key = \"sorted\" pairs them after sorting both tables by their values."
+        "row_key = \"sorted\" pairs them after sorting both tables by their values"
       )
     )
   }
@@ -393,9 +392,9 @@ diff_table <- function(
           "mode = \"equal\" compares every column, but these are in neither ",
           "`by` nor `measures`: ",
           fmt_names(label_x[ignored]),
-          ". Add them to ",
+          "; add them to ",
           "`by` (matched exactly, as part of the row identity) or, if numeric, ",
-          "to `measures`."
+          "to `measures`"
         ),
         columns = ignored
       )
@@ -542,8 +541,8 @@ diff_table <- function(
           "daffiz_warning_duplicates",
           paste0(
             head_line,
-            ". Rows within each were paired in arrival order ",
-            "(key_seq), which assumes both tables list them in the same order."
+            "; rows within each were paired in arrival order ",
+            "(key_seq), which assumes both tables list them in the same order"
           ),
           duplicates = groups
         )
@@ -565,18 +564,17 @@ diff_table <- function(
         "daffiz_error_disjoint",
         paste0(
           if (whole_rows) {
-            "No row of `x` appears in `y`"
+            "no row of `x` appears in `y`"
           } else {
             paste0(
-              "No identity value of `x` appears in `y` (identity: ",
+              "no identity value of `x` appears in `y` (identity: ",
               fmt_names(label_x[ids]),
               ")"
             )
           },
           ", so nothing can be compared",
           if (!nrow(wx) || !nrow(wy)) " (one table is empty)",
-          if (!whole_rows) ". Check `by`, and the format of the key values",
-          "."
+          if (!whole_rows) "; check `by`, and the format of the key values"
         ),
         dry_run = dry
       )

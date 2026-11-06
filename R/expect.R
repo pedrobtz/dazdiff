@@ -54,7 +54,7 @@ expect_table_equal <- function(
   if (!requireNamespace("testthat", quietly = TRUE)) {
     daffiz_abort(
       "daffiz_error_dependency",
-      "expect_table_equal() requires the suggested package 'testthat'."
+      "expect_table_equal() requires the suggested package 'testthat'"
     )
   }
   if (
