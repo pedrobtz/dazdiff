@@ -17,6 +17,9 @@ First release.
   timestamp to a whole day -- are made by default, since storage such as
   Spark or Delta narrows types the same way. Each one is announced and
   recorded; `truncate = FALSE` refuses them.
+* A timestamp cast to text is always written `"%Y-%m-%d %H:%M:%S"`, midnight
+  included, with its fraction of a second (to the microsecond) when it has
+  one, so the text does not depend on the values or the R version.
 * Column names in both tables are normalized to `A-Z`, `0-9` and `_`, so
   `amount` and `Amount` are one column. Two names in one table that
   normalize to the same thing are an error.

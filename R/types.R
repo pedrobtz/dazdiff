@@ -44,7 +44,7 @@ CAST_RULES <- rbindlist(lapply(CAST_FROM, function(from) {
   note := "fixed notation, up to 15 significant digits (scientific outside [1e-15, 2^53)); refused when the text does not read back as the same number"
 ][
   from == "POSIXct" & to == "character",
-  note := "the local time in the stamp's own timezone, which the text does not record"
+  note := "\"%Y-%m-%d %H:%M:%S\", plus \".ffffff\" (to the microsecond, trailing zeros dropped) when the stamp has a fraction of a second: the local time in the stamp's own timezone, which the text does not record"
 ][
   to == "integer" & from %in% c("numeric", "Date", "POSIXct", "character"),
   note := "a fraction is truncated toward zero (refused with truncate = FALSE); must be within integer range"
@@ -125,8 +125,11 @@ cast_rule <- function(from, to) {
 #' or a date in `date_format` is refused, and that includes the text `"NA"`,
 #' since a missing value has to arrive as `NA`. `"NaN"` and `"Inf"` are
 #' numbers. A double written as text is written in fixed notation, so
-#' `100000` becomes `"100000"`, not `"1e+05"`, and a timestamp written as text
-#' is its local time in its own timezone, which the text does not record. An
+#' `100000` becomes `"100000"`, not `"1e+05"`. A timestamp written as text is
+#' its local time in its own timezone, which the text does not record, always
+#' as `"%Y-%m-%d %H:%M:%S"` (midnight included), followed by the fraction of
+#' a second to the microsecond when it has one, as in
+#' `"2024-01-01 10:00:00.25"`. An
 #' `integer64` column (from \pkg{bit64}) becomes a double when that is exact,
 #' an integer within range, or its decimal text.
 #'

@@ -34,7 +34,9 @@ A factor (ordered or not) becomes its labels by default. A timestamp
 the stamp's own zone (the session's zone for a stamp with none, as it
 prints) and drops the time, so two stamps on the same day become one
 value; \code{c(POSIXct = "character")} keeps the stamp as text, written as its
-local time in its own zone without naming the zone, so the same instant
+local time in its own zone as \code{"\%Y-\%m-\%d \%H:\%M:\%S"} (with the fraction of
+a second, to the microsecond, when it has one) and without naming the
+zone, so the same instant
 held in two zones becomes two different strings: give both tables the
 same zone first. Name the one you mean in \code{to}.
 

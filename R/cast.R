@@ -23,6 +23,45 @@ num_to_text <- function(v) {
   txt
 }
 
+#' Write timestamps as text in one fixed format
+#'
+#' `as.character()` cannot be used: since R 4.3 it drops the time from each
+#' stamp that is exactly at midnight and keeps it on the others, so one
+#' column comes out in two formats, and before 4.3 it dropped the time for the
+#' whole column only when every stamp was at midnight. Either way a midnight
+#' stamp never joined the benchmark's `"2024-01-01 00:00:00"`, and the output
+#' depended on the R version.
+#'
+#' Every stamp is written `"%Y-%m-%d %H:%M:%S"`, the local time in the stamp's
+#' own zone (the session's, for a stamp with none). A stamp with a fraction of
+#' a second adds it after a dot, to the microsecond (what databases store),
+#' without trailing zeros. The fraction is rounded off the stamp's seconds
+#' before formatting, because `format()` truncates `%OS` digits and a double
+#' rarely holds a decimal fraction exactly: 0.1 s would print as `.099999`.
+#'
+#' @param v A POSIXct vector.
+#' @return A character vector, NA where `v` is NA.
+#' @noRd
+stamp_to_text <- function(v) {
+  s <- as.numeric(v)
+  whole <- floor(s)
+  us <- round((s - whole) * 1e6)
+  # Rounding can reach the next second: 0.9999996 s is 1 s, not 0.1000000.
+  carry <- !is.na(us) & us >= 1e6
+  whole[carry] <- whole[carry] + 1
+  us[carry] <- 0
+  txt <- format(.POSIXct(whole, tz = attr(v, "tzone")), "%Y-%m-%d %H:%M:%S")
+  frac <- !is.na(us) & us > 0
+  if (any(frac)) {
+    txt[frac] <- paste0(
+      txt[frac],
+      ".",
+      sub("0+$", "", sprintf("%06.0f", us[frac]))
+    )
+  }
+  txt
+}
+
 #' Cast one column to a target type
 #'
 #' One column of `v` cast to `to`. Refuses anything ambiguous instead
@@ -177,10 +216,12 @@ cast_value <- function(
     to,
     # A Date goes back out through the same format it would be read in by, so
     # the two directions are inverse. A double is written the way a table of
-    # text ids writes it (see num_to_text()). Everything else is
-    # as.character()'s job.
+    # text ids writes it (see num_to_text()), and a timestamp in one fixed
+    # format (see stamp_to_text()). Everything else is as.character()'s job.
     character = if (from == "Date") {
       format(v, date_format)
+    } else if (from == "POSIXct") {
+      stamp_to_text(v)
     } else if (from == "numeric") {
       txt <- num_to_text(v)
       # Fifteen significant digits, so two doubles that differ further out
@@ -448,7 +489,9 @@ cast_dt <- function(
 #' the stamp's own zone (the session's zone for a stamp with none, as it
 #' prints) and drops the time, so two stamps on the same day become one
 #' value; `c(POSIXct = "character")` keeps the stamp as text, written as its
-#' local time in its own zone without naming the zone, so the same instant
+#' local time in its own zone as `"%Y-%m-%d %H:%M:%S"` (with the fraction of
+#' a second, to the microsecond, when it has one) and without naming the
+#' zone, so the same instant
 #' held in two zones becomes two different strings: give both tables the
 #' same zone first. Name the one you mean in `to`.
 #'

@@ -31,8 +31,11 @@ Text is parsed strictly: anything that is not a number, a logical literal
 or a date in \code{date_format} is refused, and that includes the text \code{"NA"},
 since a missing value has to arrive as \code{NA}. \code{"NaN"} and \code{"Inf"} are
 numbers. A double written as text is written in fixed notation, so
-\code{100000} becomes \code{"100000"}, not \code{"1e+05"}, and a timestamp written as text
-is its local time in its own timezone, which the text does not record. An
+\code{100000} becomes \code{"100000"}, not \code{"1e+05"}. A timestamp written as text is
+its local time in its own timezone, which the text does not record, always
+as \code{"\%Y-\%m-\%d \%H:\%M:\%S"} (midnight included), followed by the fraction of
+a second to the microsecond when it has one, as in
+\code{"2024-01-01 10:00:00.25"}. An
 \code{integer64} column (from \pkg{bit64}) becomes a double when that is exact,
 an integer within range, or its decimal text.
 }
