@@ -20,7 +20,7 @@ Roxygen: list(markdown = TRUE)
 Depends:
     R (>= 4.1)
 Imports:
-    data.table,
+    data.table (>= 1.13.0),
     utils
 Suggests:
     bit64,

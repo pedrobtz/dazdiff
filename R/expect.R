@@ -150,7 +150,9 @@ expect_table_equal <- function(
       )
     }
   )
-  testthat::expectation("failure", msg, diff = d)
+  # expectation() passes `...` on only since testthat 3.3.0; building the
+  # expectation and signalling it works back to the Suggests floor.
+  testthat::exp_signal(testthat::new_expectation("failure", msg, diff = d))
   invisible(d)
 }
 

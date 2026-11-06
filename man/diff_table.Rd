@@ -73,8 +73,9 @@ A \code{data.table} keyed by the identity columns (and \code{key_seq},
 \code{status}.
 \item \code{"groups"}, with \code{duplicates = "aggregate"}: one row per key and
 measure, with \code{n_rows_x}, \code{n_rows_y}, \code{n_na_x}, \code{n_na_y},
-\code{value_key_x}, \code{value_key_y} (the exact multiset of values) and
-\code{status}. Without measures only the row counts are compared.
+\code{value_key_x}, \code{value_key_y} (the exact multiset of values, as
+hexadecimal text from the C library: compare them within one session,
+not with text stored on another platform) and \code{status}. Without measures only the row counts are compared.
 \item \code{"rows"}, when there are no measures: one row per row, with \code{key_seq}
 (when present), \code{row_id_x}, \code{row_id_y} and \code{status}, which is never
 \code{changed}.

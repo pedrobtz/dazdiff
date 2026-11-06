@@ -157,8 +157,9 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #'     `status`.
 #'   * `"groups"`, with `duplicates = "aggregate"`: one row per key and
 #'     measure, with `n_rows_x`, `n_rows_y`, `n_na_x`, `n_na_y`,
-#'     `value_key_x`, `value_key_y` (the exact multiset of values) and
-#'     `status`. Without measures only the row counts are compared.
+#'     `value_key_x`, `value_key_y` (the exact multiset of values, as
+#'     hexadecimal text from the C library: compare them within one session,
+#'     not with text stored on another platform) and `status`. Without measures only the row counts are compared.
 #'   * `"rows"`, when there are no measures: one row per row, with `key_seq`
 #'     (when present), `row_id_x`, `row_id_y` and `status`, which is never
 #'     `changed`.
