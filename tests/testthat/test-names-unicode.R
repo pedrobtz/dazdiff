@@ -15,7 +15,7 @@ test_that("measures that differ only in non-ASCII letters do not pair", {
   y <- data.frame(id = 1L, a = 5)
   names(x)[2] <- "Gr\u00f6\u00dfe"
   names(y)[2] <- "Gr\u00fc\u00dfe"
-  expect_error(diff_table(x, y), class = "daffiz_error_columns")
+  expect_error(diff_table(x, y), class = "dazdiff_error_columns")
 })
 
 test_that("a table named in Cyrillic is accepted", {

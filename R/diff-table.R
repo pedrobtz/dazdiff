@@ -98,24 +98,24 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #' @section Conditions:
 #' Every condition `diff_table()` signals has a class, so it can be caught
 #' or tested for without matching its text, and inherits from
-#' `daffiz_error`, `daffiz_warning` or `daffiz_message`. An error means the
+#' `dazdiff_error`, `dazdiff_warning` or `dazdiff_message`. An error means the
 #' question cannot be answered; a warning, that the answer may be wrong; a
 #' message reports an expected consequence of the settings.
-#' * `daffiz_error_input`: an argument is malformed.
-#' * `daffiz_error_columns`: columns missing, unknown, or not compared in
+#' * `dazdiff_error_input`: an argument is malformed.
+#' * `dazdiff_error_columns`: columns missing, unknown, or not compared in
 #'   equal mode; names that are empty or collide once normalized.
-#' * `daffiz_error_types`: a column of a type that cannot be compared, or
+#' * `dazdiff_error_types`: a column of a type that cannot be compared, or
 #'   types that differ where nothing is cast.
-#' * `daffiz_error_cast`: a value that cannot be cast to the benchmark's type.
-#' * `daffiz_error_keys`: no key column to align rows on.
-#' * `daffiz_error_measures`: `measures` names something that cannot be
+#' * `dazdiff_error_cast`: a value that cannot be cast to the benchmark's type.
+#' * `dazdiff_error_keys`: no key column to align rows on.
+#' * `dazdiff_error_measures`: `measures` names something that cannot be
 #'   measured, or a column `by` names too.
-#' * `daffiz_error_duplicates`: repeated keys under `duplicates = "error"`.
-#' * `daffiz_error_disjoint`: no key appears in both tables.
-#' * `daffiz_error_dependency`: a suggested package is needed but missing.
-#' * `daffiz_warning_duplicates`: repeated keys paired in arrival order.
-#' * `daffiz_message_dropped_columns`, `daffiz_message_ignored_columns`,
-#'   `daffiz_message_no_measures`, `daffiz_message_truncation`: columns of
+#' * `dazdiff_error_duplicates`: repeated keys under `duplicates = "error"`.
+#' * `dazdiff_error_disjoint`: no key appears in both tables.
+#' * `dazdiff_error_dependency`: a suggested package is needed but missing.
+#' * `dazdiff_warning_duplicates`: repeated keys paired in arrival order.
+#' * `dazdiff_message_dropped_columns`, `dazdiff_message_ignored_columns`,
+#'   `dazdiff_message_no_measures`, `dazdiff_message_truncation`: columns of
 #'   `y` dropped, columns not compared, no measures, values truncated.
 #'
 #' @param x The benchmark table (in `"equal"` mode, simply the first table).
@@ -210,7 +210,7 @@ diff_table <- function(
 ) {
   # 1. Arguments ----------------------------------------------------------------
   if (!is.data.frame(x) || !is.data.frame(y)) {
-    daffiz_abort("daffiz_error_input", "`x` and `y` must be data.frames")
+    dazdiff_abort("dazdiff_error_input", "`x` and `y` must be data.frames")
   }
   mode <- arg_match(mode)
   row_key <- arg_match(row_key)
@@ -218,37 +218,37 @@ diff_table <- function(
   for (arg in c("tolerance", "rel_tol")) {
     v <- get(arg)
     if (!is.numeric(v) || length(v) != 1L || !is.finite(v) || v < 0) {
-      daffiz_abort(
-        "daffiz_error_input",
+      dazdiff_abort(
+        "dazdiff_error_input",
         sprintf("`%s` must be a single finite number >= 0", arg)
       )
     }
   }
   for (arg in c("truncate", "nan_is_na")) {
     if (!is_flag(get(arg))) {
-      daffiz_abort(
-        "daffiz_error_input",
+      dazdiff_abort(
+        "dazdiff_error_input",
         sprintf("`%s` must be TRUE or FALSE", arg)
       )
     }
   }
   if (mode == "equal" && !missing(cast) && isTRUE(cast)) {
-    daffiz_abort(
-      "daffiz_error_input",
+    dazdiff_abort(
+      "dazdiff_error_input",
       "mode = \"equal\" never casts: neither table is the reference for the other"
     )
   }
   if (!is_flag(cast)) {
-    daffiz_abort("daffiz_error_input", "`cast` must be TRUE or FALSE")
+    dazdiff_abort("dazdiff_error_input", "`cast` must be TRUE or FALSE")
   }
   if (!is.null(by) && (!is.character(by) || !length(by) || anyNA(by))) {
-    daffiz_abort("daffiz_error_input", "`by` must be NULL or column names")
+    dazdiff_abort("dazdiff_error_input", "`by` must be NULL or column names")
   }
   # The multiset of a key's values is compared exactly; a tolerance would
   # silently do nothing, so it is refused instead.
   if (duplicates == "aggregate" && (tolerance > 0 || rel_tol > 0)) {
-    daffiz_abort(
-      "daffiz_error_input",
+    dazdiff_abort(
+      "dazdiff_error_input",
       "duplicates = \"aggregate\" compares values exactly; `tolerance` and `rel_tol` must be 0"
     )
   }
@@ -265,8 +265,8 @@ diff_table <- function(
   only_y <- map_y[!column %in% map_x$column]
   if (mode == "benchmark") {
     if (nrow(only_x)) {
-      daffiz_abort(
-        "daffiz_error_columns",
+      dazdiff_abort(
+        "dazdiff_error_columns",
         paste0(
           "`y` is missing column(s) the benchmark `x` has: ",
           fmt_names(only_x$label)
@@ -275,8 +275,8 @@ diff_table <- function(
       )
     }
     if (nrow(only_y)) {
-      daffiz_inform(
-        "daffiz_message_dropped_columns",
+      dazdiff_inform(
+        "dazdiff_message_dropped_columns",
         paste0(
           "Dropped column(s) of `y` that the benchmark `x` does not have: ",
           fmt_names(only_y$name),
@@ -286,8 +286,8 @@ diff_table <- function(
       )
     }
   } else if (nrow(only_x) || nrow(only_y)) {
-    daffiz_abort(
-      "daffiz_error_columns",
+    dazdiff_abort(
+      "dazdiff_error_columns",
       paste0(
         "mode = \"equal\" needs the same columns in both tables\n",
         "  only in `x`: ",
@@ -340,8 +340,8 @@ diff_table <- function(
       }
     )
     if (length(problems)) {
-      daffiz_abort(
-        "daffiz_error_columns",
+      dazdiff_abort(
+        "dazdiff_error_columns",
         paste0("`by` ", paste(problems, collapse = "; "))
       )
     }
@@ -360,8 +360,8 @@ diff_table <- function(
     measure <- select_measures(xx, measures, labels = label_x, given = given)
     both <- intersect(measure, by)
     if (length(both)) {
-      daffiz_abort(
-        "daffiz_error_measures",
+      dazdiff_abort(
+        "dazdiff_error_measures",
         paste0("`by` and `measures` both name: ", fmt_names(label_x[both]))
       )
     }
@@ -372,8 +372,8 @@ diff_table <- function(
   # or cast, and cannot refuse the comparison or report a truncation.
 
   if (!length(ids) && row_key == "none") {
-    daffiz_abort(
-      "daffiz_error_keys",
+    dazdiff_abort(
+      "dazdiff_error_keys",
       paste0(
         "the tables are not well-formed: they have no key column, since every ",
         "column is a measure, so rows cannot be aligned; name the key with ",
@@ -386,8 +386,8 @@ diff_table <- function(
   ignored <- setdiff(names(xx), c(ids, measure))
   if (length(ignored)) {
     if (mode == "equal") {
-      daffiz_abort(
-        "daffiz_error_columns",
+      dazdiff_abort(
+        "dazdiff_error_columns",
         paste0(
           "mode = \"equal\" compares every column, but these are in neither ",
           "`by` nor `measures`: ",
@@ -399,8 +399,8 @@ diff_table <- function(
         columns = ignored
       )
     }
-    daffiz_inform(
-      "daffiz_message_ignored_columns",
+    dazdiff_inform(
+      "dazdiff_message_ignored_columns",
       paste0(
         "Not compared, being in neither `by` nor `measures`: ",
         fmt_names(label_x[ignored]),
@@ -410,8 +410,8 @@ diff_table <- function(
     )
   }
   if (!length(measure)) {
-    daffiz_inform(
-      "daffiz_message_no_measures",
+    dazdiff_inform(
+      "dazdiff_message_no_measures",
       paste0(
         "No measure columns (measures = ",
         paste(deparse(measures), collapse = ""),
@@ -430,8 +430,8 @@ diff_table <- function(
   # with normalize_dt().
   unsupported <- types_x[!types_x %in% CAST_TYPES]
   if (length(unsupported)) {
-    daffiz_abort(
-      "daffiz_error_types",
+    dazdiff_abort(
+      "dazdiff_error_types",
       paste0(
         "x has column(s) of unsupported type: ",
         paste(
@@ -459,8 +459,8 @@ diff_table <- function(
     # own "Incompatible join types", neither of which names the real problem.
     off <- names(types_x)[types_x != types_y]
     if (length(off)) {
-      daffiz_abort(
-        "daffiz_error_types",
+      dazdiff_abort(
+        "dazdiff_error_types",
         paste0(
           if (mode == "equal") {
             "mode = \"equal\" does not cast"
@@ -525,8 +525,8 @@ diff_table <- function(
         fmt_names(label_x[ids])
       )
       if (duplicates == "error") {
-        daffiz_abort(
-          "daffiz_error_duplicates",
+        dazdiff_abort(
+          "dazdiff_error_duplicates",
           paste0(
             head_line,
             "; use duplicates = \"disambiguate\" or \"aggregate\""
@@ -537,8 +537,8 @@ diff_table <- function(
       disambiguate_by_key(wx)
       disambiguate_by_key(wy)
       if (length(measure)) {
-        daffiz_warn(
-          "daffiz_warning_duplicates",
+        dazdiff_warn(
+          "dazdiff_warning_duplicates",
           paste0(
             head_line,
             "; rows within each were paired in arrival order ",
@@ -560,8 +560,8 @@ diff_table <- function(
     dry <- merge_dry_run(wx, wy, on = ids)
     if (dry$keys_common == 0L) {
       whole_rows <- is.null(by) && !length(measure)
-      daffiz_abort(
-        "daffiz_error_disjoint",
+      dazdiff_abort(
+        "dazdiff_error_disjoint",
         paste0(
           if (whole_rows) {
             "no row of `x` appears in `y`"

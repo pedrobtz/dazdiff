@@ -15,7 +15,7 @@ test_that("a partially matched duplicates argument is honoured", {
 
 test_that("duplicates still raise an error by default", {
   a <- data.frame(id = c(1L, 1L), v = c(1, 2))
-  expect_error(expect_table_equal(a, a), class = "daffiz_error_duplicates")
+  expect_error(expect_table_equal(a, a), class = "dazdiff_error_duplicates")
 })
 
 test_that("tables that share no key fail the expectation", {

@@ -20,11 +20,11 @@ test_that("duplicates across -0 and 0 are seen before the merge", {
   y <- data.frame(k = c(0, 5, 1), v = c(1, 2, 3))
   expect_warning(
     diff_table(x, y, by = "k", measures = "V"),
-    class = "daffiz_warning_duplicates"
+    class = "dazdiff_warning_duplicates"
   )
   expect_error(
     diff_table(x, y, by = "k", measures = "V", duplicates = "error"),
-    class = "daffiz_error_duplicates"
+    class = "dazdiff_error_duplicates"
   )
 })
 

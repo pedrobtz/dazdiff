@@ -3,7 +3,7 @@
 # Every user column is renamed before anything else happens, to a name made of
 # upper-case letters, digits and `_` only. Two things follow from that:
 #
-# - The columns daffiz creates (`row_id`, `metric`, `value_x`, `status`,
+# - The columns dazdiff creates (`row_id`, `metric`, `value_x`, `status`,
 #   `key_seq`, ...) all contain a lowercase ASCII letter, which no normalized
 #   name does, so no user column can ever collide with one. A test asserts
 #   this for every internal name; keep it so.
@@ -65,8 +65,8 @@ check_names <- function(map, side, only = NULL) {
   }
   empty <- map[!nzchar(column), name]
   if (length(empty)) {
-    daffiz_abort(
-      "daffiz_error_columns",
+    dazdiff_abort(
+      "dazdiff_error_columns",
       paste0(
         "`",
         side,
@@ -82,8 +82,8 @@ check_names <- function(map, side, only = NULL) {
   dup <- map[column %in% column[duplicated(column)]]
   if (nrow(dup)) {
     groups <- dup[, paste0("\"", name, "\"", collapse = ", "), by = column]
-    daffiz_abort(
-      "daffiz_error_columns",
+    dazdiff_abort(
+      "dazdiff_error_columns",
       paste0(
         "`",
         side,

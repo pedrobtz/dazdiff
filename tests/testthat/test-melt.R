@@ -36,8 +36,8 @@ test_that("melt_dt: edge cases and refusals", {
   check("melt_dt: zero rows still melts", nrow(melt_dt(base_fixture()[0])) == 0L)
   check("melt_dt: no numeric column leaves one row per row", nrow(melt_dt(data.table(a = c("x", "y")))) == 2L)
   check("melt_dt: an integer column is not numeric enough by default", !"metric" %in% names(melt_dt(data.table(a = "x", b = 1L))))
-  check_error("melt_dt: an unknown measures option", melt_dt(d, measures = "chars"), class = "daffiz_error_measures")
-  check_error("melt_dt: refuses a non-table", melt_dt(1:3), class = "daffiz_error_input")
+  check_error("melt_dt: an unknown measures option", melt_dt(d, measures = "chars"), class = "dazdiff_error_measures")
+  check_error("melt_dt: refuses a non-table", melt_dt(1:3), class = "dazdiff_error_input")
 })
 
 test_that("melt_dt melts integers without melt()'s coercion warning", {
@@ -55,14 +55,14 @@ test_that("measures can be named", {
 test_that("a named measure must be numeric or integer, named once, and exist", {
   d <- melt_fixture()
   # The error carries the offending columns; test-messages.R pins why.
-  err <- expect_error(select_measures(d, "CHR_01"), class = "daffiz_error_measures")
+  err <- expect_error(select_measures(d, "CHR_01"), class = "dazdiff_error_measures")
   expect_identical(err$columns, "CHR_01")
-  err <- expect_error(select_measures(d, c("NUM_01", "NUM_01")), class = "daffiz_error_measures")
+  err <- expect_error(select_measures(d, c("NUM_01", "NUM_01")), class = "dazdiff_error_measures")
   expect_identical(err$columns, "NUM_01")
-  err <- expect_error(select_measures(d, "NOPE"), class = "daffiz_error_measures")
+  err <- expect_error(select_measures(d, "NOPE"), class = "dazdiff_error_measures")
   expect_identical(err$columns, "NOPE")
   expect_identical(select_measures(d, character()), character())
-  expect_error(select_measures(d, NA_character_), class = "daffiz_error_measures")
+  expect_error(select_measures(d, NA_character_), class = "dazdiff_error_measures")
 })
 
 test_that("index_dt numbers and keys rows on its own copy", {

@@ -6,7 +6,7 @@ test_that("an ignored column that cannot be cast does not refuse the comparison"
   y <- data.frame(id = 1:2, v = c(1, 2), loaded = c("01/01/2024", "02/01/2024"))
   expect_message(
     d <- diff_table(x, y, by = "id", measures = "v"),
-    class = "daffiz_message_ignored_columns"
+    class = "dazdiff_message_ignored_columns"
   )
   expect_identical(as.character(d$status), c("same", "same"))
 
@@ -18,7 +18,7 @@ test_that("an ignored column of an unsupported type is not refused", {
   x <- data.frame(id = 1:2, v = c(1, 2), at = as.POSIXct(c(0, 1), origin = "1970-01-01", tz = "UTC"))
   d <- suppressMessages(diff_table(x, x, by = "id", measures = "v"))
   expect_identical(nrow(d), 2L)
-  expect_error(diff_table(x, x, by = c("id", "at")), class = "daffiz_error_types")
+  expect_error(diff_table(x, x, by = c("id", "at")), class = "dazdiff_error_types")
 })
 
 test_that("an ignored column is not truncated or recorded", {
@@ -26,7 +26,7 @@ test_that("an ignored column is not truncated or recorded", {
   y <- data.frame(id = 1:2, v = c(1, 2), n = c(1.5, 2))
   expect_message(
     d <- diff_table(x, y, by = "id", measures = "v"),
-    class = "daffiz_message_ignored_columns"
+    class = "dazdiff_message_ignored_columns"
   )
   expect_identical(nrow(attr(d, "truncated")), 0L)
 })

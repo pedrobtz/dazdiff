@@ -16,8 +16,8 @@ test_that("unique_by_key reports repeated ids", {
     "unique_by_key: the measure is part of the identity, so one row per metric is fine",
     isTRUE(unique_by_key(melt_dt(data.table(id = "a", v = 1, w = 2))))
   )
-  check_error("unique_by_key: an unkeyed table", unique_by_key(data.table(a = 1)), class = "daffiz_error_keys")
-  check_error("unique_by_key: refuses a data.frame", unique_by_key(data.frame(a = 1)), class = "daffiz_error_input")
+  check_error("unique_by_key: an unkeyed table", unique_by_key(data.table(a = 1)), class = "dazdiff_error_keys")
+  check_error("unique_by_key: refuses a data.frame", unique_by_key(data.frame(a = 1)), class = "dazdiff_error_input")
 })
 
 test_that("disambiguate_by_key numbers the rows within each key", {
@@ -35,8 +35,8 @@ test_that("disambiguate_by_key can rename its column, and needs a key", {
   renamed <- melt_dt(data.table(id = c("a", "a", "b"), v = c(1, 2, 3)))
   disambiguate_by_key(renamed, seq_name = "SEQ")
   check("disambiguate_by_key: the sequence column can be renamed", "SEQ" %in% names(renamed))
-  check_error("disambiguate_by_key: an unkeyed table", disambiguate_by_key(data.table(a = 1)), class = "daffiz_error_keys")
-  check_error("disambiguate_by_key: refuses a data.frame", disambiguate_by_key(data.frame(a = 1)), class = "daffiz_error_input")
+  check_error("disambiguate_by_key: an unkeyed table", disambiguate_by_key(data.table(a = 1)), class = "dazdiff_error_keys")
+  check_error("disambiguate_by_key: refuses a data.frame", disambiguate_by_key(data.frame(a = 1)), class = "dazdiff_error_input")
 })
 
 test_that("aggregate_by_key summarizes each key group by its moments", {
@@ -80,10 +80,10 @@ test_that("aggregate_by_key(stats = \"exact\") keys each group by its multiset",
     aggregate_by_key(melt_dt(data.table(id = "a", v = 0.1 + 0.2)), stats = "exact")$value_key !=
       aggregate_by_key(melt_dt(data.table(id = "a", v = 0.3)), stats = "exact")$value_key
   )
-  check_error("aggregate_by_key: an unkeyed table", aggregate_by_key(data.table(a = 1)), class = "daffiz_error_keys")
-  check_error("aggregate_by_key: refuses a data.frame", aggregate_by_key(data.frame(a = 1)), class = "daffiz_error_input")
-  # match.arg()'s own error: the one argument check daffiz does not class.
-  expect_error(aggregate_by_key(melt_dt(dup), stats = "mean"), class = "daffiz_error_input")
+  check_error("aggregate_by_key: an unkeyed table", aggregate_by_key(data.table(a = 1)), class = "dazdiff_error_keys")
+  check_error("aggregate_by_key: refuses a data.frame", aggregate_by_key(data.frame(a = 1)), class = "dazdiff_error_input")
+  # match.arg()'s own error: the one argument check dazdiff does not class.
+  expect_error(aggregate_by_key(melt_dt(dup), stats = "mean"), class = "dazdiff_error_input")
 })
 
 test_that("exact aggregation treats -0 as 0, as == does", {

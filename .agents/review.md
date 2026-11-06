@@ -2,7 +2,7 @@
 status: pending
 ---
 
-# daffiz 0.1.0 review and proposed changes
+# dazdiff 0.1.0 review and proposed changes
 
 ## Outcome
 
@@ -90,7 +90,7 @@ classed vectors are also accepted even though `column_signature()` checks only
 attributes can align and report as matching.
 
 **Required behavior:** reject shaped atomic columns and unknown classes with a
-structured `daffiz_error_types` before duplicate grouping or joining.
+structured `dazdiff_error_types` before duplicate grouping or joining.
 
 **Change `R/preflight.R`:** replace the storage-type-only allow-list with an
 explicit predicate. Keep the supported set deliberately small and extend it
@@ -99,7 +99,7 @@ only with a test demonstrating data.table join semantics.
 ```r
 is_supported_identity <- function(column) {
   if (!is.null(dim(column))) return(FALSE)
-  if (!typeof(column) %in% daffiz_joinable_types) return(FALSE)
+  if (!typeof(column) %in% dazdiff_joinable_types) return(FALSE)
   if (!is.object(column)) return(TRUE)
 
   is.factor(column) ||
@@ -128,15 +128,15 @@ duplicates, and side-only rows.
 
 **Change tests:** add cases to `tests/testthat/test-regressions.R` asserting:
 
-- an `I(matrix(...))` identity fails with `daffiz_error_types`, not a base or
+- an `I(matrix(...))` identity fails with `dazdiff_error_types`, not a base or
   data.table error;
-- a `ts` identity fails with `daffiz_error_types` rather than silently ignoring
+- a `ts` identity fails with `dazdiff_error_types` rather than silently ignoring
   `tsp`;
 - all currently documented supported classes still compare successfully;
 - an unsupported identity can still be removed with `exclude=`.
 
 **Acceptance criteria:** no valid `data.frame` column shape reaches data.table
-grouping unless daffiz has explicitly established that it is a scalar-valued,
+grouping unless dazdiff has explicitly established that it is a scalar-valued,
 join-safe identity vector.
 
 ## P1 — API contract corrections
@@ -172,7 +172,7 @@ lexicographic pairing. Do not claim that it minimizes differences.
 **Change tests:**
 
 - update tests that rely on the old default to pass `duplicate_keys = "pair"`;
-- assert that the new default raises `daffiz_error_duplicates`;
+- assert that the new default raises `dazdiff_error_duplicates`;
 - add the counterexample above and assert the current deterministic pairing,
   without asserting optimality;
 - retain permutation and original-row traceability tests.
@@ -201,7 +201,7 @@ reserved working names to be excluded.
 Use a specific message such as:
 
 ```text
-Input column(s) collide with daffiz source-row trace columns: .row_x.
+Input column(s) collide with dazdiff source-row trace columns: .row_x.
 Rename these columns before comparison; they cannot be resolved with `exclude=`.
 ```
 
@@ -244,7 +244,7 @@ order with duplicates removed.
 accepted through `...`, but neither changes the report limits.
 
 **Change `R/report.R`:** inspect `list(...)` at the start of
-`summary.daffiz_comparison()` and raise `daffiz_error_report` when it is not
+`summary.dazdiff_comparison()` and raise `dazdiff_error_report` when it is not
 empty. Include supplied argument names, using `<unnamed>` where necessary.
 
 **Change tests:** assert focused errors for a misspelled named limit and an
@@ -267,7 +267,7 @@ assets can survive indefinitely.
 newly exported function cannot disappear from the reference index unnoticed.
 
 ```yaml
-url: https://pedrobtz.github.io/daffiz/
+url: https://pedrobtz.github.io/dazdiff/
 
 template:
   bootstrap: 5
@@ -276,7 +276,7 @@ reference:
   - title: Compare tables
     contents:
       - compare_dt
-      - daffiz_row_number
+      - dazdiff_row_number
       - is_matching
       - expect_dt_equal
   - title: Inspect differences
@@ -297,11 +297,11 @@ reference:
     contents:
       - plot_data
       - plot_diff
-      - plot.daffiz_comparison
+      - plot.dazdiff_comparison
   - title: Comparison objects
     contents:
-      - summary.daffiz_comparison
-      - all.equal.daffiz_comparison
+      - summary.dazdiff_comparison
+      - all.equal.dazdiff_comparison
 ```
 
 **Change `.github/workflows/pkgdown.yaml`:** run
@@ -347,7 +347,7 @@ The S3 object exposes mutable data.tables and a shared environment cache.
 Directly changing `cmp$cells` can make `is_matching(cmp)` disagree with a
 previously cached `column_summary(cmp)`.
 
-Document `daffiz_comparison` as opaque and direct users to accessors. For a
+Document `dazdiff_comparison` as opaque and direct users to accessors. For a
 future breaking release, store mutable internals behind a private environment
 or remove the cache unless profiling demonstrates that it is still necessary.
 Add a structural validation test if direct field access remains part of the
@@ -363,8 +363,8 @@ are available and direct users to `plot_data()` for a non-visual representation.
 ## Test additions summary
 
 - [ ] Mixed `NA`/`NaN` cells fail matching and `expect_dt_equal()`.
-- [ ] Matrix/array identity columns fail during daffiz preflight.
-- [ ] Unknown semantic classes such as `ts` fail during daffiz preflight.
+- [ ] Matrix/array identity columns fail during dazdiff preflight.
+- [ ] Unknown semantic classes such as `ts` fail during dazdiff preflight.
 - [ ] Supported identity classes retain their documented behavior.
 - [ ] Duplicate keys error by default and pair only when explicitly requested.
 - [ ] The tolerance-aware duplicate counterexample is documented by a test.
@@ -390,8 +390,8 @@ Build and check a fresh tarball outside the repository:
 ```sh
 review_dir=$(mktemp -d)
 cd "$review_dir"
-R CMD build /absolute/path/to/daffiz
-R CMD check --as-cran daffiz_*.tar.gz
+R CMD build /absolute/path/to/dazdiff
+R CMD check --as-cran dazdiff_*.tar.gz
 ```
 
 Required final state:
@@ -411,5 +411,5 @@ Required final state:
 **Decision:** distinguish `NA` from `NaN`, reject unknown identity classes, and
 make duplicate pairing opt-in.
 
-**Rationale:** daffiz is intended for regression detection. A false failure is
+**Rationale:** dazdiff is intended for regression detection. A false failure is
 visible and diagnosable; a false pass can silently approve incorrect output.

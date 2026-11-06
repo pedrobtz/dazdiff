@@ -1,11 +1,11 @@
-# daffiz
+# dazdiff
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/pedrobtz/dazdiff/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/pedrobtz/dazdiff/actions/workflows/R-CMD-check.yaml)
 ![Coverage](https://github.com/pedrobtz/dazdiff/raw/main/.github/badges/coverage.svg)
 <!-- badges: end -->
 
-`daffiz` compares two tables value by value. Its one main function,
+`dazdiff` compares two tables value by value. Its one main function,
 `diff_table()`, answers one of two questions:
 
 - **Does this table match the benchmark?** (`mode = "benchmark"`, the
@@ -22,7 +22,7 @@ back to its source row in both tables.
 Install the released version from CRAN:
 
 ```r
-install.packages("daffiz")
+install.packages("dazdiff")
 ```
 
 Or the development version from GitHub:
@@ -39,7 +39,7 @@ the way, the column names changed case, the ids became text, `units` came back
 as a double, a load timestamp was added, one row was lost and one was added:
 
 ```r
-library(daffiz)
+library(dazdiff)
 
 benchmark <- data.frame(
   id     = c(1L, 2L, 3L, 4L),
@@ -106,7 +106,7 @@ measure, each with a key to look it up by:
 ```r
 diff_report(d, x_name = "benchmark", y_name = "stored")
 #> ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-#> ┃                                       daffiz report                                        ┃
+#> ┃                                       dazdiff report                                        ┃
 #> ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 #>    Identity: id, region
 #>    Mode:     benchmark: stored is tested against benchmark

@@ -105,8 +105,8 @@ cast_value <- function(
       length(date_format) != 1L ||
       is.na(date_format)
   ) {
-    daffiz_abort(
-      "daffiz_error_input",
+    dazdiff_abort(
+      "dazdiff_error_input",
       "`date_format` must be a single format string"
     )
   }
@@ -122,7 +122,13 @@ cast_value <- function(
     if (length(vals)) {
       msg <- paste0(msg, ": ", paste(head(unique(vals), 3L), collapse = ", "))
     }
-    daffiz_abort("daffiz_error_cast", msg, column = nm, from = origin, to = to)
+    dazdiff_abort(
+      "dazdiff_error_cast",
+      msg,
+      column = nm,
+      from = origin,
+      to = to
+    )
   }
   if (!from %in% CAST_FROM) {
     refuse("unsupported source type")
@@ -165,8 +171,8 @@ cast_value <- function(
   # integer range among them.
   if (from == "integer64") {
     if (!requireNamespace("bit64", quietly = TRUE)) {
-      daffiz_abort(
-        "daffiz_error_dependency",
+      dazdiff_abort(
+        "dazdiff_error_dependency",
         sprintf("column %s: converting integer64 needs the bit64 package", nm)
       )
     }
@@ -419,7 +425,7 @@ widen_dates <- function(x, y) {
   invisible(NULL)
 }
 
-#' Say how to fix columns of a type daffiz does not compare
+#' Say how to fix columns of a type dazdiff does not compare
 #'
 #' The tail of the message refusing such columns. normalize_dt() is offered
 #' only for the types it can convert (`CAST_FROM`): offered for a difftime or
@@ -469,7 +475,7 @@ truncated_empty <- function() {
 #' the row numbers of `y` truncated (list column `rows`) are
 #' recorded on `y` as `attr(y, "truncated")` (an empty table when
 #' nothing was truncated) and announced in one message of class
-#' `daffiz_message_truncation`.
+#' `dazdiff_message_truncation`.
 #'
 #' @param x The reference table, whose column types are the targets.
 #' @param y The table to convert. Modified by reference, so it must be a
@@ -491,16 +497,16 @@ cast_dt <- function(
   labels = NULL
 ) {
   if (!is.data.frame(x) || !is.data.table(y)) {
-    daffiz_abort(
-      "daffiz_error_input",
+    dazdiff_abort(
+      "dazdiff_error_input",
       "`x` must be a data.frame and `y` a data.table"
     )
   }
 
   unknown <- setdiff(cols, intersect(names(x), names(y)))
   if (length(unknown)) {
-    daffiz_abort(
-      "daffiz_error_columns",
+    dazdiff_abort(
+      "dazdiff_error_columns",
       paste0(
         "column(s) missing from x or y: ",
         paste(unknown, collapse = ", ")
@@ -512,8 +518,8 @@ cast_dt <- function(
   targets <- vapply(cols, function(nm) col_type(x[[nm]]), character(1L))
   bad <- targets[!targets %in% CAST_TYPES]
   if (length(bad)) {
-    daffiz_abort(
-      "daffiz_error_types",
+    dazdiff_abort(
+      "dazdiff_error_types",
       paste0(
         "x has column(s) of unsupported type: ",
         paste(sprintf("%s (%s)", names(bad), bad), collapse = ", ")
@@ -577,8 +583,8 @@ cast_dt <- function(
   setattr(y, "truncated", truncated)
 
   if (nrow(truncated)) {
-    daffiz_inform(
-      "daffiz_message_truncation",
+    dazdiff_inform(
+      "dazdiff_message_truncation",
       paste0(
         "Truncated ",
         format(sum(truncated$n), big.mark = ","),
@@ -600,7 +606,7 @@ cast_dt <- function(
   invisible(y)
 }
 
-#' Convert a table to the types daffiz compares
+#' Convert a table to the types dazdiff compares
 #'
 #' [diff_table()] compares columns of five types: character, logical, Date,
 #' numeric (double) and integer. In `mode = "benchmark"` the benchmark `x` must
@@ -645,7 +651,7 @@ cast_dt <- function(
 #' normalize_dt(x, to = c(POSIXct = "Date", factor = "character"))
 normalize_dt <- function(dt, to = c(factor = "character"), cols = names(dt)) {
   if (!is.data.frame(dt)) {
-    daffiz_abort("daffiz_error_input", "`dt` must be a data.frame")
+    dazdiff_abort("dazdiff_error_input", "`dt` must be a data.frame")
   }
   # `to` is checked whole, before any column is looked at: a typo in it is a
   # mistake in the call whatever the table holds, and caught here it names
@@ -659,8 +665,8 @@ normalize_dt <- function(dt, to = c(factor = "character"), cols = names(dt)) {
       !all(names(to) %in% sources) ||
       !all(to %in% CAST_TYPES)
   ) {
-    daffiz_abort(
-      "daffiz_error_input",
+    dazdiff_abort(
+      "dazdiff_error_input",
       paste0(
         "`to` must be a character vector named by type, each name one of ",
         paste0("\"", sources, "\"", collapse = ", "),
@@ -689,8 +695,8 @@ normalize_dt <- function(dt, to = c(factor = "character"), cols = names(dt)) {
 
   unknown <- setdiff(cols, names(dt))
   if (length(unknown)) {
-    daffiz_abort(
-      "daffiz_error_columns",
+    dazdiff_abort(
+      "dazdiff_error_columns",
       paste0("unknown column(s): ", paste(unknown, collapse = ", ")),
       columns = unknown
     )
@@ -707,8 +713,8 @@ normalize_dt <- function(dt, to = c(factor = "character"), cols = names(dt)) {
     # Naming a target in `to` is the fix only for a type normalize_dt() can
     # convert; for the others, fix_hint() says so.
     can <- types[unmapped] %in% CAST_FROM
-    daffiz_abort(
-      "daffiz_error_types",
+    dazdiff_abort(
+      "dazdiff_error_types",
       paste0(
         "no conversion given for column(s): ",
         paste(sprintf("%s (%s)", unmapped, types[unmapped]), collapse = ", "),

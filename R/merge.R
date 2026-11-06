@@ -26,15 +26,15 @@
 #' @noRd
 merge_dry_run <- function(x, y, on = key(x)) {
   if (!is.data.table(x) || !is.data.table(y)) {
-    daffiz_abort("daffiz_error_input", "`x` and `y` must be data.tables")
+    dazdiff_abort("dazdiff_error_input", "`x` and `y` must be data.tables")
   }
   if (!length(on)) {
-    daffiz_abort("daffiz_error_keys", "no columns to join on")
+    dazdiff_abort("dazdiff_error_keys", "no columns to join on")
   }
   missing_cols <- setdiff(on, intersect(names(x), names(y)))
   if (length(missing_cols)) {
-    daffiz_abort(
-      "daffiz_error_columns",
+    dazdiff_abort(
+      "dazdiff_error_columns",
       paste0("not in both tables: ", paste(missing_cols, collapse = ", ")),
       columns = missing_cols
     )
@@ -116,7 +116,7 @@ merge_dt <- function(
   suffix = "_y"
 ) {
   if (!is.data.table(x) || !is.data.table(y)) {
-    daffiz_abort("daffiz_error_input", "`x` and `y` must be data.tables")
+    dazdiff_abort("dazdiff_error_input", "`x` and `y` must be data.tables")
   }
   mode <- arg_match(mode)
 
@@ -127,8 +127,8 @@ merge_dt <- function(
     # large -- so the message for the join most worth refusing would itself
     # fail to build.
     n <- function(v) format(v, big.mark = ",", scientific = FALSE)
-    daffiz_abort(
-      "daffiz_error_keys",
+    dazdiff_abort(
+      "dazdiff_error_keys",
       paste0(
         "keys are not one to one: ",
         n(dry$rows_x),
@@ -155,8 +155,8 @@ merge_dt <- function(
   taken <- unique(targets[targets %in% names(x)])
   if (length(taken) || anyDuplicated(targets)) {
     clash <- unique(c(taken, targets[duplicated(targets)]))
-    daffiz_abort(
-      "daffiz_error_columns",
+    dazdiff_abort(
+      "dazdiff_error_columns",
       sprintf(
         "suffix \"%s\" would write over existing column(s): %s; pick another suffix",
         suffix,

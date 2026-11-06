@@ -79,7 +79,7 @@ What is still missing:
   carries it on its result.
 - **Alert the user with a message when truncation happens** (decided
   2026-09-29). Raise one `message()` per call, not one per column, as a
-  subclassed condition (`daffiz_message_truncation`, carrying the record
+  subclassed condition (`dazdiff_message_truncation`, carrying the record
   above). It names each column, how many values were truncated, and up to
   three examples (`1.7 -> 1`). No message when nothing was truncated.
   - **Why a message rather than a warning:** under the storage workflow,
@@ -87,7 +87,7 @@ What is still missing:
     `expect_no_warning()` and `options(warn = 2)` pipelines on the normal
     path.
   - **Silencing it:** `suppressMessages()` works, or
-    `withCallingHandlers(daffiz_message_truncation = ...)` for callers who
+    `withCallingHandlers(dazdiff_message_truncation = ...)` for callers who
     want to act on it.
   - **Where it is raised:** in `cast_dt()`. `diff_table()` and `expect_*()`
     pass it through.
@@ -123,7 +123,7 @@ The rule, in order:
    locale, so the result is the same in every session.
 3. Trim leading and trailing `_` (decided 2026-09-29).
 4. A name that ends up empty (`"%"`, `" "`, `"_"`) is a
-   `daffiz_error_columns` error: the user must rename it.
+   `dazdiff_error_columns` error: the user must rename it.
 
 | Original | Normalized |
 |---|---|
@@ -158,7 +158,7 @@ Conditions for this to hold:
   of them.
   - **No workaround:** no suffixing, no "keep the first", and no argument to
     bypass the check.
-  - **Class:** `daffiz_error_columns`, carrying the colliding groups.
+  - **Class:** `dazdiff_error_columns`, carrying the colliding groups.
   - **Message:** names the table (`x` or `y`) and lists each group as its
     normalized name with every original that maps to it, for example
     `AMOUNT <- "amount", "Amount"`. It ends with "rename or drop these
@@ -216,12 +216,12 @@ the table under test.
 - **Columns only in `x` are an error** (recommended; please confirm). The
   benchmark defines the contract, so a column it has and the tested table
   lacks is a regression. Silently comparing the rest would hide it. The error
-  (`daffiz_error_columns`) names the missing columns in their original `x`
+  (`dazdiff_error_columns`) names the missing columns in their original `x`
   spelling. This fixes the second and third cases. There is no confusing "not
   in both tables" message, and no `only_x` cells for a column that is missing
   rather than a row.
 - **Announce what was dropped** (recommended). One subclassed message,
-  `daffiz_message_dropped_columns`, lists `y`'s dropped columns in their
+  `dazdiff_message_dropped_columns`, lists `y`'s dropped columns in their
   original spelling, like the truncation message. Record them in the same
   result attribute as the name mapping. That way a typo in `y` (for example
   `amout`) is visible instead of silently vanishing, and the error then also
@@ -237,7 +237,7 @@ the table under test.
 peers; neither is the source of truth.
 
 - **All columns must match.** A column on either side only is an error
-  (`daffiz_error_columns`) that lists both directions: "only in `x`: …" and
+  (`dazdiff_error_columns`) that lists both directions: "only in `x`: …" and
   "only in `y`: …", each in its original spelling. Nothing is dropped. This is
   the draft's gate 4.
 - **Types must already agree; nothing is cast** (recommended). With no source
@@ -284,7 +284,7 @@ See "Values" in `plan.md`.
 
 `diff_table(data.table(v = 1:2 + 0), data.table(v = c(1, 3)))` raises a
 data.table warning about a zero-length `cols`, then "`dt` has no key to check".
-**Fix:** raise a daffiz error that says no identity columns were found and
+**Fix:** raise a dazdiff error that says no identity columns were found and
 suggests passing `by=` or adding a key. Positional alignment is in the roadmap.
 
 ### F6. `tolerance` is not validated — Confirmed
@@ -309,7 +309,7 @@ With the default `duplicates = "disambiguate"`, the only sign that identity
 was invented is a `KEY_SEQ` column. Pairing by arrival order can only produce
 false *failures*, which is why it is a safer default than the old sorted
 pairing. It should still be announced. **Fix:** emit a subclassed warning
-(`daffiz_warning_duplicates`) carrying the `unique_by_key()` groups.
+(`dazdiff_warning_duplicates`) carrying the `unique_by_key()` groups.
 
 ## P2 — design
 
@@ -383,7 +383,7 @@ as the draft did.
 - **`status`:** make it a factor with fixed levels (`same`, `changed`,
   `only_x`, `only_y`), so `table()` shows zero counts and the levels are a
   documented contract.
-- **Errors:** all use plain `stop()`. Use `daffiz_abort()` with subclasses
+- **Errors:** all use plain `stop()`. Use `dazdiff_abort()` with subclasses
   (keep `R/conditions.R`), so tests and callers can catch them by class.
 - **`NORMALIZE_TO` POSIXct → Date:** it is lossy: two stamps on the same day
   become one key, which then shows up as a "duplicate". Consider having no

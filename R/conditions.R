@@ -1,6 +1,6 @@
 # Structured conditions -------------------------------------------------------
 #
-# Every condition daffiz raises carries a subclass as well as readable text, so
+# Every condition dazdiff raises carries a subclass as well as readable text, so
 # callers and tests can tell which check fired without parsing a message.
 #
 # The three kinds mean different things:
@@ -15,26 +15,26 @@
 # capitalised and ending with a period, since they read as a note on a run
 # that went ahead.
 
-daffiz_abort <- function(subclass, message, ...) {
+dazdiff_abort <- function(subclass, message, ...) {
   cond <- structure(
-    class = c(subclass, "daffiz_error", "error", "condition"),
+    class = c(subclass, "dazdiff_error", "error", "condition"),
     list(message = message, call = NULL, ...)
   )
   stop(cond)
 }
 
-daffiz_warn <- function(subclass, message, ...) {
+dazdiff_warn <- function(subclass, message, ...) {
   cond <- structure(
-    class = c(subclass, "daffiz_warning", "warning", "condition"),
+    class = c(subclass, "dazdiff_warning", "warning", "condition"),
     list(message = message, call = NULL, ...)
   )
   warning(cond)
 }
 
 # message() prints conditionMessage() as is, so the newline is ours to add.
-daffiz_inform <- function(subclass, message, ...) {
+dazdiff_inform <- function(subclass, message, ...) {
   cond <- structure(
-    class = c(subclass, "daffiz_message", "message", "condition"),
+    class = c(subclass, "dazdiff_message", "message", "condition"),
     list(message = paste0(message, "\n"), call = NULL, ...)
   )
   message(cond)
@@ -54,7 +54,7 @@ fmt_names <- function(x, max_n = 10L) {
   out
 }
 
-# match.arg(), raising a classed daffiz_error_input instead of base R's bare
+# match.arg(), raising a classed dazdiff_error_input instead of base R's bare
 # "'arg' should be one of" error, which no caller can tell apart from any
 # other. Called as `mode <- arg_match(mode)` from the function whose formal
 # lists the choices, like match.arg().
@@ -73,8 +73,8 @@ arg_match <- function(arg, choices = NULL) {
     NA_integer_
   }
   if (is.na(i)) {
-    daffiz_abort(
-      "daffiz_error_input",
+    dazdiff_abort(
+      "dazdiff_error_input",
       sprintf(
         "`%s` must be one of %s",
         name,

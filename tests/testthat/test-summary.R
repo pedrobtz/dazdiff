@@ -55,7 +55,7 @@ test_that("diff_summary works on the groups and rows shapes", {
 
   expect_message(
     r <- diff_table(data.table(k = c("a", "b")), data.table(k = c("a", "c"))),
-    class = "daffiz_message_no_measures"
+    class = "dazdiff_message_no_measures"
   )
   s <- diff_summary(r)
   expect_identical(nrow(s), 1L)
@@ -64,7 +64,7 @@ test_that("diff_summary works on the groups and rows shapes", {
 
 test_that("diff_summary of an empty rows-shape result is one row of zeros", {
   e <- data.table(k = character())
-  expect_message(d <- diff_table(e, e), class = "daffiz_message_no_measures")
+  expect_message(d <- diff_table(e, e), class = "dazdiff_message_no_measures")
   expect_identical(attr(d, "shape"), "rows")
   expect_identical(nrow(d), 0L)
   expect_identical(
@@ -74,5 +74,5 @@ test_that("diff_summary of an empty rows-shape result is one row of zeros", {
 })
 
 test_that("diff_summary refuses anything but a diff_table() result", {
-  expect_error(diff_summary(data.table(a = 1)), class = "daffiz_error_input")
+  expect_error(diff_summary(data.table(a = 1)), class = "dazdiff_error_input")
 })

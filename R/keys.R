@@ -13,12 +13,12 @@
 #' @noRd
 unique_by_key <- function(dt, along = "metric") {
   if (!is.data.table(dt)) {
-    daffiz_abort("daffiz_error_input", "`dt` must be a data.table")
+    dazdiff_abort("dazdiff_error_input", "`dt` must be a data.table")
   }
 
   k <- key(dt)
   if (!length(k)) {
-    daffiz_abort("daffiz_error_keys", "`dt` has no key to check")
+    dazdiff_abort("dazdiff_error_keys", "`dt` has no key to check")
   }
 
   by <- c(k, intersect(along, names(dt)))
@@ -59,10 +59,10 @@ disambiguate_by_key <- function(
   seq_name = "key_seq"
 ) {
   if (!is.data.table(long)) {
-    daffiz_abort("daffiz_error_input", "`long` must be a data.table")
+    dazdiff_abort("dazdiff_error_input", "`long` must be a data.table")
   }
   if (!length(by)) {
-    daffiz_abort("daffiz_error_keys", "no key to disambiguate by")
+    dazdiff_abort("dazdiff_error_keys", "no key to disambiguate by")
   }
 
   grp <- c(by, intersect(along, names(long)))
@@ -108,11 +108,11 @@ aggregate_by_key <- function(
   nan_is_na = TRUE
 ) {
   if (!is.data.table(long)) {
-    daffiz_abort("daffiz_error_input", "`long` must be a data.table")
+    dazdiff_abort("dazdiff_error_input", "`long` must be a data.table")
   }
   stats <- arg_match(stats)
   if (!length(by)) {
-    daffiz_abort("daffiz_error_keys", "no key to aggregate by")
+    dazdiff_abort("dazdiff_error_keys", "no key to aggregate by")
   }
 
   grp <- c(by, intersect(along, names(long)))

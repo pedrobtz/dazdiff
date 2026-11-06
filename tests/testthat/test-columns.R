@@ -19,7 +19,7 @@ test_that("summarize_dt reports each column's name, type and distinct count", {
     summarize_dt(data.table(x = c(1, NA)))$n_unique == 2L
   )
   check("summarize_dt: zero rows", all(summarize_dt(base_fixture()[0])$n_unique == 0L))
-  check_error("summarize_dt: refuses a non-table", summarize_dt(1:3), class = "daffiz_error_input")
+  check_error("summarize_dt: refuses a non-table", summarize_dt(1:3), class = "dazdiff_error_input")
 })
 
 test_that("compare_columns of a table with itself matches everywhere", {
@@ -76,7 +76,7 @@ test_that("compare_columns leaves the overlap uncomputed across a type change", 
     is.na(compare_columns(data.table(f = factor("a")), data.table(f = "a"))[colname == "F", over_pct])
   )
   check("compare_columns: two empty columns give NA overlap", is.na(compare_columns(base[0], base[0])[colname == "ID", over_pct]))
-  check_error("compare_columns: refuses a non-table", compare_columns(base, 1:3), class = "daffiz_error_input")
+  check_error("compare_columns: refuses a non-table", compare_columns(base, 1:3), class = "dazdiff_error_input")
 })
 
 test_that("compare_columns pairs columns by their normalized names", {
@@ -101,12 +101,12 @@ test_that("compare_columns reads IDate and Date as one type", {
 test_that("compare_columns refuses names that collide after normalization", {
   err <- expect_error(
     compare_columns(data.table(amount = 1, Amount = 2), data.table(amount = 1)),
-    class = "daffiz_error_columns"
+    class = "dazdiff_error_columns"
   )
   expect_identical(c(err$side, err$columns), c("x", "amount", "Amount"))
   err <- expect_error(
     compare_columns(data.table(a = 1), data.table(a = 1, A = 2)),
-    class = "daffiz_error_columns"
+    class = "dazdiff_error_columns"
   )
   expect_identical(c(err$side, err$columns), c("y", "a", "A"))
 })

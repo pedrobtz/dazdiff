@@ -66,7 +66,7 @@ test_that("diff_report works on every shape", {
 
   expect_message(
     rows <- diff_table(data.table(k = c("a", "b")), data.table(k = c("b", "c", "a"))),
-    class = "daffiz_message_no_measures"
+    class = "dazdiff_message_no_measures"
   )
   w <- diff_report(rows)
   expect_identical(w$measures, character())
@@ -87,11 +87,11 @@ test_that("counts past 2^31 are formatted", {
 
 test_that("diff_report validates its arguments", {
   d <- diff_table(report_x(), report_y())
-  expect_error(diff_report(data.table(a = 1)), class = "daffiz_error_input")
-  expect_error(diff_report(d, top_k = -1), class = "daffiz_error_input")
-  expect_error(diff_report(d, sample_k = 1.5), class = "daffiz_error_input")
-  expect_error(diff_report(d, x_name = NA_character_), class = "daffiz_error_input")
-  expect_error(format(diff_report(d), unicode = NA), class = "daffiz_error_input")
+  expect_error(diff_report(data.table(a = 1)), class = "dazdiff_error_input")
+  expect_error(diff_report(d, top_k = -1), class = "dazdiff_error_input")
+  expect_error(diff_report(d, sample_k = 1.5), class = "dazdiff_error_input")
+  expect_error(diff_report(d, x_name = NA_character_), class = "dazdiff_error_input")
+  expect_error(format(diff_report(d), unicode = NA), class = "dazdiff_error_input")
 })
 
 test_that("the drawing", {
@@ -111,9 +111,9 @@ test_that("the drawing", {
   expect_message(
     expect_message(
       d <- diff_table(bench, tested, by = c("id", "region"), measures = c("amount", "rate")),
-      class = "daffiz_message_dropped_columns"
+      class = "dazdiff_message_dropped_columns"
     ),
-    class = "daffiz_message_ignored_columns"
+    class = "dazdiff_message_ignored_columns"
   )
   expect_snapshot(print(diff_report(d, x_name = "bench", y_name = "tested", top_k = 1), unicode = FALSE))
 })
@@ -129,8 +129,8 @@ test_that("the drawing of paired rows and a truncating cast", {
   x <- data.table(id = c("a", "a", "b"), n = c(1L, 1L, 3L), v = c(1, 2, 3))
   y <- data.table(id = c("a", "a", "b"), n = c(1.7, 1, 3), v = c(1, 2, 4))
   expect_message(
-    expect_warning(d <- diff_table(x, y), class = "daffiz_warning_duplicates"),
-    class = "daffiz_message_truncation"
+    expect_warning(d <- diff_table(x, y), class = "dazdiff_warning_duplicates"),
+    class = "dazdiff_message_truncation"
   )
   r <- diff_report(d)
   expect_true(r$paired)
@@ -151,7 +151,7 @@ test_that("the drawing of a change in one measure of several", {
 test_that("the drawing of an exact match that dropped a column", {
   x <- data.table(id = 1:2, v = c(1, 2))
   y <- data.table(id = 1:2, v = c(1, 2), loaded_at = "t")
-  expect_message(d <- diff_table(x, y), class = "daffiz_message_dropped_columns")
+  expect_message(d <- diff_table(x, y), class = "dazdiff_message_dropped_columns")
   r <- diff_report(d)
   expect_true(r$equal)
   expect_identical(r$dropped, "loaded_at")

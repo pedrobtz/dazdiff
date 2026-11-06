@@ -19,7 +19,7 @@ test_that("rows added and removed", {
   # Nothing aligns, so nothing would be compared: every row one-sided. That
   # is almost always a wrong key, and is refused rather than reported.
   check_error("B shares no ids with A: refused, since nothing aligns",
-    diff_table(A, copy(A)[, ID := paste0(ID, "!")]), class = "daffiz_error_disjoint")
+    diff_table(A, copy(A)[, ID := paste0(ID, "!")]), class = "dazdiff_error_disjoint")
 })
 
 test_that("changing an id column is an identity change, not a value change", {
@@ -72,7 +72,7 @@ test_that("types: a drifted type is cast back, or refused without casting", {
   B_chr <- copy(A)[, VAL := as.character(VAL)]
   check("a drifted type is cast back", is_tally(diff_table(A, B_chr), same = 4L))
   check_error("without casting the type mismatch is refused",
-    diff_table(A, B_chr, cast = FALSE), class = "daffiz_error_types")
+    diff_table(A, B_chr, cast = FALSE), class = "dazdiff_error_types")
 })
 
 test_that("types: integers are ids unless asked to be measures", {
@@ -90,10 +90,10 @@ test_that("types: integers are ids unless asked to be measures", {
 test_that("an extra column in B is dropped, a missing one refused", {
   A <- cases_fixture()
   B_wide <- copy(A)[, NOTE := "hi"]
-  m <- expect_message(d <- diff_table(A, B_wide), class = "daffiz_message_dropped_columns")
+  m <- expect_message(d <- diff_table(A, B_wide), class = "dazdiff_message_dropped_columns")
   check("an extra column in B does not stop the compare", is_tally(d, same = 4L))
   check("the message names the dropped column", identical(m$columns, "NOTE"))
-  err <- expect_error(diff_table(A, copy(A)[, GRP := NULL]), class = "daffiz_error_columns")
+  err <- expect_error(diff_table(A, copy(A)[, GRP := NULL]), class = "dazdiff_error_columns")
   check("a missing column in B is refused, naming it", identical(err$columns, "GRP"))
 })
 
@@ -120,12 +120,12 @@ test_that("ids that do not tell rows apart", {
     VAL = c(10, 11, 20)
   )
   B_dup <- copy(A_dup)
-  expect_warning(d <- diff_table(A_dup, B_dup), class = "daffiz_warning_duplicates")
+  expect_warning(d <- diff_table(A_dup, B_dup), class = "dazdiff_warning_duplicates")
   check("duplicate ids: disambiguated by arrival order", is_tally(d, same = 3L))
   # The edit is inside the repeated group, on its second row.
   expect_warning(
     d <- diff_table(A_dup, copy(A_dup)[2, VAL := 12]),
-    class = "daffiz_warning_duplicates"
+    class = "dazdiff_warning_duplicates"
   )
   check("duplicate ids: a change inside the group is found", is_tally(d, same = 2L, changed = 1L))
   check(
@@ -133,7 +133,7 @@ test_that("ids that do not tell rows apart", {
     d[status == "changed", ID == "a" && key_seq == 2L && row_id_x == 2L && row_id_y == 2L]
   )
   check_error("duplicates = error refuses", diff_table(A_dup, B_dup, duplicates = "error"),
-    class = "daffiz_error_duplicates")
+    class = "dazdiff_error_duplicates")
   check("duplicates = aggregate collapses the group", {
     res <- diff_table(A_dup, B_dup, duplicates = "aggregate")
     nrow(res) == 2L && all(res$status == "same")
@@ -149,7 +149,7 @@ test_that("a repeated key numbers a row once, the same for all its measures", {
   # own could give one source row two numbers.
   x <- data.table(id = c("a", "a", "a"), v = c(1, 2, 3), w = c(30, 20, 10))
   y <- data.table(id = c("a", "a", "a"), v = c(1, 2, 3), w = c(30, 21, 10))
-  expect_warning(d <- diff_table(x, y), class = "daffiz_warning_duplicates")
+  expect_warning(d <- diff_table(x, y), class = "dazdiff_warning_duplicates")
   by_row <- d[, .(n_seq = uniqueN(key_seq), n_metric = .N), by = row_id_x]
   expect_identical(by_row$n_seq, c(1L, 1L, 1L))
   expect_identical(by_row$n_metric, c(2L, 2L, 2L))

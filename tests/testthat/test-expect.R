@@ -29,7 +29,7 @@ test_that("max_rows must be a single number >= 0", {
   for (bad in list(-1, NA, NA_real_, c(1, 2), "3", NULL)) {
     expect_error(
       expect_table_equal(expected, expected, max_rows = bad),
-      class = "daffiz_error_input",
+      class = "dazdiff_error_input",
       info = deparse(bad)
     )
   }
@@ -38,7 +38,7 @@ test_that("max_rows must be a single number >= 0", {
 test_that("expect_table_equal needs testthat", {
   local_missing_package("testthat")
   expected <- data.frame(id = 1:2, v = c(1, 2))
-  expect_error(expect_table_equal(expected, expected), class = "daffiz_error_dependency")
+  expect_error(expect_table_equal(expected, expected), class = "dazdiff_error_dependency")
 })
 
 test_that("expect_table_equal treats expected as the benchmark", {
@@ -46,20 +46,20 @@ test_that("expect_table_equal treats expected as the benchmark", {
   actual <- data.frame(id = 1:2, v = c(1, 2), extra = "e")
   expect_success(suppressMessages(expect_table_equal(actual, expected)))
   # Reversed, the benchmark has a column the tested table lacks.
-  expect_error(expect_table_equal(expected, actual), class = "daffiz_error_columns")
+  expect_error(expect_table_equal(expected, actual), class = "dazdiff_error_columns")
   # As peers, the extra column is a difference.
-  expect_error(expect_table_equal(actual, expected, mode = "equal"), class = "daffiz_error_columns")
+  expect_error(expect_table_equal(actual, expected, mode = "equal"), class = "dazdiff_error_columns")
 })
 
 test_that("expect_table_equal does not pair duplicate keys unless asked", {
   expected <- data.table(id = c("a", "a"), v = c(1, 2))
   actual <- data.table(id = c("a", "a"), v = c(2, 1))
-  err <- expect_error(expect_table_equal(actual, expected), class = "daffiz_error_duplicates")
+  err <- expect_error(expect_table_equal(actual, expected), class = "dazdiff_error_duplicates")
   expect_identical(err$duplicates$ID, c("a", "a"))
   expect_success(expect_table_equal(actual, expected, duplicates = "aggregate"))
   expect_warning(
     expect_failure(expect_table_equal(actual, expected, duplicates = "disambiguate")),
-    class = "daffiz_warning_duplicates"
+    class = "dazdiff_warning_duplicates"
   )
 })
 

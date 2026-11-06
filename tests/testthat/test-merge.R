@@ -54,7 +54,7 @@ test_that("a key repeating on one side alone is not one to one", {
     "merge_dt: so the merge is refused",
     merge_dt(setkey(data.table(id = "a", v = 1), id),
              setkey(data.table(id = c("b", "b"), w = 1:2), id), all = TRUE),
-    class = "daffiz_error_keys"
+    class = "dazdiff_error_keys"
   )
   # The shared key is unique, so the fanout is 1, and still the gate holds.
   side <- merge_dry_run(
@@ -81,9 +81,9 @@ test_that("merge_dry_run: an empty side, and refusals", {
   kx <- kx_fixture()
   empty <- merge_dry_run(kx[0], ky_fixture())
   check("merge_dry_run: an empty side gives NA for its share", is.na(empty$pct_x))
-  check_error("merge_dry_run: no key to join on", merge_dry_run(data.table(a = 1), data.table(a = 1)), class = "daffiz_error_keys")
-  check_error("merge_dry_run: a column missing from one side", merge_dry_run(kx, ky_fixture(), on = "nope"), class = "daffiz_error_columns")
-  check_error("merge_dry_run: refuses a data.frame", merge_dry_run(as.data.frame(kx), ky_fixture(), on = "id"), class = "daffiz_error_input")
+  check_error("merge_dry_run: no key to join on", merge_dry_run(data.table(a = 1), data.table(a = 1)), class = "dazdiff_error_keys")
+  check_error("merge_dry_run: a column missing from one side", merge_dry_run(kx, ky_fixture(), on = "nope"), class = "dazdiff_error_columns")
+  check_error("merge_dry_run: refuses a data.frame", merge_dry_run(as.data.frame(kx), ky_fixture(), on = "id"), class = "dazdiff_error_input")
 })
 
 test_that("merge_dt defaults to a new inner join", {
@@ -103,13 +103,13 @@ test_that("merge_dt refuses a suffix that lands on an existing column", {
   check_error(
     "merge_dt: a suffix that would overwrite an existing column is refused",
     merge_dt(sfx_x, sfx_y, mode = "in_place"),
-    class = "daffiz_error_columns"
+    class = "dazdiff_error_columns"
   )
   check("merge_dt: x is untouched by the refusal", identical(sfx_x, before))
   check_error(
     "merge_dt: and refused in new mode too, where it would duplicate the name",
     merge_dt(sfx_x, sfx_y, mode = "new"),
-    class = "daffiz_error_columns"
+    class = "dazdiff_error_columns"
   )
   check("merge_dt: x is still untouched", identical(sfx_x, before))
   check(
@@ -150,17 +150,17 @@ test_that("merge_dt refuses a join that is not one to one, and bad input", {
       setkey(data.table(id = c("a", "a"), v = 1:2), id),
       setkey(data.table(id = c("a", "a"), w = 1:2), id)
     ),
-    class = "daffiz_error_keys"
+    class = "dazdiff_error_keys"
   )
   expect_identical(err$dry_run$est_merge_rows, 4)
-  check_error("merge_dt: refuses a data.frame", merge_dt(as.data.frame(kx_fixture()), ky_fixture()), class = "daffiz_error_input")
+  check_error("merge_dt: refuses a data.frame", merge_dt(as.data.frame(kx_fixture()), ky_fixture()), class = "dazdiff_error_input")
   # match.arg()'s own error, unclassed.
-  expect_error(merge_dt(kx_fixture(), ky_fixture(), mode = "sideways"), class = "daffiz_error_input")
+  expect_error(merge_dt(kx_fixture(), ky_fixture(), mode = "sideways"), class = "dazdiff_error_input")
 })
 
 test_that("the refusal of a fanout past 2^31 can still be written", {
   big <- 46341L
   bx <- setkey(data.table(id = rep(1L, big)), id)
-  err <- expect_error(merge_dt(bx, copy(bx)), class = "daffiz_error_keys")
+  err <- expect_error(merge_dt(bx, copy(bx)), class = "dazdiff_error_keys")
   expect_match(conditionMessage(err), "46,341 rows would become 2,147,488,281", fixed = TRUE)
 })

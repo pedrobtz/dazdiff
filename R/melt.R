@@ -28,8 +28,8 @@ select_measures <- function(
   given = measures
 ) {
   if (!is.character(measures) || anyNA(measures)) {
-    daffiz_abort(
-      "daffiz_error_measures",
+    dazdiff_abort(
+      "dazdiff_error_measures",
       paste0(
         "`measures` must be \"numeric\", \"numeric+integer\", column names, ",
         "or character(0) for none"
@@ -71,8 +71,8 @@ select_measures <- function(
     }
   )
   if (length(problems)) {
-    daffiz_abort(
-      "daffiz_error_measures",
+    dazdiff_abort(
+      "dazdiff_error_measures",
       paste0("`measures` ", paste(problems, collapse = "; ")),
       columns = c(dup, unknown, wrong)
     )
@@ -193,7 +193,7 @@ melt_dt <- function(
   value_name = "value"
 ) {
   if (!is.data.frame(dt)) {
-    daffiz_abort("daffiz_error_input", "`dt` must be a data.frame")
+    dazdiff_abort("dazdiff_error_input", "`dt` must be a data.frame")
   }
 
   if ("row_id" %in% names(dt)) {

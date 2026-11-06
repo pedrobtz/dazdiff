@@ -1,7 +1,7 @@
 # Performance benchmarks
 
 > **Out of date.** This harness still measures the pipeline of the earlier
-> draft (`compare_dt()`, tag `draft-0.1.0`), which daffiz 0.1.0 no longer
+> draft (`compare_dt()`, tag `draft-0.1.0`), which dazdiff 0.1.0 no longer
 > exports, so the commands below fail against the current package. Run them
 > from a checkout of `draft-0.1.0`, or port the harness to `diff_table()`
 > first (see `.agents/roadmap.md`).
@@ -23,8 +23,8 @@ matrix includes 1,000, 100,000, and 1,000,000 rows; 5, 20, and 100 measures;
 can include 100-million-cell cases and must be enabled deliberately:
 
 ```sh
-DAFFIZ_BENCH_PROFILE=full \
-DAFFIZ_BENCH_MAX_CELLS=100000000 \
+DAZDIFF_BENCH_PROFILE=full \
+DAZDIFF_BENCH_MAX_CELLS=100000000 \
 Rscript benchmarks/run-benchmarks.R .
 ```
 

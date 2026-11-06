@@ -72,7 +72,7 @@ test_that("a Date's fraction of a day is recorded when written as text", {
 test_that("a Date's fraction of a day is refused as text with truncate = FALSE", {
   expect_error(
     cast_value(as.Date(19723.5), "character", "d", truncate = FALSE),
-    class = "daffiz_error_cast"
+    class = "dazdiff_error_cast"
   )
   expect_identical(
     cast_value(as.Date(19723), "character", "d", truncate = FALSE),
@@ -86,7 +86,7 @@ test_that("diff_table() announces the day a text benchmark truncates", {
       data.frame(d = "2024-01-01", v = 1),
       data.frame(d = as.Date(19723.5), v = 1)
     ),
-    class = "daffiz_message_truncation"
+    class = "dazdiff_message_truncation"
   )
   expect_identical(as.character(out$status), "same")
   expect_identical(nrow(attr(out, "truncated")), 1L)
@@ -102,7 +102,7 @@ test_that("a fractional Date is floored onto an IDate benchmark", {
   y <- data.table::data.table(d = as.Date(c(19723.5, 19724)), v = c(1, 2))
   expect_message(
     out <- expect_no_warning(diff_table(x, y)),
-    class = "daffiz_message_truncation"
+    class = "dazdiff_message_truncation"
   )
   expect_identical(as.character(out$status), c("same", "same"))
   expect_s3_class(out$D, "IDate")
@@ -117,7 +117,7 @@ test_that("a fractional Date onto an IDate is refused with truncate = FALSE", {
   y <- data.table::data.table(d = as.Date(19723.5), v = 1)
   expect_error(
     diff_table(x, y, truncate = FALSE),
-    class = "daffiz_error_cast"
+    class = "dazdiff_error_cast"
   )
 })
 
@@ -170,7 +170,7 @@ test_that("an all-NA logical column casts to a Date of NA", {
 test_that("a logical column with values is refused as a Date", {
   expect_error(
     cast_value(c(TRUE, NA), "Date", "d"),
-    class = "daffiz_error_cast"
+    class = "dazdiff_error_cast"
   )
 })
 
@@ -180,7 +180,7 @@ test_that("diff_table() compares a Date against an empty logical column", {
       data.frame(id = 1:2, d = as.Date(c("2024-01-01", NA))),
       data.frame(id = 1:2, d = NA)
     ),
-    class = "daffiz_message_no_measures"
+    class = "dazdiff_message_no_measures"
   )
   expect_identical(
     as.character(out$status),
@@ -229,7 +229,7 @@ test_that("normalize_dt() lets the caller replace the factor default", {
 test_that("normalize_dt() refuses a `to` value that is not a type", {
   err <- expect_error(
     normalize_dt(data.frame(f = factor("a")), to = c(factor = "text")),
-    class = "daffiz_error_input"
+    class = "dazdiff_error_input"
   )
   expect_match(conditionMessage(err), "\"character\"", fixed = TRUE)
   expect_match(conditionMessage(err), "factor = \"text\"", fixed = TRUE)
@@ -238,19 +238,19 @@ test_that("normalize_dt() refuses a `to` value that is not a type", {
 test_that("normalize_dt() refuses a `to` name it cannot convert from", {
   expect_error(
     normalize_dt(data.frame(a = 1), to = c(difftime = "numeric")),
-    class = "daffiz_error_input"
+    class = "dazdiff_error_input"
   )
   expect_error(
     normalize_dt(data.frame(a = 1), to = "character"),
-    class = "daffiz_error_input"
+    class = "dazdiff_error_input"
   )
   expect_error(
     normalize_dt(data.frame(a = 1), to = c(factor = "character", factor = "Date")),
-    class = "daffiz_error_input"
+    class = "dazdiff_error_input"
   )
   expect_error(
     normalize_dt(data.frame(a = 1), to = c(factor = NA_character_)),
-    class = "daffiz_error_input"
+    class = "dazdiff_error_input"
   )
 })
 
@@ -262,7 +262,7 @@ test_that("diff_table() points at normalize_dt() only for what it converts", {
     t = as.POSIXct(c("2024-01-01 10:00:00", "2024-01-02 10:00:00"), tz = "UTC"),
     span = as.difftime(c(1, 2), units = "hours")
   )
-  err <- expect_error(diff_table(x, x), class = "daffiz_error_types")
+  err <- expect_error(diff_table(x, x), class = "dazdiff_error_types")
   msg <- conditionMessage(err)
   expect_match(msg, "convert t with normalize_dt() first", fixed = TRUE)
   expect_match(
@@ -274,7 +274,7 @@ test_that("diff_table() points at normalize_dt() only for what it converts", {
 
 test_that("diff_table() does not offer normalize_dt() for a list column", {
   x <- data.table::data.table(id = 1:2, l = list(1, "a"))
-  err <- expect_error(diff_table(x, x), class = "daffiz_error_types")
+  err <- expect_error(diff_table(x, x), class = "dazdiff_error_types")
   expect_no_match(
     conditionMessage(err),
     "with normalize_dt() first",
@@ -288,12 +288,12 @@ test_that("normalize_dt() asks for `to` only for types it can convert", {
     t = as.POSIXct("2024-01-01 10:00:00", tz = "UTC"),
     span = as.difftime(1, units = "hours")
   )
-  err <- expect_error(normalize_dt(dt), class = "daffiz_error_types")
+  err <- expect_error(normalize_dt(dt), class = "dazdiff_error_types")
   msg <- conditionMessage(err)
   expect_match(msg, "name the target type for POSIXct in `to`", fixed = TRUE)
   expect_match(msg, "cannot convert difftime", fixed = TRUE)
 
-  err <- expect_error(normalize_dt(dt["span"]), class = "daffiz_error_types")
+  err <- expect_error(normalize_dt(dt["span"]), class = "dazdiff_error_types")
   expect_no_match(conditionMessage(err), "`to`", fixed = TRUE)
 })
 
@@ -303,7 +303,7 @@ test_that("an integer64 outside integer range is written as an integer", {
   skip_if_not_installed("bit64")
   err <- expect_error(
     cast_value(bit64::as.integer64(3000000000), "integer", "id"),
-    class = "daffiz_error_cast"
+    class = "dazdiff_error_cast"
   )
   expect_match(conditionMessage(err), "outside integer range: 3000000000", fixed = TRUE)
   expect_match(conditionMessage(err), "integer64 -> integer", fixed = TRUE)
@@ -312,7 +312,7 @@ test_that("an integer64 outside integer range is written as an integer", {
 test_that("a double outside integer range is written in full", {
   err <- expect_error(
     cast_value(c(1e10, -Inf), "integer", "v"),
-    class = "daffiz_error_cast"
+    class = "dazdiff_error_cast"
   )
   expect_match(conditionMessage(err), "10000000000, -Inf", fixed = TRUE)
 })

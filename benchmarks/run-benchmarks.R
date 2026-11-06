@@ -7,24 +7,24 @@
 #   full: the design-plan matrix (potentially 100 million cells per case)
 #
 # Safety cap:
-#   DAFFIZ_BENCH_MAX_CELLS defaults to 5e6. Cases above it are recorded as
+#   DAZDIFF_BENCH_MAX_CELLS defaults to 5e6. Cases above it are recorded as
 #   skipped. Raise it deliberately only on a machine sized for the final table.
 
 args <- commandArgs(trailingOnly = TRUE)
 repository <- if (length(args)) normalizePath(args[[1L]], mustWork = TRUE) else
   normalizePath(".", mustWork = TRUE)
-profile <- Sys.getenv("DAFFIZ_BENCH_PROFILE", "validation")
-max_cells <- as.numeric(Sys.getenv("DAFFIZ_BENCH_MAX_CELLS", "5e6"))
+profile <- Sys.getenv("DAZDIFF_BENCH_PROFILE", "validation")
+max_cells <- as.numeric(Sys.getenv("DAZDIFF_BENCH_MAX_CELLS", "5e6"))
 output <- Sys.getenv(
-  "DAFFIZ_BENCH_OUTPUT",
+  "DAZDIFF_BENCH_OUTPUT",
   file.path(repository, "benchmarks", "results", "benchmark-latest.csv")
 )
 
 if (!profile %in% c("validation", "full")) {
-  stop("DAFFIZ_BENCH_PROFILE must be 'validation' or 'full'")
+  stop("DAZDIFF_BENCH_PROFILE must be 'validation' or 'full'")
 }
 if (!is.finite(max_cells) || max_cells < 1) {
-  stop("DAFFIZ_BENCH_MAX_CELLS must be a positive finite number")
+  stop("DAZDIFF_BENCH_MAX_CELLS must be a positive finite number")
 }
 
 if (profile == "validation") {

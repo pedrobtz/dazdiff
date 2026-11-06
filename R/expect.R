@@ -16,7 +16,7 @@
 #' a test should not fail on that. It is still far below any difference a
 #' person would call real. Pass `rel_tol = 0` for an exact comparison.
 #'
-#' Duplicate keys are an error (`daffiz_error_duplicates`), not a failure:
+#' Duplicate keys are an error (`dazdiff_error_duplicates`), not a failure:
 #' pairing rows by arrival order is an assumption, and an assertion should not
 #' rest on one, so the test cannot be judged as written. The exception is a
 #' comparison with no measures, where the repeated rows are identical in every
@@ -52,8 +52,8 @@ expect_table_equal <- function(
   max_rows = 10L
 ) {
   if (!requireNamespace("testthat", quietly = TRUE)) {
-    daffiz_abort(
-      "daffiz_error_dependency",
+    dazdiff_abort(
+      "dazdiff_error_dependency",
       "expect_table_equal() requires the suggested package 'testthat'"
     )
   }
@@ -63,8 +63,8 @@ expect_table_equal <- function(
       is.na(max_rows) ||
       max_rows < 0
   ) {
-    daffiz_abort(
-      "daffiz_error_input",
+    dazdiff_abort(
+      "dazdiff_error_input",
       "`max_rows` must be a single number >= 0"
     )
   }
@@ -91,10 +91,10 @@ expect_table_equal <- function(
         diff_table,
         c(list(expected, object), dots, list(rel_tol = rel_tol))
       ),
-      daffiz_warning_duplicates = function(w) {
+      dazdiff_warning_duplicates = function(w) {
         if (refuse_pairing) {
-          daffiz_abort(
-            "daffiz_error_duplicates",
+          dazdiff_abort(
+            "dazdiff_error_duplicates",
             paste0(
               conditionMessage(w),
               "\nexpect_table_equal() does not pair duplicate keys; pass ",
@@ -105,9 +105,9 @@ expect_table_equal <- function(
         }
       }
     ),
-    daffiz_error_disjoint = function(e) e
+    dazdiff_error_disjoint = function(e) e
   )
-  if (inherits(d, "daffiz_error_disjoint")) {
+  if (inherits(d, "dazdiff_error_disjoint")) {
     testthat::expectation(
       "failure",
       paste0(

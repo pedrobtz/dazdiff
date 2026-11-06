@@ -9,7 +9,7 @@ test_that("canonical_names keeps only letters, digits and _", {
   ))
 })
 
-test_that("every column daffiz creates contains a lowercase letter", {
+test_that("every column dazdiff creates contains a lowercase letter", {
   # This is what makes a collision with a normalized user column impossible.
   # A new internal name without one would silently break that guarantee, so
   # the names are read off real results of every shape, in both modes, and
@@ -59,12 +59,12 @@ test_that("check_names refuses empty and colliding names, naming each group", {
   # The groups, as drawn in the message, are pinned in test-messages.R.
   err <- expect_error(
     check_names(name_map(data.table(`%` = 1, a = 2)), "x"),
-    class = "daffiz_error_columns"
+    class = "dazdiff_error_columns"
   )
   expect_identical(c(err$side, err$columns), c("x", "%"))
   err <- expect_error(
     check_names(name_map(data.table(a = 1, A = 2, b.c = 3, `b c` = 4)), "x"),
-    class = "daffiz_error_columns"
+    class = "dazdiff_error_columns"
   )
   expect_identical(err$columns, c("a", "A", "b.c", "b c"))
 })
@@ -72,7 +72,7 @@ test_that("check_names refuses empty and colliding names, naming each group", {
 test_that("check_names can be limited to the names that matter", {
   map <- name_map(data.table(foo = 1, Foo = 2, id = 3))
   expect_silent(check_names(map, "y", only = "ID"))
-  err <- expect_error(check_names(map, "y", only = c("ID", "FOO")), class = "daffiz_error_columns")
+  err <- expect_error(check_names(map, "y", only = c("ID", "FOO")), class = "dazdiff_error_columns")
   expect_identical(err$columns, c("foo", "Foo"))
 })
 

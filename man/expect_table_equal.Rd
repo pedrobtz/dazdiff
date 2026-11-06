@@ -47,7 +47,7 @@ agrees with its stored copy to the last bit (\code{0.1 + 0.2} is not \code{0.3})
 a test should not fail on that. It is still far below any difference a
 person would call real. Pass \code{rel_tol = 0} for an exact comparison.
 
-Duplicate keys are an error (\code{daffiz_error_duplicates}), not a failure:
+Duplicate keys are an error (\code{dazdiff_error_duplicates}), not a failure:
 pairing rows by arrival order is an assumption, and an assertion should not
 rest on one, so the test cannot be judged as written. The exception is a
 comparison with no measures, where the repeated rows are identical in every

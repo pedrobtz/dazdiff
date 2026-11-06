@@ -1,4 +1,4 @@
-Package: daffiz
+Package: dazdiff
 Title: Value-by-Value Comparison of Two Tables
 Version: 0.1.0
 Authors@R:

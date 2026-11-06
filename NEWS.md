@@ -1,4 +1,4 @@
-# daffiz 0.1.0
+# dazdiff 0.1.0
 
 First release.
 

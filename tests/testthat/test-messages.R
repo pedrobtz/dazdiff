@@ -1,39 +1,39 @@
-# The wording of every condition daffiz raises, one call per site in R/.
+# The wording of every condition dazdiff raises, one call per site in R/.
 #
 # Elsewhere the suite tells conditions apart by their class and the fields
 # they carry, never by their text; the text is pinned here instead, where a
-# change to it shows up as a reviewable snapshot diff. A new daffiz_abort(),
-# daffiz_warn() or daffiz_inform() needs a snapshot here.
+# change to it shows up as a reviewable snapshot diff. A new dazdiff_abort(),
+# dazdiff_warn() or dazdiff_inform() needs a snapshot here.
 
 # Classes ------------------------------------------------------------------------
 
 test_that("every condition carries its kind's parent class", {
-  err <- expect_error(diff_table(1, 2), class = "daffiz_error_input")
-  expect_s3_class(err, c("daffiz_error_input", "daffiz_error", "error", "condition"), exact = TRUE)
+  err <- expect_error(diff_table(1, 2), class = "dazdiff_error_input")
+  expect_s3_class(err, c("dazdiff_error_input", "dazdiff_error", "error", "condition"), exact = TRUE)
   expect_null(err$call)
 
   x <- data.table(id = c("a", "a"), v = c(1, 2))
-  w <- expect_warning(diff_table(x, x), class = "daffiz_warning_duplicates")
-  expect_s3_class(w, c("daffiz_warning_duplicates", "daffiz_warning", "warning", "condition"), exact = TRUE)
+  w <- expect_warning(diff_table(x, x), class = "dazdiff_warning_duplicates")
+  expect_s3_class(w, c("dazdiff_warning_duplicates", "dazdiff_warning", "warning", "condition"), exact = TRUE)
 
   m <- expect_message(
     diff_table(data.table(id = "a", v = 1), data.table(id = "a", v = 1, w = 2)),
-    class = "daffiz_message_dropped_columns"
+    class = "dazdiff_message_dropped_columns"
   )
-  expect_s3_class(m, c("daffiz_message_dropped_columns", "daffiz_message", "message", "condition"), exact = TRUE)
-  # message() prints conditionMessage() as is, so the newline is daffiz's.
+  expect_s3_class(m, c("dazdiff_message_dropped_columns", "dazdiff_message", "message", "condition"), exact = TRUE)
+  # message() prints conditionMessage() as is, so the newline is dazdiff's.
   expect_match(conditionMessage(m), "\n$")
 })
 
-test_that("a caller can catch any daffiz condition by its parent class", {
-  expect_error(diff_table(1, 2), class = "daffiz_error")
+test_that("a caller can catch any dazdiff condition by its parent class", {
+  expect_error(diff_table(1, 2), class = "dazdiff_error")
   expect_warning(
     diff_table(data.table(id = c("a", "a"), v = 1:2 + 0), data.table(id = c("a", "a"), v = 1:2 + 0)),
-    class = "daffiz_warning"
+    class = "dazdiff_warning"
   )
   expect_message(
     diff_table(data.table(k = "a"), data.table(k = "a")),
-    class = "daffiz_message"
+    class = "dazdiff_message"
   )
 })
 
@@ -156,7 +156,7 @@ test_that("converting integer64 needs bit64", {
   skip_if_not_installed("bit64")
   v <- bit64::as.integer64(1)
   local_missing_package("bit64")
-  expect_error(cast_value(v, "numeric", "col"), class = "daffiz_error_dependency")
+  expect_error(cast_value(v, "numeric", "col"), class = "dazdiff_error_dependency")
   expect_snapshot(error = TRUE, cast_value(v, "numeric", "col"))
 })
 
@@ -239,7 +239,7 @@ test_that("expect_table_equal()'s errors", {
 
 test_that("a choice argument outside its choices is a classed input error", {
   x <- data.frame(id = 1:2, v = c(1, 2))
-  expect_error(diff_table(x, x, row_key = "random"), class = "daffiz_error_input")
+  expect_error(diff_table(x, x, row_key = "random"), class = "dazdiff_error_input")
   expect_identical(
     suppressMessages(diff_table(x, x, mode = "eq"))$status,
     suppressMessages(diff_table(x, x, mode = "equal"))$status

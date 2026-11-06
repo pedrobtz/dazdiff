@@ -120,7 +120,7 @@ cast_rule <- function(from, to) {
   CAST_RULES[idx]
 }
 
-#' The type conversions daffiz will make
+#' The type conversions dazdiff will make
 #'
 #' In `mode = "benchmark"`, [diff_table()] casts each column of the candidate
 #' to the type it has in the benchmark. These are the conversions it will
