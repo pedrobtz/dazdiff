@@ -128,6 +128,20 @@ cast_value <- function(
     refuse("unsupported source type")
   }
 
+  # Readers such as read.csv() and fread() type a column with no values as
+  # logical. It stands for a column of the target type with no values, so it
+  # becomes one, before the rules are read: logical -> Date is refused for
+  # any column that has a value (see CAST_RULES).
+  if (from == "logical" && all(is.na(v)) && to %in% CAST_TYPES) {
+    return(switch(
+      to,
+      character = rep(NA_character_, length(v)),
+      integer = rep(NA_integer_, length(v)),
+      numeric = rep(NA_real_, length(v)),
+      Date = structure(rep(NA_real_, length(v)), class = "Date")
+    ))
+  }
+
   rule <- cast_rule(from, to)
   if (!isTRUE(rule$allowed)) {
     refuse(if (is.na(rule$allowed)) "no rule for this pair" else rule$note)

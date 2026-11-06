@@ -22,7 +22,8 @@ NORMALIZE_TO <- c(factor = "character")
 
 # Which conversions cast_dt() will attempt, and on what terms. This table is
 # the authority: cast_value() consults it before doing any work, so what you
-# see here is what the code does. `note` is the condition the values must meet
+# see here is what the code does (an all-NA logical column is the one
+# exception, noted on its rule below). `note` is the condition the values must meet
 # (an unmet condition is an error, never a silent NA).
 #
 # A cast that loses the fraction of a value -- to a whole integer, to a whole
@@ -86,6 +87,13 @@ CAST_RULES <- rbindlist(lapply(CAST_FROM, function(from) {
     (from %in% c("logical", "integer64") & to == "Date"),
   `:=`(allowed = FALSE, note = "no sound conversion")
 ][
+  # The one exception to the table, made in cast_value() before it is read:
+  # readers such as read.csv() and fread() type a column with no values as
+  # logical, so a logical column of nothing but NA becomes NA of any target
+  # type. Only Date would otherwise refuse it; the note says so.
+  from == "logical" & to == "Date",
+  note := "no sound conversion, except that a column that is entirely NA (how readers type an empty column) becomes NA"
+][
   # A factor's labels can be parsed like any text, but doing it implicitly is
   # how codes get mistaken for values. Ask for as.character() out loud instead.
   from == "factor" & to != "character",
@@ -122,8 +130,8 @@ cast_rule <- function(from, to) {
 #'
 #' A cast that drops the fraction of a value (a double to an integer, a
 #' timestamp to its calendar day, a Date holding part of a day to its text) is
-#' a *truncation*: it is made when
-#' `truncate = TRUE`, which is the default, and refused otherwise.
+#' a *truncation*: it is made when `truncate = TRUE`, which is the default,
+#' and refused otherwise.
 #'
 #' Text is parsed strictly: anything that is not a number, a logical literal
 #' or a date in `date_format` is refused, and that includes the text `"NA"`,
@@ -136,6 +144,10 @@ cast_rule <- function(from, to) {
 #' `"2024-01-01 10:00:00.25"`. An
 #' `integer64` column (from \pkg{bit64}) becomes a double when that is exact,
 #' an integer within range, or its decimal text.
+#'
+#' A logical column becomes a Date only when every value is `NA`: that is how
+#' readers such as `read.csv()` and `data.table::fread()` type a column with
+#' no values, and the Date column it stands for is then all `NA` as well.
 #'
 #' @param wide If `TRUE` (the default), a grid of source types by target types,
 #'   with `"yes"` for an allowed conversion, `"-"` for a refused one and `"="`

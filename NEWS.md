@@ -21,6 +21,9 @@ First release.
 * A timestamp cast to text is always written `"%Y-%m-%d %H:%M:%S"`, midnight
   included, with its fraction of a second (to the microsecond) when it has
   one, so the text does not depend on the values or the R version.
+* A logical column of nothing but `NA`, which is how `read.csv()` and
+  `fread()` type a column with no values, casts to any type, a Date
+  included.
 * Column names in both tables are normalized to `A-Z`, `0-9` and `_`, so
   `amount` and `Amount` are one column. Two names in one table that
   normalize to the same thing are an error.

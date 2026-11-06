@@ -155,3 +155,48 @@ test_that("equal mode widens an IDate against a fractional Date", {
   # The caller's tables are untouched.
   expect_true(is.integer(x$d))
 })
+
+# An empty logical column as a Date -----------------------------------------
+
+test_that("an all-NA logical column casts to a Date of NA", {
+  out <- cast_value(c(NA, NA), "Date", "d")
+  expect_s3_class(out, "Date")
+  expect_true(all(is.na(out)))
+  expect_length(out, 2L)
+  expect_identical(cast_value(NA, "integer", "d"), NA_integer_)
+  expect_match(cast_rule("logical", "Date")$note, "entirely NA")
+})
+
+test_that("a logical column with values is refused as a Date", {
+  expect_error(
+    cast_value(c(TRUE, NA), "Date", "d"),
+    class = "daffiz_error_cast"
+  )
+})
+
+test_that("diff_table() compares a Date against an empty logical column", {
+  expect_message(
+    out <- diff_table(
+      data.frame(id = 1:2, d = as.Date(c("2024-01-01", NA))),
+      data.frame(id = 1:2, d = NA)
+    ),
+    class = "daffiz_message_no_measures"
+  )
+  expect_identical(
+    as.character(out$status),
+    c("only_y", "only_x", "same")
+  )
+})
+
+test_that("an all-NA logical column onto an IDate takes the IDate storage", {
+  x <- data.table::data.table(
+    id = 1:2,
+    d = data.table::as.IDate(c("2024-01-01", NA))
+  )
+  out <- suppressMessages(diff_table(x, data.frame(id = 1:2, d = NA)))
+  expect_s3_class(out$D, "IDate")
+  expect_identical(
+    as.character(out$status),
+    c("only_y", "only_x", "same")
+  )
+})

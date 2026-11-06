@@ -25,8 +25,8 @@ refused rather than made.
 \details{
 A cast that drops the fraction of a value (a double to an integer, a
 timestamp to its calendar day, a Date holding part of a day to its text) is
-a \emph{truncation}: it is made when
-\code{truncate = TRUE}, which is the default, and refused otherwise.
+a \emph{truncation}: it is made when \code{truncate = TRUE}, which is the default,
+and refused otherwise.
 
 Text is parsed strictly: anything that is not a number, a logical literal
 or a date in \code{date_format} is refused, and that includes the text \code{"NA"},
@@ -39,6 +39,10 @@ a second to the microsecond when it has one, as in
 \code{"2024-01-01 10:00:00.25"}. An
 \code{integer64} column (from \pkg{bit64}) becomes a double when that is exact,
 an integer within range, or its decimal text.
+
+A logical column becomes a Date only when every value is \code{NA}: that is how
+readers such as \code{read.csv()} and \code{data.table::fread()} type a column with
+no values, and the Date column it stands for is then all \code{NA} as well.
 }
 \examples{
 cast_rules()
