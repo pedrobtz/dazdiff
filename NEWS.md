@@ -14,9 +14,16 @@ First release.
     both tables with the same type, nothing is cast, and the result is
     symmetric.
 * Casts that drop a fraction -- a double to an integer, a number or a
-  timestamp to a whole day -- are made by default, since storage such as
-  Spark or Delta narrows types the same way. Each one is announced and
-  recorded; `truncate = FALSE` refuses them.
+  timestamp to a whole day, a Date holding part of a day to its text -- are
+  made by default, since storage such as Spark or Delta narrows types the
+  same way. Each one is announced and recorded; `truncate = FALSE` refuses
+  them.
+* A timestamp cast to text is always written `"%Y-%m-%d %H:%M:%S"`, midnight
+  included, with its fraction of a second (to the microsecond) when it has
+  one, so the text does not depend on the values or the R version.
+* A logical column of nothing but `NA`, which is how `read.csv()` and
+  `fread()` type a column with no values, casts to any type, a Date
+  included.
 * Column names in both tables are normalized to upper-case letters, digits
   and `_`, so `amount` and `Amount` are one column. Letters outside ASCII are
   kept. Two names in one table that normalize to the same thing are an
@@ -54,6 +61,7 @@ First release.
 * `compare_columns()` shows how the columns of two tables line up,
   `normalize_dt()` converts other types (factors, timestamps, `integer64`)
   to the ones `diff_table()` compares, and `cast_rules()` lists the
-  conversions it makes.
+  conversions it makes. A factor becomes its labels by default, and the
+  mappings given in `normalize_dt(to = )` are added to that default.
 * Every error, warning and message has a class, listed under Conditions in
   `?diff_table`.

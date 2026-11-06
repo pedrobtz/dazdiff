@@ -439,7 +439,7 @@ diff_table <- function(
           sprintf("%s (%s)", label_x[names(unsupported)], unsupported),
           collapse = ", "
         ),
-        "; convert them with normalize_dt() first"
+        fix_hint(label_x[names(unsupported)], unsupported)
       ),
       columns = names(unsupported)
     )
@@ -477,6 +477,7 @@ diff_table <- function(
         columns = off
       )
     }
+    widen_dates(xx, yy)
   }
   truncated <- attr(yy, "truncated")
   if (is.null(truncated)) {
