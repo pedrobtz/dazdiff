@@ -79,13 +79,13 @@ select_measures <- function(dt, measures = "numeric") {
 #' @param dt A data.frame.
 #' @param ids The row identity: the key.
 #' @param measures The measure columns.
-#' @param nan_to_na Map NaN to NA in double id columns. data.table joins and
+#' @param nan_is_na Map NaN to NA in double id columns. data.table joins and
 #'   groups NA and NaN as different keys, so without this a row keyed NaN on
 #'   one side and NA on the other would not align.
 #' @return A keyed data.table. Every missing value in a double id column holds
 #'   one bit pattern; see `canonical_missing()`.
 #' @noRd
-index_dt <- function(dt, ids, measures = character(), nan_to_na = FALSE) {
+index_dt <- function(dt, ids, measures = character(), nan_is_na = FALSE) {
   cols <- c(ids, measures)
   wide <- lapply(as.list(dt)[cols], copy)
   for (nm in measures) {
@@ -94,7 +94,7 @@ index_dt <- function(dt, ids, measures = character(), nan_to_na = FALSE) {
     }
   }
   for (nm in ids) {
-    wide[[nm]] <- canonical_missing(wide[[nm]], nan_to_na)
+    wide[[nm]] <- canonical_missing(wide[[nm]], nan_is_na)
   }
   wide <- setDT(c(list(row_id = seq_len(nrow(dt))), wide))
   if (length(ids)) {
@@ -115,18 +115,18 @@ index_dt <- function(dt, ids, measures = character(), nan_to_na = FALSE) {
 #' and POSIXct included).
 #'
 #' @param v A vector; only doubles are touched.
-#' @param nan_to_na Whether NaN becomes NA too.
+#' @param nan_is_na Whether NaN becomes NA too.
 #' @return `v`, with its class and attributes.
 #' @noRd
-canonical_missing <- function(v, nan_to_na = FALSE) {
+canonical_missing <- function(v, nan_is_na = FALSE) {
   if (!is.double(v) || !anyNA(v)) {
     return(v)
   }
   at <- attributes(v)
   v <- as.vector(unclass(v), "double")
   nan <- is.nan(v)
-  v[is.na(v) & (nan_to_na | !nan)] <- NA_real_
-  if (!nan_to_na) {
+  v[is.na(v) & (nan_is_na | !nan)] <- NA_real_
+  if (!nan_is_na) {
     v[nan] <- NaN
   }
   attributes(v) <- at
@@ -151,8 +151,8 @@ canonical_missing <- function(v, nan_to_na = FALSE) {
 #' @param measures `"numeric"` (the default) melts only the double columns.
 #'   `"numeric+integer"` melts the integers too, as doubles. Column names
 #'   melt exactly those.
-#' @param variable.name Name of the column holding the measure names.
-#' @param value.name Name of the column holding the measured values.
+#' @param variable_name Name of the column holding the measure names.
+#' @param value_name Name of the column holding the measured values.
 #' @return A long data.table keyed by the id columns, with `row_id` carried
 #'   along as a column but left out of the key, so the key is made of real
 #'   values. With no measures there is nothing to melt, and the indexed table
@@ -161,8 +161,8 @@ canonical_missing <- function(v, nan_to_na = FALSE) {
 melt_dt <- function(
   dt,
   measures = "numeric",
-  variable.name = "metric",
-  value.name = "value"
+  variable_name = "metric",
+  value_name = "value"
 ) {
   if (!is.data.frame(dt)) {
     daffiz_abort("daffiz_error_input", "`dt` must be a data.frame")
@@ -184,13 +184,11 @@ melt_dt <- function(
     dt,
     id.vars = id_vars,
     measure.vars = measure,
-    variable.name = variable.name,
-    value.name = value.name,
+    variable.name = variable_name,
+    value.name = value_name,
     variable.factor = FALSE
   )
   setcolorder(long, "row_id")
-  # Keyed by the id.vars the caller's data supplies -- row_id is carried along
-  # as a column but left out of the key, so the key is made of real values.
   key_cols <- setdiff(id_vars, "row_id")
   if (length(key_cols)) {
     setkeyv(long, key_cols)

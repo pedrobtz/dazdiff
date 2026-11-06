@@ -40,7 +40,7 @@ fmt_names <- function(x, max_n = 10L) {
   if (!length(x)) {
     return("<none>")
   }
-  shown <- utils::head(x, max_n)
+  shown <- head(x, max_n)
   out <- paste(shown, collapse = ", ")
   if (length(x) > max_n) {
     out <- paste0(out, ", ... (", length(x) - max_n, " more)")

@@ -30,7 +30,8 @@ summarize_dt <- function(dt) {
 #' when a comparison refuses to run.
 #'
 #' Column names are normalized first, as [diff_table()] does: upper case, with
-#' every run of other characters replaced by `_`. So `amount` in `x` and
+#' every run of other characters replaced by `_`, and `_` trimmed from both
+#' ends. So `amount` in `x` and
 #' `Amount` in `y` are one column. Two names in one table that normalize to
 #' the same thing are an error.
 #'

@@ -25,7 +25,8 @@ when a comparison refuses to run.
 }
 \details{
 Column names are normalized first, as \code{\link[=diff_table]{diff_table()}} does: upper case, with
-every run of other characters replaced by \verb{_}. So \code{amount} in \code{x} and
+every run of other characters replaced by \verb{_}, and \verb{_} trimmed from both
+ends. So \code{amount} in \code{x} and
 \code{Amount} in \code{y} are one column. Two names in one table that normalize to
 the same thing are an error.
 

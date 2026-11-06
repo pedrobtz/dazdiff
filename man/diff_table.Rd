@@ -62,7 +62,7 @@ refused rather than read as one.}
 A \code{data.table} keyed by the identity columns (and \code{key_seq},
 \code{metric} when present), with \code{status} a factor with levels \code{same},
 \code{changed}, \code{only_x} and \code{only_y}. The key includes \code{row_number} when
-\code{row_key} added it. Its shape is in \code{attr(, "shape")}:
+\code{row_key} added it. Its shape is in \code{attr(d, "shape")}:
 \itemize{
 \item \code{"cells"}, the usual one: one row per row and measure, with \code{key_seq}
 (only when duplicates were numbered), \code{metric}, \code{row_id_x}, \code{row_id_y}
@@ -79,7 +79,8 @@ measure, with \code{n_rows_x}, \code{n_rows_y}, \code{n_na_x}, \code{n_na_y},
 \code{changed}.
 }
 
-The attributes \code{mode}, \code{tolerance} (\code{abs} and \code{rel}), \code{name_map} (each column's name in \code{x} and \code{y}),
+The attributes \code{mode}, \code{tolerance} (\code{abs} and \code{rel}), \code{name_map} (each
+column's name in \code{x} and \code{y}),
 \code{dropped} (columns of \code{y} dropped in benchmark mode), \code{ignored} (columns
 not compared) and \code{truncated} (the casts that truncated, with the rows
 of \code{y} each one touched) record what was done on the way.
@@ -113,7 +114,7 @@ case, with every run of characters other than \code{A-Z} and \code{0-9} replaced
 \verb{_}, and \verb{_} trimmed from the ends. So \verb{unit price}, \code{Unit.Price} and
 \code{UNIT_PRICE} are one column, in either table. Two names in one table that
 normalize to the same thing are an error to fix before comparing. The
-result uses the normalized names; \code{attr(, "name_map")} maps them back.
+result uses the normalized names; \code{attr(d, "name_map")} maps them back.
 }
 
 \section{Truncation}{
@@ -123,7 +124,7 @@ number or a timestamp to a whole day -- is made by default, because the
 benchmark's types are taken as the truth: storage such as Spark or Delta
 turns a locally built double into an integer, and the comparison has to
 follow it. Each truncation is announced in a message and recorded in
-\code{attr(, "truncated")}: per column, the count, up to three examples, and
+\code{attr(d, "truncated")}: per column, the count, up to three examples, and
 in the list column \code{rows} the row numbers of \code{y} that were truncated,
 which are the \code{row_id_y} of the result. A truncated key column can pair
 rows that differ (\code{1.5} in \code{y} becomes \code{1} and aligns with \code{x}'s \code{1}), so
@@ -188,9 +189,9 @@ instead, exactly (\code{tolerance} must be 0).
 A value is \code{same} when both are equal, or when both are finite and their
 difference is within \code{tolerance} or within \code{rel_tol} relative to the larger
 of the two: \code{abs_diff <= tolerance} or \code{rel_diff <= rel_tol}. Both
-tolerances default to 0, so by default only equal values are the same. Two missing values are the same; with
-\code{nan_is_na = TRUE} NaN and NA are the same missing value, in measures and in
-key columns alike.
+tolerances default to 0, so by default only equal values are the same. Two
+missing values are the same; with \code{nan_is_na = TRUE} NaN and NA are the
+same missing value, in measures and in key columns alike.
 }
 
 \section{Conditions}{

@@ -101,7 +101,7 @@ expect_table_equal <- function(
   }
 
   off <- d[status != "same"]
-  shown <- utils::head(off, max_rows)
+  shown <- head(off, max_rows)
   msg <- paste0(
     "`",
     object_label,

@@ -162,7 +162,7 @@ diff_report <- function(
     keep <- if (side == "x") in_x & !in_y else !in_x & in_y
     out <- rows[keep, ids, with = FALSE]
     out <- out[!duplicated(out)]
-    out <- utils::head(out, sample_k)
+    out <- head(out, sample_k)
     setnames(out, ids, label_of(ids))
     out
   }
@@ -199,17 +199,17 @@ diff_report <- function(
 top_changes <- function(d, ids, top_k) {
   ch <- d[status == "changed"]
   pairs <- ch[,
-    list(n = .N, at = .I[1L], abs_diff = abs(diff[1L])),
+    .(n = .N, at = .I[1L], abs_diff = abs(diff[1L])),
     by = c("metric", "value_x", "value_y")
   ]
-  n_distinct <- pairs[, list(n_distinct = .N), by = "metric"]
+  n_distinct <- pairs[, .(n_distinct = .N), by = "metric"]
   setorderv(
     pairs,
     c("metric", "n", "abs_diff"),
     order = c(1L, -1L, -1L),
     na.last = TRUE
   )
-  top <- pairs[, utils::head(.SD, top_k), by = "metric"]
+  top <- pairs[, head(.SD, top_k), by = "metric"]
   top[, metric := as.character(metric)]
   top[, example := fmt_keys(ch[at, ids, with = FALSE])]
   top[, c("at", "abs_diff") := NULL]
@@ -348,7 +348,7 @@ section <- function(title, lines, g) {
   )
 }
 
-# "x rows   (+33.33%)   y rows" over the two counts, each column centred.
+# "x rows   (+33.33%)   y rows" over the two counts, each column centered.
 row_counts_lines <- function(x) {
   r <- x$rows
   change <- if (r$n_x == 0) {
@@ -367,8 +367,8 @@ row_counts_lines <- function(x) {
   width <- pmax(nchar(top, type = "width"), nchar(bottom, type = "width")) +
     c(0L, 4L, 0L)
   c(
-    paste(centre(top, width), collapse = ""),
-    paste(centre(bottom, width), collapse = "")
+    paste(center(top, width), collapse = ""),
+    paste(center(bottom, width), collapse = "")
   )
 }
 
@@ -402,9 +402,13 @@ row_diagram <- function(x, g) {
   )
   shown <- c(r$n_only_x, r$n_same, r$n_changed, r$n_only_y) > 0
   bands <- bands[shown]
-  counts <- vapply(bands, function(b) fmt_count(as.numeric(b[[1L]])), "")
+  counts <- vapply(
+    bands,
+    function(b) fmt_count(as.numeric(b[[1L]])),
+    character(1L)
+  )
   kinds <- vapply(bands, `[[`, "", 2L)
-  pcts <- vapply(bands, function(b) paste0("(", b[[3L]], ")"), "")
+  pcts <- vapply(bands, function(b) paste0("(", b[[3L]], ")"), character(1L))
   labels <- paste(
     formatC(counts, width = max(nchar(counts))),
     formatC(kinds, width = -max(nchar(kinds, type = "width"))),
@@ -532,11 +536,15 @@ sample_lines <- function(x, side, g) {
     return(character())
   }
   max_cols <- 5L
-  shown <- utils::head(names(keys), max_cols)
+  shown <- head(names(keys), max_cols)
   header <- c(shown, if (length(keys) > max_cols) "...")
   rows <- lapply(seq_len(nrow(keys)), function(i) {
     c(
-      as.list(vapply(shown, function(col) fmt_cell(keys[[col]][i]), "")),
+      as.list(vapply(
+        shown,
+        function(col) fmt_cell(keys[[col]][i]),
+        character(1L)
+      )),
       if (length(keys) > max_cols) "..."
     )
   })
@@ -599,7 +607,7 @@ draw_table <- function(header, rows, align, g) {
   c(out, rule(g$tbl, g$tbt, g$tbr))
 }
 
-centre <- function(s, width) {
+center <- function(s, width) {
   gap <- width - nchar(s, type = "width")
   left <- gap %/% 2L
   paste0(strrep(" ", left), s, strrep(" ", gap - left))
@@ -640,7 +648,9 @@ fmt_cell <- function(v) {
 
 fmt_size <- function(v) if (is.na(v)) "-" else format(v, digits = 4L)
 
-fmt_values <- function(v) vapply(seq_along(v), function(i) fmt_cell(v[i]), "")
+fmt_values <- function(v) {
+  vapply(seq_along(v), function(i) fmt_cell(v[i]), character(1L))
+}
 
 # Keys as text: the value of a single key column, a tuple of several.
 fmt_keys <- function(keys) {

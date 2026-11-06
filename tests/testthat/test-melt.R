@@ -24,7 +24,7 @@ test_that("melt_dt", {
   check("melt_dt: an integer measure leaves the key", !"INT_01" %in% key(both))
 })
 
-named <- melt_dt(d, variable.name = "which", value.name = "amount")
+named <- melt_dt(d, variable_name = "which", value_name = "amount")
 
 test_that("melt_dt", {
   check("melt_dt: the measure and value columns can be renamed", all(c("which", "amount") %in% names(named)))
@@ -78,7 +78,7 @@ test_that("index_dt numbers and keys rows on its own copy", {
 test_that("index_dt can map NaN to NA in double id columns", {
   src <- data.table(K = c(NaN, 1), V = c(1, 2))
   expect_true(any(is.nan(index_dt(src, "K", "V")$K)))
-  wide <- index_dt(src, "K", "V", nan_to_na = TRUE)
+  wide <- index_dt(src, "K", "V", nan_is_na = TRUE)
   expect_false(any(is.nan(wide$K)))
   expect_true(is.nan(src$K[1L]))
 })
@@ -109,6 +109,6 @@ test_that("index_dt writes every missing double key with one bit pattern", {
   expect_length(nan, 2L)
   expect_identical(writeBin(nan[1], raw()), writeBin(nan[2], raw()))
   expect_identical(sum(is.na(w$k) & !is.nan(w$k)), 1L)
-  w <- index_dt(data.table(k = c(NaN, na_q)), "k", nan_to_na = TRUE)
+  w <- index_dt(data.table(k = c(NaN, na_q)), "k", nan_is_na = TRUE)
   expect_false(any(is.nan(w$k)))
 })

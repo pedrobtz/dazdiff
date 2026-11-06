@@ -37,7 +37,7 @@ test_that("disambiguate_by_key", {
 
 renamed <- melt_dt(dup)
 
-disambiguate_by_key(renamed, seq.name = "SEQ")
+disambiguate_by_key(renamed, seq_name = "SEQ")
 
 test_that("disambiguate_by_key", {
   check("disambiguate_by_key: the sequence column can be renamed", "SEQ" %in% names(renamed))

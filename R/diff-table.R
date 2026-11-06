@@ -28,7 +28,7 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #' `_`, and `_` trimmed from the ends. So `unit price`, `Unit.Price` and
 #' `UNIT_PRICE` are one column, in either table. Two names in one table that
 #' normalize to the same thing are an error to fix before comparing. The
-#' result uses the normalized names; `attr(, "name_map")` maps them back.
+#' result uses the normalized names; `attr(d, "name_map")` maps them back.
 #'
 #' @section Truncation:
 #' In benchmark mode a cast that drops a fraction -- a double to an integer, a
@@ -36,7 +36,7 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #' benchmark's types are taken as the truth: storage such as Spark or Delta
 #' turns a locally built double into an integer, and the comparison has to
 #' follow it. Each truncation is announced in a message and recorded in
-#' `attr(, "truncated")`: per column, the count, up to three examples, and
+#' `attr(d, "truncated")`: per column, the count, up to three examples, and
 #' in the list column `rows` the row numbers of `y` that were truncated,
 #' which are the `row_id_y` of the result. A truncated key column can pair
 #' rows that differ (`1.5` in `y` becomes `1` and aligns with `x`'s `1`), so
@@ -89,9 +89,9 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #' A value is `same` when both are equal, or when both are finite and their
 #' difference is within `tolerance` or within `rel_tol` relative to the larger
 #' of the two: `abs_diff <= tolerance` or `rel_diff <= rel_tol`. Both
-#' tolerances default to 0, so by default only equal values are the same. Two missing values are the same; with
-#' `nan_is_na = TRUE` NaN and NA are the same missing value, in measures and in
-#' key columns alike.
+#' tolerances default to 0, so by default only equal values are the same. Two
+#' missing values are the same; with `nan_is_na = TRUE` NaN and NA are the
+#' same missing value, in measures and in key columns alike.
 #'
 #' @section Conditions:
 #' Every condition `diff_table()` signals has a class, so it can be caught
@@ -144,7 +144,7 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #' @return A `data.table` keyed by the identity columns (and `key_seq`,
 #'   `metric` when present), with `status` a factor with levels `same`,
 #'   `changed`, `only_x` and `only_y`. The key includes `row_number` when
-#'   `row_key` added it. Its shape is in `attr(, "shape")`:
+#'   `row_key` added it. Its shape is in `attr(d, "shape")`:
 #'   * `"cells"`, the usual one: one row per row and measure, with `key_seq`
 #'     (only when duplicates were numbered), `metric`, `row_id_x`, `row_id_y`
 #'     (the source rows, `NA` on the side the row is missing from),
@@ -160,7 +160,8 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #'     (when present), `row_id_x`, `row_id_y` and `status`, which is never
 #'     `changed`.
 #'
-#'   The attributes `mode`, `tolerance` (`abs` and `rel`), `name_map` (each column's name in `x` and `y`),
+#'   The attributes `mode`, `tolerance` (`abs` and `rel`), `name_map` (each
+#'   column's name in `x` and `y`),
 #'   `dropped` (columns of `y` dropped in benchmark mode), `ignored` (columns
 #'   not compared) and `truncated` (the casts that truncated, with the rows
 #'   of `y` each one touched) record what was done on the way.
@@ -480,8 +481,8 @@ diff_table <- function(
 
   # 6-7. Index ------------------------------------------------------------------
   # Our own copies of the id and measure columns, numbered and keyed.
-  wx <- index_dt(xx, ids, measure, nan_to_na = nan_is_na)
-  wy <- index_dt(yy, ids, measure, nan_to_na = nan_is_na)
+  wx <- index_dt(xx, ids, measure, nan_is_na = nan_is_na)
+  wy <- index_dt(yy, ids, measure, nan_is_na = nan_is_na)
 
   # 8. Duplicate keys -----------------------------------------------------------
   # Checked on the wide tables, one row per source row: the answer is the same

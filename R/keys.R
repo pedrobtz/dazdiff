@@ -39,7 +39,7 @@ unique_by_key <- function(dt, along = "metric") {
 #' Rows are numbered in arrival order. That is stable when values change, so a
 #' changed row keeps its number; it moves only if rows are reordered, and then
 #' the comparison reports changes rather than hiding them. Numbering by value
-#' instead would pair rows so as to minimise the differences, and ranking within
+#' instead would pair rows so as to minimize the differences, and ranking within
 #' each measure would pair a different source row for each measure.
 #'
 #' `diff_table()` numbers the wide table, one row per source row, before
@@ -49,14 +49,14 @@ unique_by_key <- function(dt, along = "metric") {
 #' @param long A keyed data.table, modified by reference.
 #' @param by The key columns to number within.
 #' @param along Names the measure column, grouped on alongside the key.
-#' @param seq.name Name of the sequence column to add.
-#' @return `long`, invisibly, re-keyed on `by` plus `seq.name`.
+#' @param seq_name Name of the sequence column to add.
+#' @return `long`, invisibly, re-keyed on `by` plus `seq_name`.
 #' @noRd
 disambiguate_by_key <- function(
   long,
   by = key(long),
   along = "metric",
-  seq.name = "key_seq"
+  seq_name = "key_seq"
 ) {
   if (!is.data.table(long)) {
     daffiz_abort("daffiz_error_input", "`long` must be a data.table")
@@ -66,9 +66,9 @@ disambiguate_by_key <- function(
   }
 
   grp <- c(by, intersect(along, names(long)))
-  long[, (seq.name) := seq_len(.N), by = grp]
+  long[, (seq_name) := seq_len(.N), by = grp]
 
-  setkeyv(long, c(by, seq.name))
+  setkeyv(long, c(by, seq_name))
   invisible(long)
 }
 
@@ -87,7 +87,7 @@ disambiguate_by_key <- function(
 #' @param long A keyed data.table.
 #' @param by The key columns to group by.
 #' @param along Names the measure column, grouped on alongside the key.
-#' @param value.name The value column to summarize.
+#' @param value_name The value column to summarize.
 #' @param stats `"moments"` (the default) keeps order-invariant summaries:
 #'   a count, the sum and sum of squares, and the range. No single one of these
 #'   separates `{1,3}` from `{2,2}` -- together they do. Use it when you want to
@@ -103,7 +103,7 @@ aggregate_by_key <- function(
   long,
   by = key(long),
   along = "metric",
-  value.name = "value",
+  value_name = "value",
   stats = c("moments", "exact"),
   nan_is_na = TRUE
 ) {
@@ -116,7 +116,7 @@ aggregate_by_key <- function(
   }
 
   grp <- c(by, intersect(along, names(long)))
-  if (!value.name %in% names(long)) {
+  if (!value_name %in% names(long)) {
     return(setkeyv(long[, .(n_rows = .N), by = grp], by)[])
   }
 
@@ -127,7 +127,7 @@ aggregate_by_key <- function(
   out <- if (stats == "moments") {
     long[,
       {
-        v <- get(value.name)
+        v <- get(value_name)
         .(
           n_rows = .N,
           n_na = sum(is.na(v)),
@@ -147,7 +147,7 @@ aggregate_by_key <- function(
         # sort() leaves NA and NaN in arrival order among themselves, so the
         # same multiset could otherwise encode two ways. Radix sorting is in the
         # C locale, so the encoding does not depend on the session either.
-        v <- get(value.name) + 0
+        v <- get(value_name) + 0
         if (nan_is_na) {
           v[is.nan(v)] <- NA_real_
         }
@@ -213,7 +213,7 @@ virtual_key <- function(
   keys <- lapply(
     as.list(dt)[c(groups, sort_by)],
     canonical_missing,
-    nan_to_na = nan_is_na
+    nan_is_na = nan_is_na
   )
   o <- do.call(order, c(unname(keys), list(method = "radix", na.last = TRUE)))
   out <- integer(n)
