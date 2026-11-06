@@ -212,9 +212,9 @@ diff_table <- function(
   if (!is.data.frame(x) || !is.data.frame(y)) {
     daffiz_abort("daffiz_error_input", "`x` and `y` must be data.frames")
   }
-  mode <- match.arg(mode)
-  row_key <- match.arg(row_key)
-  duplicates <- match.arg(duplicates)
+  mode <- arg_match(mode)
+  row_key <- arg_match(row_key)
+  duplicates <- arg_match(duplicates)
   for (arg in c("tolerance", "rel_tol")) {
     v <- get(arg)
     if (!is.numeric(v) || length(v) != 1L || !is.finite(v) || v < 0) {

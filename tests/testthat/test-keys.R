@@ -1,16 +1,14 @@
-# Ported from .agents/test.R. Setup between blocks stays at file level,
-# in order, because later checks reuse what earlier ones built.
+# Ported from .agents/test.R. Every block builds what it checks, so the file
+# runs in any order (devtools::test(shuffle = TRUE)).
 
-test_that("unique_by_key", {
-  check("unique_by_key: distinct ids", isTRUE(unique_by_key(melt_dt(base))))
-  check("unique_by_key: no duplicates to report", nrow(attr(unique_by_key(melt_dt(base)), "duplicates")) == 0L)
+test_that("unique_by_key passes distinct ids", {
+  check("unique_by_key: distinct ids", isTRUE(unique_by_key(melt_dt(base_fixture()))))
+  check("unique_by_key: no duplicates to report", nrow(attr(unique_by_key(melt_dt(base_fixture())), "duplicates")) == 0L)
 })
 
-dup <- data.table(id = c("a", "a", "b"), v = c(1, 2, 3))
-
-u_dup <- unique_by_key(melt_dt(dup))
-
-test_that("unique_by_key", {
+test_that("unique_by_key reports repeated ids", {
+  dup <- data.table(id = c("a", "a", "b"), v = c(1, 2, 3))
+  u_dup <- unique_by_key(melt_dt(dup))
   check("unique_by_key: repeated ids", isFALSE(u_dup))
   check("unique_by_key: names the offending group", attr(u_dup, "duplicates")$id == "a")
   check("unique_by_key: counts the rows in it", attr(u_dup, "duplicates")$n_rows == 2L)
@@ -18,35 +16,31 @@ test_that("unique_by_key", {
     "unique_by_key: the measure is part of the identity, so one row per metric is fine",
     isTRUE(unique_by_key(melt_dt(data.table(id = "a", v = 1, w = 2))))
   )
-  check_error("unique_by_key: an unkeyed table", unique_by_key(data.table(a = 1)), "no key")
-  check_error("unique_by_key: refuses a data.frame", unique_by_key(data.frame(a = 1)))
+  check_error("unique_by_key: an unkeyed table", unique_by_key(data.table(a = 1)), class = "daffiz_error_keys")
+  check_error("unique_by_key: refuses a data.frame", unique_by_key(data.frame(a = 1)), class = "daffiz_error_input")
 })
 
-lx <- melt_dt(dup)
-
-disambiguate_by_key(lx)
-
-test_that("disambiguate_by_key", {
+test_that("disambiguate_by_key numbers the rows within each key", {
+  lx <- melt_dt(data.table(id = c("a", "a", "b"), v = c(1, 2, 3)))
+  out <- disambiguate_by_key(lx)
   check("disambiguate_by_key: adds the sequence column", "key_seq" %in% names(lx))
   check("disambiguate_by_key: numbers within the group", setequal(lx[id == "a", key_seq], c(1L, 2L)))
   check("disambiguate_by_key: a single-row group gets 1", all(lx[id == "b", key_seq] == 1L))
   check("disambiguate_by_key: the key now includes it", identical(key(lx), c("id", "key_seq")))
   check("disambiguate_by_key: the table is now unique by key", isTRUE(unique_by_key(lx)))
-  check("disambiguate_by_key: modifies by reference", "key_seq" %in% names(lx))
+  check("disambiguate_by_key: returns the table it modified, not a copy", identical(address(out), address(lx)))
 })
 
-renamed <- melt_dt(dup)
-
-disambiguate_by_key(renamed, seq_name = "SEQ")
-
-test_that("disambiguate_by_key", {
+test_that("disambiguate_by_key can rename its column, and needs a key", {
+  renamed <- melt_dt(data.table(id = c("a", "a", "b"), v = c(1, 2, 3)))
+  disambiguate_by_key(renamed, seq_name = "SEQ")
   check("disambiguate_by_key: the sequence column can be renamed", "SEQ" %in% names(renamed))
-  check_error("disambiguate_by_key: an unkeyed table", disambiguate_by_key(data.table(a = 1)), "no key")
+  check_error("disambiguate_by_key: an unkeyed table", disambiguate_by_key(data.table(a = 1)), class = "daffiz_error_keys")
+  check_error("disambiguate_by_key: refuses a data.frame", disambiguate_by_key(data.frame(a = 1)), class = "daffiz_error_input")
 })
 
-agg <- aggregate_by_key(melt_dt(dup))
-
-test_that("aggregate_by_key", {
+test_that("aggregate_by_key summarizes each key group by its moments", {
+  agg <- aggregate_by_key(melt_dt(data.table(id = c("a", "a", "b"), v = c(1, 2, 3))))
   check("aggregate_by_key: one row per key group and measure", nrow(agg) == 2L)
   check("aggregate_by_key: counts the rows in the group", agg[id == "a", n_rows] == 2L)
   check("aggregate_by_key: sums the values", agg[id == "a", value_sum] == 3)
@@ -55,20 +49,15 @@ test_that("aggregate_by_key", {
   check("aggregate_by_key: keyed by the group", identical(key(agg), "id"))
 })
 
-m13 <- aggregate_by_key(melt_dt(data.table(id = c("a", "a"), v = c(1, 3))))
-
-m22 <- aggregate_by_key(melt_dt(data.table(id = c("a", "a"), v = c(2, 2))))
-
-test_that("aggregate_by_key", {
+test_that("aggregate_by_key: the moments together separate what the sum cannot", {
+  m13 <- aggregate_by_key(melt_dt(data.table(id = c("a", "a"), v = c(1, 3))))
+  m22 <- aggregate_by_key(melt_dt(data.table(id = c("a", "a"), v = c(2, 2))))
   check("aggregate_by_key: the sum alone cannot separate {1,3} from {2,2}", m13$value_sum == m22$value_sum)
   check("aggregate_by_key: the sum of squares can", m13$value_sumsq != m22$value_sumsq)
 })
 
-na_grp <- melt_dt(data.table(id = c("a", "a"), v = c(1, NA_real_)))
-
-agg_na <- aggregate_by_key(na_grp)
-
-test_that("aggregate_by_key", {
+test_that("aggregate_by_key counts NAs rather than dropping them", {
+  agg_na <- aggregate_by_key(melt_dt(data.table(id = c("a", "a"), v = c(1, NA_real_))))
   check("aggregate_by_key: NAs are counted, not dropped", agg_na$n_na == 1L && agg_na$n_rows == 2L)
   check("aggregate_by_key: the other values are still summarised", agg_na$value_sum == 1)
   check_clean(
@@ -77,19 +66,13 @@ test_that("aggregate_by_key", {
   )
 })
 
-ex <- aggregate_by_key(melt_dt(dup), stats = "exact")
-
-test_that("aggregate_by_key", {
+test_that("aggregate_by_key(stats = \"exact\") keys each group by its multiset", {
+  dup <- data.table(id = c("a", "a", "b"), v = c(1, 2, 3))
+  ex <- aggregate_by_key(melt_dt(dup), stats = "exact")
   check("aggregate_by_key: exact keeps a value key instead of moments", "value_key" %in% names(ex) && !"value_sum" %in% names(ex))
-})
-
-ex13 <- aggregate_by_key(melt_dt(data.table(id = c("a", "a"), v = c(1, 3))), stats = "exact")
-
-ex31 <- aggregate_by_key(melt_dt(data.table(id = c("a", "a"), v = c(3, 1))), stats = "exact")
-
-ex22 <- aggregate_by_key(melt_dt(data.table(id = c("a", "a"), v = c(2, 2))), stats = "exact")
-
-test_that("aggregate_by_key", {
+  ex13 <- aggregate_by_key(melt_dt(data.table(id = c("a", "a"), v = c(1, 3))), stats = "exact")
+  ex31 <- aggregate_by_key(melt_dt(data.table(id = c("a", "a"), v = c(3, 1))), stats = "exact")
+  ex22 <- aggregate_by_key(melt_dt(data.table(id = c("a", "a"), v = c(2, 2))), stats = "exact")
   check("aggregate_by_key: exact is order-free", ex13$value_key == ex31$value_key)
   check("aggregate_by_key: exact separates different multisets", ex13$value_key != ex22$value_key)
   check(
@@ -97,8 +80,10 @@ test_that("aggregate_by_key", {
     aggregate_by_key(melt_dt(data.table(id = "a", v = 0.1 + 0.2)), stats = "exact")$value_key !=
       aggregate_by_key(melt_dt(data.table(id = "a", v = 0.3)), stats = "exact")$value_key
   )
-  check_error("aggregate_by_key: an unkeyed table", aggregate_by_key(data.table(a = 1)), "no key")
-  check_error("aggregate_by_key: an unknown stats option", aggregate_by_key(melt_dt(dup), stats = "mean"))
+  check_error("aggregate_by_key: an unkeyed table", aggregate_by_key(data.table(a = 1)), class = "daffiz_error_keys")
+  check_error("aggregate_by_key: refuses a data.frame", aggregate_by_key(data.frame(a = 1)), class = "daffiz_error_input")
+  # match.arg()'s own error: the one argument check daffiz does not class.
+  expect_error(aggregate_by_key(melt_dt(dup), stats = "mean"), class = "daffiz_error_input")
 })
 
 test_that("exact aggregation treats -0 as 0, as == does", {
@@ -137,7 +122,24 @@ test_that("virtual_key numbers rows by position or by sorted value", {
   expect_identical(virtual_key(dt[0], "sorted", sort_by = "v"), integer())
 })
 
+# testthat runs every test with LC_COLLATE=C, where radix order and the
+# locale's order agree, so these also run under local_english_collation().
 test_that("virtual_key sorts text in the C locale, whatever the session", {
   dt <- data.table(s = c("b", "B", "a"))
+  # C order is B < a < b.
   expect_identical(virtual_key(dt, "sorted", sort_by = "s"), c(3L, 1L, 2L))
+  local_english_collation()
+  expect_identical(virtual_key(dt, "sorted", sort_by = "s"), c(3L, 1L, 2L))
+})
+
+test_that("the exact multiset encoding sorts in the C locale, whatever the session", {
+  # "%a" writes 1 as 0x1p+0 and 0.5 as 0x1p-1: "+" sorts before "-" in C, but
+  # a locale that ignores punctuation puts 0x1p-1 first.
+  key_of <- function(v) {
+    aggregate_by_key(melt_dt(data.table(id = "a", v = v)), stats = "exact")$value_key
+  }
+  expect_identical(key_of(c(0.5, 1)), "0x1p+0|0x1p-1")
+  local_english_collation()
+  expect_identical(key_of(c(0.5, 1)), "0x1p+0|0x1p-1")
+  expect_identical(key_of(c(1, 0.5)), "0x1p+0|0x1p-1")
 })

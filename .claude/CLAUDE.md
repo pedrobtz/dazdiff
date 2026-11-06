@@ -74,13 +74,24 @@ calls lives in its own file and is tested on its own:
 
 The tests in `test-types.R`, `test-cast.R`, `test-columns.R`, `test-melt.R`,
 `test-keys.R`, `test-merge.R`, `test-diff-table.R` and
-`test-diff-table-cases.R` were ported mechanically from `.agents/test.R` and
-`.agents/test-cases.R`. They use the `check()` helpers in `helper-check.R`,
-and the setup between their `test_that()` blocks runs at file level on
-purpose, because later checks reuse it. New tests are ordinary testthat
-(`test-diff-table-modes.R`, `test-names.R`, `test-summary.R`,
-`test-expect.R`, `test-report.R`, whose drawings are snapshots in
-`_snaps/report.md`).
+`test-diff-table-cases.R` were ported from `.agents/test.R` and
+`.agents/test-cases.R`. They use the `check()` helpers in `helper-check.R`.
+New tests are ordinary testthat (`test-diff-table-modes.R`, `test-names.R`,
+`test-summary.R`, `test-expect.R`, `test-report.R`, whose drawings are
+snapshots in `_snaps/report.md`).
+
+The suite is shuffle-safe: it passes under `devtools::test(shuffle = TRUE)`,
+which reorders every top-level expression of a file. So setup lives inside
+the `test_that()` blocks, and shared fixtures are functions in
+`helper-fixtures.R` that build a fresh table each call; nothing runs at file
+level. Global state (seed, time zone, collation, mocks) goes through
+`withr::local_*()` or `testthat::local_mocked_bindings()`.
+
+Error paths are asserted by condition class (`expect_error(class = )`,
+`check_error(label, expr, class)`) and the fields a condition carries, never
+by its wording. The wording of every `daffiz_abort()`, `daffiz_warn()` and
+`daffiz_inform()` site is pinned once in `test-messages.R`
+(`_snaps/messages.md`); a new site needs a snapshot there.
 
 ## Load-bearing details
 

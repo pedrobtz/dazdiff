@@ -110,7 +110,7 @@ aggregate_by_key <- function(
   if (!is.data.table(long)) {
     daffiz_abort("daffiz_error_input", "`long` must be a data.table")
   }
-  stats <- match.arg(stats)
+  stats <- arg_match(stats)
   if (!length(by)) {
     daffiz_abort("daffiz_error_keys", "no key to aggregate by")
   }
@@ -204,7 +204,7 @@ virtual_key <- function(
   sort_by = character(),
   nan_is_na = TRUE
 ) {
-  how <- match.arg(how)
+  how <- arg_match(how)
   n <- nrow(dt)
   if (how == "position" || !n) {
     return(seq_len(n))

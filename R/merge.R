@@ -118,7 +118,7 @@ merge_dt <- function(
   if (!is.data.table(x) || !is.data.table(y)) {
     daffiz_abort("daffiz_error_input", "`x` and `y` must be data.tables")
   }
-  mode <- match.arg(mode)
+  mode <- arg_match(mode)
 
   dry <- merge_dry_run(x, y, on = on)
   if (!dry$one_to_one) {

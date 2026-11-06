@@ -47,3 +47,34 @@ fmt_names <- function(x, max_n = 10L) {
   }
   out
 }
+
+# match.arg(), raising a classed daffiz_error_input instead of base R's bare
+# "'arg' should be one of" error, which no caller can tell apart from any
+# other. Called as `mode <- arg_match(mode)` from the function whose formal
+# lists the choices, like match.arg().
+arg_match <- function(arg, choices = NULL) {
+  name <- deparse(substitute(arg))
+  if (is.null(choices)) {
+    fn <- sys.function(sys.parent())
+    choices <- eval(formals(fn)[[name]], envir = parent.frame())
+  }
+  if (identical(arg, choices)) {
+    return(choices[1L])
+  }
+  i <- if (is.character(arg) && length(arg) == 1L && !is.na(arg)) {
+    pmatch(arg, choices)
+  } else {
+    NA_integer_
+  }
+  if (is.na(i)) {
+    daffiz_abort(
+      "daffiz_error_input",
+      sprintf(
+        "`%s` must be one of %s",
+        name,
+        paste0("\"", choices, "\"", collapse = ", ")
+      )
+    )
+  }
+  choices[i]
+}

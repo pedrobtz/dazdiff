@@ -307,7 +307,7 @@ format.daffiz_report <- function(x, unicode = l10n_info()[["UTF-8"]], ...) {
     body <- c(
       body,
       section("Columns", columns, g),
-      section("Rows", c(row_counts_lines(x), "", row_diagram(x, g)), g),
+      section("Rows", c(row_counts_lines(x), spaced(row_diagram(x, g))), g),
       if (length(x$measures)) section("Measures", measure_lines(x, g), g),
       sample_lines(x, "x", g),
       sample_lines(x, "y", g)
@@ -382,11 +382,14 @@ row_counts_lines <- function(x) {
 # below. Each band is labelled with its count and share: of x's rows for the
 # rows only in x, of the joined rows for `same` and `changed`, of y's rows for
 # the rows only in y.
+# A block of lines with a blank line before it, or nothing when it is empty.
+spaced <- function(lines) if (length(lines)) c("", lines) else character()
+
 row_diagram <- function(x, g) {
   r <- x$rows
   n_joined <- r$n_same + r$n_changed
   # diff_table() refuses a comparison that aligns nothing, and two empty
-  # tables are equal, so this report always has a joined band.
+  # tables are equal; a filtered result can still have no joined band.
   if (n_joined == 0) {
     return(character())
   }
