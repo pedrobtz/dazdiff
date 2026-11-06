@@ -1,11 +1,9 @@
-# Ported from .agents/test.R. Setup between blocks stays at file level,
-# in order, because later checks reuse what earlier ones built.
+# Ported from .agents/test.R. Every block builds what it checks, so the file
+# runs in any order (devtools::test(shuffle = TRUE)).
 
-d <- fake_dt(4, n_cols = c(character = 1, integer = 1, numeric = 2), seed = 1)
-
-long <- melt_dt(d)
-
-test_that("melt_dt", {
+test_that("melt_dt makes one row per row and double, traced by row_id", {
+  d <- melt_fixture()
+  long <- melt_dt(d)
   check("melt_dt: rows x measured columns", nrow(long) == nrow(d) * 2L)
   check("melt_dt: only the doubles are measured by default", setequal(unique(long$metric), c("NUM_01", "NUM_02")))
   check("melt_dt: the measure names are character, not factor", is.character(long$metric))
@@ -16,49 +14,53 @@ test_that("melt_dt", {
   check("melt_dt: the source table is not touched", !"row_id" %in% names(d))
 })
 
-both <- melt_dt(d, measures = "numeric+integer")
-
-test_that("melt_dt", {
+test_that("melt_dt with numeric+integer measures the integers too", {
+  both <- melt_dt(melt_fixture(), measures = "numeric+integer")
   check("melt_dt: numeric+integer measures the integers too", setequal(unique(both$metric), c("NUM_01", "NUM_02", "INT_01")))
   check("melt_dt: the value column widens to double", is.double(both$value))
   check("melt_dt: an integer measure leaves the key", !"INT_01" %in% key(both))
 })
 
-named <- melt_dt(d, variable_name = "which", value_name = "amount")
-
-test_that("melt_dt", {
+test_that("melt_dt can rename its measure and value columns", {
+  named <- melt_dt(melt_fixture(), variable_name = "which", value_name = "amount")
   check("melt_dt: the measure and value columns can be renamed", all(c("which", "amount") %in% names(named)))
 })
 
-test_that("melt_dt", {
+test_that("melt_dt: edge cases and refusals", {
+  d <- melt_fixture()
   check("melt_dt: an upper-case ROW_ID is left alone as an ordinary id column", {
     upper <- melt_dt(copy(d)[, ROW_ID := 99L])
     all(upper$ROW_ID == 99L) && "ROW_ID" %in% key(upper) &&
       setequal(upper$row_id, seq_len(nrow(d)))
   })
-  check("melt_dt: zero rows still melts", nrow(melt_dt(base[0])) == 0L)
+  check("melt_dt: zero rows still melts", nrow(melt_dt(base_fixture()[0])) == 0L)
   check("melt_dt: no numeric column leaves one row per row", nrow(melt_dt(data.table(a = c("x", "y")))) == 2L)
   check("melt_dt: an integer column is not numeric enough by default", !"metric" %in% names(melt_dt(data.table(a = "x", b = 1L))))
-  check_error("melt_dt: an unknown measures option", melt_dt(d, measures = "chars"), "not a column: chars")
-  check_error("melt_dt: refuses a non-table", melt_dt(1:3))
+  check_error("melt_dt: an unknown measures option", melt_dt(d, measures = "chars"), class = "daffiz_error_measures")
+  check_error("melt_dt: refuses a non-table", melt_dt(1:3), class = "daffiz_error_input")
 })
 
 test_that("melt_dt melts integers without melt()'s coercion warning", {
-  expect_no_warning(out <- melt_dt(d, measures = "numeric+integer"))
+  expect_no_warning(out <- melt_dt(melt_fixture(), measures = "numeric+integer"))
   expect_type(out$value, "double")
 })
 
 test_that("measures can be named", {
-  out <- melt_dt(d, measures = c("NUM_02", "INT_01"))
+  out <- melt_dt(melt_fixture(), measures = c("NUM_02", "INT_01"))
   expect_setequal(unique(out$metric), c("NUM_02", "INT_01"))
   # The double that was not named is an id now.
   expect_true("NUM_01" %in% key(out))
 })
 
 test_that("a named measure must be numeric or integer, named once, and exist", {
-  expect_error(select_measures(d, "CHR_01"), "not numeric or integer: CHR_01 \\(character\\)", class = "daffiz_error_measures")
-  expect_error(select_measures(d, c("NUM_01", "NUM_01")), "named more than once: NUM_01")
-  expect_error(select_measures(d, "NOPE"), "not a column: NOPE")
+  d <- melt_fixture()
+  # The error carries the offending columns; test-messages.R pins why.
+  err <- expect_error(select_measures(d, "CHR_01"), class = "daffiz_error_measures")
+  expect_identical(err$columns, "CHR_01")
+  err <- expect_error(select_measures(d, c("NUM_01", "NUM_01")), class = "daffiz_error_measures")
+  expect_identical(err$columns, "NUM_01")
+  err <- expect_error(select_measures(d, "NOPE"), class = "daffiz_error_measures")
+  expect_identical(err$columns, "NOPE")
   expect_error(select_measures(d, character()), class = "daffiz_error_measures")
   expect_error(select_measures(d, NA_character_), class = "daffiz_error_measures")
 })
@@ -98,7 +100,7 @@ test_that("index_dt writes every missing double key with one bit pattern", {
   w <- index_dt(data.table(k = c(NA_real_, na_q), d = as.Date(c(NA, NA)) + 1), c("k", "d"))
   for (nm in c("k", "d")) {
     raws <- lapply(unclass(w[[nm]]), writeBin, raw())
-    expect_true(all(vapply(raws, identical, logical(1L), writeBin(NA_real_, raw()))))
+    expect_true(all(vapply(raws, identical, logical(1L), writeBin(NA_real_, raw()))), info = nm)
   }
   expect_s3_class(w$d, "Date")
 
