@@ -116,7 +116,7 @@ B_wide <- copy(A)[, NOTE := "hi"]
 test_that("columns", {
   check("an extra column in B does not stop the compare",
     is_tally(suppressMessages(diff_table(A, B_wide)), same = 4L))
-  expect_message(diff_table(A, B_wide), "NOTE", class = "daffiz_message_dropped_columns")
+  expect_message(diff_table(A, B_wide), "NOTE", class = "dazdiff_message_dropped_columns")
   check_error("a missing column in B is refused",
     diff_table(A, copy(A)[, GRP := NULL]), "`y` is missing column\\(s\\) the benchmark `x` has: GRP")
 })
@@ -147,7 +147,7 @@ A_dup <- data.table(
 B_dup <- copy(A_dup)
 
 test_that("ids that do not tell rows apart", {
-  expect_warning(diff_table(A_dup, B_dup), class = "daffiz_warning_duplicates")
+  expect_warning(diff_table(A_dup, B_dup), class = "dazdiff_warning_duplicates")
   check("duplicate ids: disambiguated by arrival order", is_tally(suppressWarnings(diff_table(A_dup, B_dup)), same = 3L))
   check("duplicate ids: a change inside the group is found",
     is_tally(suppressWarnings(diff_table(A_dup, copy(A_dup)[3, VAL := 21])), same = 2L, changed = 1L))

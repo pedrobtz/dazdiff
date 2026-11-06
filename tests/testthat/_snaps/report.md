@@ -4,7 +4,7 @@
       print(diff_report(diff_table(x3, y3)), unicode = FALSE)
     Output
       +===============================================================================+
-      |                                 daffiz report                                 |
+      |                                dazdiff report                                 |
       +===============================================================================+
          Identity: id
          Mode:     benchmark: y is tested against x
@@ -58,7 +58,7 @@
       print(diff_report(diff_table(x3, x3)), unicode = FALSE)
     Output
       +==================================================+
-      |                  daffiz report                   |
+      |                  dazdiff report                  |
       +==================================================+
          Identity: id
          Mode:     benchmark: y is tested against x
@@ -71,7 +71,7 @@
       print(diff_report(d, x_name = "bench", y_name = "tested", top_k = 1), unicode = FALSE)
     Output
       +====================================================================================+
-      |                                   daffiz report                                    |
+      |                                   dazdiff report                                   |
       +====================================================================================+
          Identity: id, region
          Mode:     benchmark: tested is tested against bench
@@ -131,7 +131,7 @@
       print(diff_report(diff_table(x3, y3)), unicode = TRUE)
     Output
       ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-      ┃                                 daffiz report                                 ┃
+      ┃                                dazdiff report                                 ┃
       ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
          Identity: id
          Mode:     benchmark: y is tested against x

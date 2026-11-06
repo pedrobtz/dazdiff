@@ -264,7 +264,7 @@ test_that("normalize_dt", {
 })
 
 test_that("truncate = FALSE refuses every cast that drops a fraction", {
-  expect_error(cast_value(1.7, "integer", "N", truncate = FALSE), "not a whole number", class = "daffiz_error_cast")
+  expect_error(cast_value(1.7, "integer", "N", truncate = FALSE), "not a whole number", class = "dazdiff_error_cast")
   expect_error(cast_value("3.7", "integer", "N", truncate = FALSE), "character -> integer, not a whole number")
   expect_error(cast_value(1.5, "Date", "D", truncate = FALSE), "not a whole day")
   expect_error(
@@ -349,7 +349,7 @@ test_that("a stamp on a day with no midnight is truncated, not a crash", {
   stamp <- as.POSIXct("2024-03-10 12:00:00", tz = "America/Havana")
   expect_message(
     d <- diff_table(data.frame(d = as.Date("2024-03-10"), v = 1), data.frame(d = stamp, v = 1)),
-    class = "daffiz_message_truncation"
+    class = "dazdiff_message_truncation"
   )
   expect_identical(as.character(d$status), "same")
   expect_equal(
@@ -358,7 +358,7 @@ test_that("a stamp on a day with no midnight is truncated, not a crash", {
   )
   expect_error(
     cast_value(stamp, "Date", "D", truncate = FALSE),
-    "has a time of day", class = "daffiz_error_cast"
+    "has a time of day", class = "dazdiff_error_cast"
   )
 })
 
@@ -372,7 +372,7 @@ test_that("a double written as text has no exponent", {
     )
   )
   # More than 15 significant digits is still refused.
-  expect_error(cast_value(0.1 + 0.2, "character", "C"), "loses precision", class = "daffiz_error_cast")
+  expect_error(cast_value(0.1 + 0.2, "character", "C"), "loses precision", class = "dazdiff_error_cast")
   # Text ids in the benchmark meet numeric ids in the candidate.
   x <- data.frame(id = c("100000", "123456"), v = c(1, 2))
   y <- data.frame(id = c(100000, 123456), v = c(1, 2))
@@ -386,7 +386,7 @@ test_that("text NaN and Inf parse as numbers; the text NA does not", {
     cast_value(c("1", "NaN", "Inf", "-Inf", NA), "numeric", "N"),
     c(1, NaN, Inf, -Inf, NA)
   )
-  expect_error(cast_value(c("1", "NA"), "numeric", "N"), "not a number: NA", class = "daffiz_error_cast")
+  expect_error(cast_value(c("1", "NA"), "numeric", "N"), "not a number: NA", class = "dazdiff_error_cast")
   d <- diff_table(data.frame(id = 1:2, v = c(1, NaN)), data.frame(id = 1:2, v = c("1", "NaN")))
   expect_identical(as.character(d$status), c("same", "same"))
   # With nan_is_na = FALSE, the parsed NaN is still a NaN.
@@ -412,12 +412,12 @@ test_that("integer64 converts through bit64, exactly or not at all", {
   expect_identical(cast_value(small, "numeric", "N"), c(1, -2, NA))
   expect_identical(cast_value(small, "integer", "N"), c(1L, -2L, NA))
   expect_identical(cast_value(big, "character", "N"), c("1", "-2", NA, "9007199254740993"))
-  expect_error(cast_value(big, "numeric", "N"), "2\\^53 or more.*9007199254740993", class = "daffiz_error_cast")
+  expect_error(cast_value(big, "numeric", "N"), "2\\^53 or more.*9007199254740993", class = "dazdiff_error_cast")
   expect_error(
     cast_value(bit64::as.integer64("3000000000"), "integer", "N"),
-    "outside integer range", class = "daffiz_error_cast"
+    "outside integer range", class = "dazdiff_error_cast"
   )
-  expect_error(cast_value(small, "Date", "N"), "no sound conversion", class = "daffiz_error_cast")
+  expect_error(cast_value(small, "Date", "N"), "no sound conversion", class = "dazdiff_error_cast")
 
   y <- data.frame(id = small[1:2], v = c(1, 2))
   out <- normalize_dt(y, to = c(integer64 = "numeric"))
@@ -436,7 +436,7 @@ test_that("normalize_dt's documented default is its real one", {
 
 test_that("NaN becomes NA only when they are the same missing value", {
   expect_true(is.na(cast_value(NaN, "integer", "N")))
-  expect_error(cast_value(NaN, "integer", "N", nan_is_na = FALSE), "NaN", class = "daffiz_error_cast")
+  expect_error(cast_value(NaN, "integer", "N", nan_is_na = FALSE), "NaN", class = "dazdiff_error_cast")
   expect_error(cast_value(NaN, "Date", "D", nan_is_na = FALSE), "NaN")
   # Text keeps NaN as "NaN", so there is nothing to refuse.
   expect_identical(cast_value(NaN, "character", "C", nan_is_na = FALSE), "NaN")
@@ -445,7 +445,7 @@ test_that("NaN becomes NA only when they are the same missing value", {
 test_that("cast_dt reports truncation once, as a message with a record", {
   x <- data.table(a = 1L, b = 1L, c = "k")
   y <- data.table(a = c(1.7, 2), b = c("3.2", "3.2"), c = "k")
-  expect_message(cast_dt(x, y), class = "daffiz_message_truncation")
+  expect_message(cast_dt(x, y), class = "dazdiff_message_truncation")
   rec <- attr(y, "truncated")
   expect_identical(rec$column, c("a", "b"))
   expect_identical(rec$n, c(1L, 2L))
@@ -478,7 +478,7 @@ test_that("cast_dt names columns by their labels in messages", {
 test_that("a short year is refused on every platform, not only where %Y pads", {
   # glibc formats year 24 as "24", so the text round trip alone would accept
   # "24-01-01" on Linux. The year is checked on the date itself.
-  expect_error(cast_value("24-01-01", "Date", "col"), "not a canonical", class = "daffiz_error_cast")
+  expect_error(cast_value("24-01-01", "Date", "col"), "not a canonical", class = "dazdiff_error_cast")
   expect_error(cast_value("024-01-01", "Date", "col"), "not a canonical")
   expect_error(cast_value("0024-01-01", "Date", "col"), "not a canonical")
   expect_equal(cast_value("1024-01-01", "Date", "col"), as.Date("1024-01-01"))

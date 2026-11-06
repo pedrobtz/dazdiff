@@ -18,15 +18,15 @@ test_that("expect_table_equal treats expected as the benchmark", {
   actual <- data.frame(id = 1:2, v = c(1, 2), extra = "e")
   expect_success(suppressMessages(expect_table_equal(actual, expected)))
   # Reversed, the benchmark has a column the tested table lacks.
-  expect_error(expect_table_equal(expected, actual), class = "daffiz_error_columns")
+  expect_error(expect_table_equal(expected, actual), class = "dazdiff_error_columns")
   # As peers, the extra column is a difference.
-  expect_error(expect_table_equal(actual, expected, mode = "equal"), class = "daffiz_error_columns")
+  expect_error(expect_table_equal(actual, expected, mode = "equal"), class = "dazdiff_error_columns")
 })
 
 test_that("expect_table_equal does not pair duplicate keys unless asked", {
   expected <- data.table(id = c("a", "a"), v = c(1, 2))
   actual <- data.table(id = c("a", "a"), v = c(2, 1))
-  expect_error(expect_table_equal(actual, expected), "does not pair duplicate keys", class = "daffiz_error_duplicates")
+  expect_error(expect_table_equal(actual, expected), "does not pair duplicate keys", class = "dazdiff_error_duplicates")
   expect_success(expect_table_equal(actual, expected, duplicates = "aggregate"))
   expect_failure(suppressWarnings(expect_table_equal(actual, expected, duplicates = "disambiguate")))
 })

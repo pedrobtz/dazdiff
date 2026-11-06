@@ -2,7 +2,7 @@
 % Please edit documentation in R/cast.R
 \name{normalize_dt}
 \alias{normalize_dt}
-\title{Convert a table to the types daffiz compares}
+\title{Convert a table to the types dazdiff compares}
 \usage{
 normalize_dt(dt, to = c(factor = "character"), cols = names(dt))
 }

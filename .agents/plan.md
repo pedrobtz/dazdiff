@@ -2,7 +2,7 @@
 status: implemented (2026-09-29, branch redo-core)
 ---
 
-# daffiz 0.1.0
+# dazdiff 0.1.0
 
 A small package around one function, `diff_table()`, plus a few helpers.
 Built from `.agents/compare.R`; fixes reference `core-review.md` (F1–F8,
@@ -101,7 +101,7 @@ tolerance`. With `nan_is_na = TRUE`, NaN counts as NA: in cells, in
 - A warning when the answer may be wrong: invented pairing.
 - A message for expected side effects: truncation, dropped or ignored
   columns, no measures.
-- Every condition has a `daffiz_*` class and names columns as the user wrote
+- Every condition has a `dazdiff_*` class and names columns as the user wrote
   them.
 - The caller's tables are never modified.
 
@@ -129,7 +129,7 @@ tolerance`. With `nan_is_na = TRUE`, NaN counts as NA: in cells, in
 - **Merge:** `merge_dt()` messages use `format()`, not `%d` (F7).
 - **`diff_table()`:** the behaviour above, fixing F3–F6 and F8. It keeps the
   in-place merge only.
-- **All files:** `stop()` → `daffiz_abort()` with classes.
+- **All files:** `stop()` → `dazdiff_abort()` with classes.
 
 ## Steps
 

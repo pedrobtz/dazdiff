@@ -108,7 +108,7 @@ x8 <- data.table(id = c("a", "a", "b"), v = c(1, 2, 3))
 y8 <- data.table(id = c("a", "a", "b"), v = c(1, 2, 30))
 
 test_that("8) pairing duplicate keys by arrival order is announced", {
-  expect_warning(diff_table(x8, y8), "paired in arrival order", class = "daffiz_warning_duplicates")
+  expect_warning(diff_table(x8, y8), "paired in arrival order", class = "dazdiff_warning_duplicates")
 })
 
 t8 <- suppressWarnings(diff_table(x8, y8))

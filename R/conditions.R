@@ -1,6 +1,6 @@
 # Structured conditions -------------------------------------------------------
 #
-# Every condition daffiz raises carries a subclass as well as readable text, so
+# Every condition dazdiff raises carries a subclass as well as readable text, so
 # callers and tests can tell which check fired without parsing a message.
 #
 # The three kinds mean different things:
@@ -9,26 +9,26 @@
 # - a message: an expected consequence of the settings the caller chose
 #   (values truncated by a cast, columns dropped or ignored).
 
-daffiz_abort <- function(subclass, message, ...) {
+dazdiff_abort <- function(subclass, message, ...) {
   cond <- structure(
-    class = c(subclass, "daffiz_error", "error", "condition"),
+    class = c(subclass, "dazdiff_error", "error", "condition"),
     list(message = message, call = NULL, ...)
   )
   stop(cond)
 }
 
-daffiz_warn <- function(subclass, message, ...) {
+dazdiff_warn <- function(subclass, message, ...) {
   cond <- structure(
-    class = c(subclass, "daffiz_warning", "warning", "condition"),
+    class = c(subclass, "dazdiff_warning", "warning", "condition"),
     list(message = message, call = NULL, ...)
   )
   warning(cond)
 }
 
 # message() prints conditionMessage() as is, so the newline is ours to add.
-daffiz_inform <- function(subclass, message, ...) {
+dazdiff_inform <- function(subclass, message, ...) {
   cond <- structure(
-    class = c(subclass, "daffiz_message", "message", "condition"),
+    class = c(subclass, "dazdiff_message", "message", "condition"),
     list(message = paste0(message, "\n"), call = NULL, ...)
   )
   message(cond)

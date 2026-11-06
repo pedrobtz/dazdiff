@@ -30,7 +30,7 @@
 #'   hides them.
 #' @param sample_k The number of keys shown of the rows found in only one
 #'   table; 0 hides them.
-#' @return A `daffiz_report`: a list holding the counts the report draws,
+#' @return A `dazdiff_report`: a list holding the counts the report draws,
 #'   with `format()` and `print()` methods. `format()` takes `unicode`, whether
 #'   to draw with box-drawing characters (by default, when the session's
 #'   encoding is UTF-8), and returns the lines of text.
@@ -46,13 +46,13 @@ diff_report <- function(d, x_name = "x", y_name = "y", top_k = 3L, sample_k = 5L
   for (arg in c("x_name", "y_name")) {
     v <- get(arg)
     if (!is.character(v) || length(v) != 1L || is.na(v) || !nzchar(v)) {
-      daffiz_abort("daffiz_error_input", sprintf("`%s` must be a single non-empty string", arg))
+      dazdiff_abort("dazdiff_error_input", sprintf("`%s` must be a single non-empty string", arg))
     }
   }
   for (arg in c("top_k", "sample_k")) {
     v <- get(arg)
     if (!is.numeric(v) || length(v) != 1L || !is.finite(v) || v < 0 || v != trunc(v)) {
-      daffiz_abort("daffiz_error_input", sprintf("`%s` must be a single whole number >= 0", arg))
+      dazdiff_abort("dazdiff_error_input", sprintf("`%s` must be a single whole number >= 0", arg))
     }
   }
 
@@ -154,7 +154,7 @@ diff_report <- function(d, x_name = "x", y_name = "y", top_k = 3L, sample_k = 5L
       only_y = sample_keys("y"),
       top_k = as.integer(top_k)
     ),
-    class = "daffiz_report"
+    class = "dazdiff_report"
   )
 }
 
@@ -175,9 +175,9 @@ top_changes <- function(d, ids, top_k) {
 }
 
 #' @export
-format.daffiz_report <- function(x, unicode = l10n_info()[["UTF-8"]], ...) {
+format.dazdiff_report <- function(x, unicode = l10n_info()[["UTF-8"]], ...) {
   if (!is_flag(unicode)) {
-    daffiz_abort("daffiz_error_input", "`unicode` must be TRUE or FALSE")
+    dazdiff_abort("dazdiff_error_input", "`unicode` must be TRUE or FALSE")
   }
   g <- report_glyphs(unicode)
   r <- x$rows
@@ -245,7 +245,7 @@ format.daffiz_report <- function(x, unicode = l10n_info()[["UTF-8"]], ...) {
 
   body <- sub("\\s+$", "", body)
   width <- max(40L, nchar(body, type = "width"))
-  title <- "daffiz report"
+  title <- "dazdiff report"
   left <- (width - 2L - nchar(title)) %/% 2L
   header <- c(
     paste0(g$htl, strrep(g$hh, width - 2L), g$htr),
@@ -256,7 +256,7 @@ format.daffiz_report <- function(x, unicode = l10n_info()[["UTF-8"]], ...) {
 }
 
 #' @export
-print.daffiz_report <- function(x, ...) {
+print.dazdiff_report <- function(x, ...) {
   cat(format(x, ...), sep = "\n")
   invisible(x)
 }

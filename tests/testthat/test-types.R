@@ -18,7 +18,7 @@ test_that("col_type names integer64 for what it is, not as a number", {
   big <- bit64::as.integer64(c(1, 2))
   expect_identical(col_type(big), "integer64")
   # Not a cast type, so a reference column of it is refused, not misread.
-  expect_error(cast_dt(data.table(id = big), data.table(id = "1")), class = "daffiz_error_types")
+  expect_error(cast_dt(data.table(id = big), data.table(id = "1")), class = "dazdiff_error_types")
 })
 
 test_that("cast rules table", {

@@ -9,7 +9,7 @@ test_that("canonical_names keeps only A-Z, 0-9 and _", {
   ))
 })
 
-test_that("every column daffiz creates contains a lowercase letter", {
+test_that("every column dazdiff creates contains a lowercase letter", {
   # This is what makes a collision with a normalized user column impossible.
   # A new internal name without one would silently break that guarantee.
   internal <- c(
@@ -31,11 +31,11 @@ test_that("check_names refuses empty and colliding names, naming each group", {
   expect_error(
     check_names(name_map(data.table(`%` = 1, a = 2)), "x"),
     'no letter or digit.*"%"',
-    class = "daffiz_error_columns"
+    class = "dazdiff_error_columns"
   )
   err <- expect_error(
     check_names(name_map(data.table(a = 1, A = 2, b.c = 3, `b c` = 4)), "x"),
-    class = "daffiz_error_columns"
+    class = "dazdiff_error_columns"
   )
   expect_match(conditionMessage(err), 'A <- "a", "A"', fixed = TRUE)
   expect_match(conditionMessage(err), 'B_C <- "b.c", "b c"', fixed = TRUE)

@@ -55,7 +55,7 @@ num_to_text <- function(v) {
 cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
                        truncate = TRUE, nan_is_na = TRUE) {
   if (!is.character(date_format) || length(date_format) != 1L || is.na(date_format)) {
-    daffiz_abort("daffiz_error_input", "`date_format` must be a single format string")
+    dazdiff_abort("dazdiff_error_input", "`date_format` must be a single format string")
   }
   from <- col_type(v)
   if (is.null(origin)) {
@@ -69,7 +69,7 @@ cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
     if (length(vals)) {
       msg <- paste0(msg, ": ", paste(head(unique(vals), 3L), collapse = ", "))
     }
-    daffiz_abort("daffiz_error_cast", msg, column = nm, from = origin, to = to)
+    dazdiff_abort("dazdiff_error_cast", msg, column = nm, from = origin, to = to)
   }
   if (!from %in% CAST_FROM) {
     refuse("unsupported source type")
@@ -93,8 +93,8 @@ cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
   # integer range among them.
   if (from == "integer64") {
     if (!requireNamespace("bit64", quietly = TRUE)) {
-      daffiz_abort(
-        "daffiz_error_dependency",
+      dazdiff_abort(
+        "dazdiff_error_dependency",
         sprintf("column %s: converting integer64 needs the bit64 package", nm)
       )
     }
@@ -283,7 +283,7 @@ truncated_empty <- function() data.table(
 #' the row numbers of \code{y} truncated (list column \code{rows}) are
 #' recorded on \code{y} as \code{attr(y, "truncated")} (an empty table when
 #' nothing was truncated) and announced in one message of class
-#' \code{daffiz_message_truncation}.
+#' \code{dazdiff_message_truncation}.
 #'
 #' @param x The reference table, whose column types are the targets.
 #' @param y The table to convert. Modified by reference, so it must be a
@@ -299,13 +299,13 @@ cast_dt <- function(x, y, cols = intersect(names(x), names(y)),
                     date_format = "%Y-%m-%d", truncate = TRUE, nan_is_na = TRUE,
                     labels = NULL) {
   if (!is.data.frame(x) || !is.data.table(y)) {
-    daffiz_abort("daffiz_error_input", "`x` must be a data.frame and `y` a data.table")
+    dazdiff_abort("dazdiff_error_input", "`x` must be a data.frame and `y` a data.table")
   }
 
   unknown <- setdiff(cols, intersect(names(x), names(y)))
   if (length(unknown)) {
-    daffiz_abort(
-      "daffiz_error_columns",
+    dazdiff_abort(
+      "dazdiff_error_columns",
       paste0("column(s) missing from x or y: ", paste(unknown, collapse = ", ")),
       columns = unknown
     )
@@ -314,8 +314,8 @@ cast_dt <- function(x, y, cols = intersect(names(x), names(y)),
   targets <- vapply(cols, function(nm) col_type(x[[nm]]), character(1L))
   bad <- targets[!targets %in% CAST_TYPES]
   if (length(bad)) {
-    daffiz_abort(
-      "daffiz_error_types",
+    dazdiff_abort(
+      "dazdiff_error_types",
       paste0(
         "x has column(s) of unsupported type: ",
         paste(sprintf("%s (%s)", names(bad), bad), collapse = ", ")
@@ -358,8 +358,8 @@ cast_dt <- function(x, y, cols = intersect(names(x), names(y)),
   setattr(y, "truncated", truncated)
 
   if (nrow(truncated)) {
-    daffiz_inform(
-      "daffiz_message_truncation",
+    dazdiff_inform(
+      "dazdiff_message_truncation",
       paste0(
         "Truncated ", format(sum(truncated$n), big.mark = ","),
         " value(s) while casting to the reference types:\n",
@@ -374,7 +374,7 @@ cast_dt <- function(x, y, cols = intersect(names(x), names(y)),
   invisible(y)
 }
 
-#' Convert a table to the types daffiz compares
+#' Convert a table to the types dazdiff compares
 #'
 #' [diff_table()] compares columns of five types: character, logical, Date,
 #' numeric (double) and integer. In `mode = "benchmark"` the benchmark `x` must
@@ -415,14 +415,14 @@ cast_dt <- function(x, y, cols = intersect(names(x), names(y)),
 #' normalize_dt(x, to = c(POSIXct = "Date", factor = "character"))
 normalize_dt <- function(dt, to = c(factor = "character"), cols = names(dt)) {
   if (!is.data.frame(dt)) {
-    daffiz_abort("daffiz_error_input", "`dt` must be a data.frame")
+    dazdiff_abort("dazdiff_error_input", "`dt` must be a data.frame")
   }
   dt <- as.data.table(dt)
 
   unknown <- setdiff(cols, names(dt))
   if (length(unknown)) {
-    daffiz_abort(
-      "daffiz_error_columns",
+    dazdiff_abort(
+      "dazdiff_error_columns",
       paste0("unknown column(s): ", paste(unknown, collapse = ", ")),
       columns = unknown
     )
@@ -436,8 +436,8 @@ normalize_dt <- function(dt, to = c(factor = "character"), cols = names(dt)) {
 
   unmapped <- need[!types[need] %in% names(to)]
   if (length(unmapped)) {
-    daffiz_abort(
-      "daffiz_error_types",
+    dazdiff_abort(
+      "dazdiff_error_types",
       paste0(
         "no conversion given for column(s): ",
         paste(sprintf("%s (%s)", unmapped, types[unmapped]), collapse = ", "),

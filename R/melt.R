@@ -19,8 +19,8 @@ MEASURE_TYPES <- list(
 #' @noRd
 select_measures <- function(dt, measures = "numeric") {
   if (!is.character(measures) || !length(measures) || anyNA(measures)) {
-    daffiz_abort(
-      "daffiz_error_measures",
+    dazdiff_abort(
+      "dazdiff_error_measures",
       "`measures` must be \"numeric\", \"numeric+integer\" or column names"
     )
   }
@@ -45,8 +45,8 @@ select_measures <- function(dt, measures = "numeric") {
     }
   )
   if (length(problems)) {
-    daffiz_abort(
-      "daffiz_error_measures",
+    dazdiff_abort(
+      "dazdiff_error_measures",
       paste0("`measures` ", paste(problems, collapse = "; ")),
       columns = c(dup, unknown, wrong)
     )
@@ -154,7 +154,7 @@ canonical_missing <- function(v, nan_to_na = FALSE) {
 melt_dt <- function(dt, measures = "numeric",
                     variable.name = "metric", value.name = "value") {
   if (!is.data.frame(dt)) {
-    daffiz_abort("daffiz_error_input", "`dt` must be a data.frame")
+    dazdiff_abort("dazdiff_error_input", "`dt` must be a data.frame")
   }
 
   if ("row_id" %in% names(dt)) {

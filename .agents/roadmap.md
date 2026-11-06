@@ -20,9 +20,9 @@ someone asks.
 | `exclude=` | `R/preflight.R` gate 3 | Not in the core | Drop the columns right after `canonical_names()`, before the column step; warn on unknown names | M |
 | Role inference: shared unclassed doubles, and hints for numeric type skew | `R/resolve-columns.R`, `R/preflight.R` | Replaced by casting (`CAST_RULES`) and selecting measures by type | Probably never; casting covers the int/double skew | — |
 | Checks on identity attributes (factor `levels`, difftime `units`) | `R/preflight.R` `column_signature()` | Factor and difftime are not cast target types, so `x` refuses them and `normalize_dt()` converts them | Only if difftime/units become cast types | L |
-| Allow-list of identity types (reject complex/raw/list) | `daffiz_joinable_types` | `CAST_TYPES` is itself an allow-list | — (covered) | — |
+| Allow-list of identity types (reject complex/raw/list) | `dazdiff_joinable_types` | `CAST_TYPES` is itself an allow-list | — (covered) | — |
 | Zero-overlap gate (`disjoint_keys = "error"/"warn"`) | `R/preflight.R` `preflight_alignment()` | Not in the core | 0.1.0 has the error (`plan.md`); the `"warn"` opt-out stays here | M |
-| Projected-size warning (`options(daffiz.max_cells)`) | `R/compare-dt.R` `warn_projected_size()` | Not in the core | `merge_dry_run()` gives exact row counts cheaply; multiply by the number of measures, in doubles | M |
+| Projected-size warning (`options(dazdiff.max_cells)`) | `R/compare-dt.R` `warn_projected_size()` | Not in the core | `merge_dry_run()` gives exact row counts cheaply; multiply by the number of measures, in doubles | M |
 | Batching by measure (`batch=`) | `R/batching.R` | An optimisation, not a feature; re-benchmark on the new pipeline first | Loop `melt → merge → classify` over groups of measures, then `rbindlist()` | L |
 | Lossless type widening in `mode = "equal"` (integer ↔ double compared as double) | The draft promoted integer measures (`R/compare-dt.R`) | `"equal"` mode requires identical types, since it has no source of truth to cast to | Widen both sides to double for the integer/numeric pair only; never narrow | M |
 | Report labels (`x_name`/`y_name`) | `capture_label()` | No report to label yet | Arguments of `diff_report()`; not captured from the call, since the report sees only the result | done |
@@ -39,7 +39,7 @@ someone asks.
 
 ## Result object and accessors
 
-The draft returned a `daffiz_comparison` S3 object holding the settings, deep
+The draft returned a `dazdiff_comparison` S3 object holding the settings, deep
 copies of both inputs, the cell table and a cache environment. The rebuild
 returns a plain `data.table` (see `plan.md`), so everything that relied on the
 stored snapshots or settings is gone for now.
@@ -52,9 +52,9 @@ stored snapshots or settings is gone for now.
 | `all_cells()`, `diff_cells()` | `R/accessors-cells.R` | The table *is* all cells; `d[status != "same"]` gives the rest | — |
 | `is_matching()` | `R/comparison.R` | `all(d$status == "same")`, plus "no duplicate groups dropped" if `"report"` returns | M |
 | `key_profile()` | `R/key-profile.R` | Profile the identity columns of the `only_x`/`only_y` rows | L |
-| `summary()`, `print()`, `format()` methods with bounded sections | `R/report.R`, `R/comparison.R` | Re-added as `diff_report()` (`R/report.R`), a `daffiz_report` object with `format()`/`print()`, laid out after the summary of the Python package diffly. The result stays a plain `data.table`, so the report is asked for, not printed by default. Still open: a JSON/list export, and using the report in `expect_table_equal()`'s failure text | done |
-| `all.equal.daffiz_comparison()` | `R/comparison.R` | It existed only because of the cache environment; not needed without one | — |
-| Structured conditions for every gate (`daffiz_error_input/columns/roles/types/tolerance/duplicates/disjoint/batch`, `daffiz_warning_*`) | `R/conditions.R` + call sites | `conditions.R` is kept; every condition in 0.1.0 has a `daffiz_*` class | H |
+| `summary()`, `print()`, `format()` methods with bounded sections | `R/report.R`, `R/comparison.R` | Re-added as `diff_report()` (`R/report.R`), a `dazdiff_report` object with `format()`/`print()`, laid out after the summary of the Python package diffly. The result stays a plain `data.table`, so the report is asked for, not printed by default. Still open: a JSON/list export, and using the report in `expect_table_equal()`'s failure text | done |
+| `all.equal.dazdiff_comparison()` | `R/comparison.R` | It existed only because of the cache environment; not needed without one | — |
+| Structured conditions for every gate (`dazdiff_error_input/columns/roles/types/tolerance/duplicates/disjoint/batch`, `dazdiff_warning_*`) | `R/conditions.R` + call sites | `conditions.R` is kept; every condition in 0.1.0 has a `dazdiff_*` class | H |
 
 ## Testing and visualisation
 
@@ -79,19 +79,19 @@ the other ideas worth taking from it, read from `diffly/comparison.py`,
 `_conditions.py`, `summary.py` and `metrics/`. Each is weighed against the
 load-bearing details in `.claude/CLAUDE.md`, not copied as is.
 
-| Idea | In diffly | On the daffiz core | Pri |
+| Idea | In diffly | On the dazdiff core | Pri |
 |---|---|---|---|
 | Report in the failure text of `expect_table_equal()` | `diffly.testing.assert_frame_equal()` prints the summary on failure | Append `format(diff_report(d, "expected", "actual"), unicode = FALSE)` to the failure message, bounded by `top_k`/`sample_k` | H |
 | Relative tolerance per measure | `abs_tol`, `rel_tol`, each a number or a mapping per column; `is_close()`, so equality first and NaN equal to NaN | `rel_tol` is done (one value). Per measure is the `rel_tol` row above. diffly's defaults differ between comparing (`rel_tol = 1e-9`) and its test helper (polars' `1e-5`/`1e-8`); `expect_table_equal()` now defaults to `rel_tol = sqrt(.Machine$double.eps)`, testthat's default, rather than polars' `1e-5`, which passes 9 units on a million; `diff_table()` stays exact | M |
 | Change counts per measure as data | `change_counts(col, include_sample_primary_key=)`: (old, new, count, example key), most frequent first | Export what `top_changes()` in `R/report.R` computes, uncapped, as `diff_changes(d, measure = NULL)` | M |
-| Non-numeric measures | Every non-key column is compared: text, booleans, categoricals (as text when their levels differ), lists element by element, structs field by field | daffiz compares numeric measures only; other columns become the identity or are ignored. Text, logical and Date measures would need a typed value column per type in the melt (or one melt per type, `rbindlist()`-ed). Must be opt-in (`measures = "all"` or by name): with `by = NULL` those columns are the identity today. Change counts matter most for text | M |
+| Non-numeric measures | Every non-key column is compared: text, booleans, categoricals (as text when their levels differ), lists element by element, structs field by field | dazdiff compares numeric measures only; other columns become the identity or are ignored. Text, logical and Date measures would need a typed value column per type in the melt (or one melt per type, `rbindlist()`-ed). Must be opt-in (`measures = "all"` or by name): with `by = NULL` those columns are the identity today. Change counts matter most for text | M |
 | Time tolerance | `abs_tol_temporal`, a `timedelta` for Date/Datetime pairs | Comes with non-numeric measures: a Date or POSIXct measure compared within a tolerance in days or seconds. Keys stay exact | L |
 | Row accessors with a column subset | `joined()`, `joined_equal(*cols)`, `joined_unequal(*cols)`, `left_only()`, `right_only()` | The `original_rows()` / `x_only()` / `y_only()` row above; a `measures` subset is `d[metric %in% m & status == "changed"]` grouped back to rows | H (as above) |
 | Extra change statistics | `ChangeMetric`s: mean, median, min, max, std, a quantile of `right - left`, the mean relative difference; selectable columns in the summary | Add the fixed few that are cheap (median, mean relative diff) to `diff_summary()` before any plug-in API. Filter on the source values, as the magnitudes do | L |
 | Per-table statistics | `DataMetric`s, e.g. the fraction of nulls on each side | `summarize_dt()` already profiles columns; show NA counts of `x` and `y` per measure in the report | L |
 | Hide sensitive values | `hidden_columns`: counts only, no values or example keys | A `hide = ` argument of `diff_report()`; refuse hiding a key column while `sample_k > 0` or examples are shown, as diffly does | L |
 | Structured export of the report | `Summary.to_json()` | The report is already a list; document its fields, and add `jsonlite` to Suggests only if asked | L |
-| Smaller report | `slim = True` drops the header; `show_perfect_column_matches` lists measures that match | Arguments of `format.daffiz_report()` | L |
+| Smaller report | `slim = True` drops the header; `show_perfect_column_matches` lists measures that match | Arguments of `format.dazdiff_report()` | L |
 | Command line | `diffly left.parquet right.parquet --primary-key id` | An `exec/` script (Rapp) reading CSV, or parquet through `arrow` in Suggests | L |
 | Types checked apart from values | `equal(check_dtypes = False)` | Covered by the lossless-widening row above for `mode = "equal"`; benchmark mode casts | — |
 | Comparing without a key by sorting both tables | `equal()` sorts both frames by every column when there is no primary key | Covered: `row_key = "sorted"` | — |
