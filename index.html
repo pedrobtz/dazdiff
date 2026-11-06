@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Value-by-Value Comparison of Two Tables • daffiz</title>
+<title>Value-by-Value Comparison of Two Tables • dazdiff</title>
 <!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="bootstrap-toc.css">
 <script src="bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
@@ -32,7 +32,7 @@
         <span class="icon-bar"></span>
       </button>
       <span class="navbar-brand">
-        <a class="navbar-link" href="index.html">daffiz</a>
+        <a class="navbar-link" href="index.html">dazdiff</a>
         <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0</span>
       </span>
     </div>
@@ -48,7 +48,7 @@
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/pedrobtz/daffiz/" class="external-link">
+  <a href="https://github.com/pedrobtz/dazdiff/" class="external-link">
     <span class="fab fa-github fa-lg"></span>
 
   </a>
@@ -66,11 +66,11 @@
       </header><div class="row">
   <div class="contents col-md-9">
 <div class="section level1">
-<div class="page-header"><h1 id="daffiz">daffiz<a class="anchor" aria-label="anchor" href="#daffiz"></a>
+<div class="page-header"><h1 id="dazdiff">dazdiff<a class="anchor" aria-label="anchor" href="#dazdiff"></a>
 </h1></div>
 <!-- badges: start -->
 
-<p><code>daffiz</code> compares two tables value by value. Its one main function, <code><a href="reference/diff_table.html">diff_table()</a></code>, answers one of two questions:</p>
+<p><code>dazdiff</code> compares two tables value by value. Its one main function, <code><a href="reference/diff_table.html">diff_table()</a></code>, answers one of two questions:</p>
 <ul>
 <li>
 <strong>Does this table match the benchmark?</strong> (<code>mode = "benchmark"</code>, the default.) The benchmark’s column types are the truth. The tested table’s columns are cast to them, and its extra columns are dropped.</li>
@@ -83,18 +83,18 @@
 </h2>
 <p>Install the released version from CRAN:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"daffiz"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"dazdiff"</span><span class="op">)</span></span></code></pre></div>
 <p>Or the development version from GitHub:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
-<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"pedrobtz/daffiz"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"pedrobtz/dazdiff"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="comparing-against-a-benchmark">Comparing against a benchmark<a class="anchor" aria-label="anchor" href="#comparing-against-a-benchmark"></a>
 </h2>
 <p>A benchmark table, and the same data after a round trip through storage. On the way, the column names changed case, the ids became text, <code>units</code> came back as a double, a load timestamp was added, one row was lost and one was added:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pedrobtz/daffiz" class="external-link">daffiz</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pedrobtz/dazdiff" class="external-link">dazdiff</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">benchmark</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  id     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fl">2L</span>, <span class="fl">3L</span>, <span class="fl">4L</span><span class="op">)</span>,</span>
@@ -152,7 +152,7 @@
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/diff_report.html">diff_report</a></span><span class="op">(</span><span class="va">d</span>, x_name <span class="op">=</span> <span class="st">"benchmark"</span>, y_name <span class="op">=</span> <span class="st">"stored"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</span></span>
-<span><span class="co">#&gt; ┃                                       daffiz report                                        ┃</span></span>
+<span><span class="co">#&gt; ┃                                       dazdiff report                                        ┃</span></span>
 <span><span class="co">#&gt; ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</span></span>
 <span><span class="co">#&gt;    Identity: id, region</span></span>
 <span><span class="co">#&gt;    Mode:     benchmark: stored is tested against benchmark</span></span>
@@ -292,8 +292,8 @@
     <div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/pedrobtz/daffiz/" class="external-link">Browse source code</a></li>
-<li><a href="https://github.com/pedrobtz/daffiz/issues" class="external-link">Report a bug</a></li>
+<li><a href="https://github.com/pedrobtz/dazdiff/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/pedrobtz/dazdiff/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 
@@ -310,7 +310,7 @@
 <div class="citation">
 <h2 data-toc-skip>Citation</h2>
 <ul class="list-unstyled">
-<li><a href="authors.html#citation">Citing daffiz</a></li>
+<li><a href="authors.html#citation">Citing dazdiff</a></li>
 </ul>
 </div>
 
@@ -324,7 +324,7 @@
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/pedrobtz/daffiz/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/pedrobtz/daffiz/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
+<li><a href="https://github.com/pedrobtz/dazdiff/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/pedrobtz/dazdiff/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
 </ul>
 </div>
 
