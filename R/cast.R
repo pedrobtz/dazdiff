@@ -2,16 +2,16 @@
 
 #' Write doubles as text the way a table of text ids writes them
 #'
-#' \code{as.character()} follows R's \code{scipen} rule, so a round number
-#' whose exponent form is shorter comes out as \code{"1e+05"}, and never joins
-#' the benchmark's \code{"100000"}. Values are written in fixed notation with
+#' `as.character()` follows R's `scipen` rule, so a round number
+#' whose exponent form is shorter comes out as `"1e+05"`, and never joins
+#' the benchmark's `"100000"`. Values are written in fixed notation with
 #' up to 15 significant digits instead, which is how such ids are written.
 #' Outside [1e-15, 2^53) fixed notation would mean a run of zeros or digits
 #' beyond the double's precision, and no table of ids writes those, so they
-#' keep \code{as.character()}'s form.
+#' keep `as.character()`'s form.
 #'
 #' @param v A double vector.
-#' @return A character vector, NA where \code{v} is NA (NaN is \code{"NaN"}).
+#' @return A character vector, NA where `v` is NA (NaN is `"NaN"`).
 #' @noRd
 num_to_text <- function(v) {
   txt <- as.character(v)
@@ -25,31 +25,31 @@ num_to_text <- function(v) {
 
 #' Cast one column to a target type
 #'
-#' One column of \code{v} cast to \code{to}. Refuses anything ambiguous instead
+#' One column of `v` cast to `to`. Refuses anything ambiguous instead
 #' of letting R's coercion rules quietly produce NAs. The one loss it will
 #' accept is a truncation -- a fraction dropped on the way to a whole integer
-#' or a whole day -- and only when \code{truncate} says so.
+#' or a whole day -- and only when `truncate` says so.
 #'
 #' @param v The vector to convert.
-#' @param to The target type, one of \code{CAST_TYPES}.
+#' @param to The target type, one of `CAST_TYPES`.
 #' @param nm The column's name, used in error messages.
 #' @param origin The type the value arrived as. Text and factors are converted
 #'   in two hops, and the message should name the type the caller actually
-#'   passed, not the intermediate one. Defaults to \code{col_type(v)}.
-#' @param date_format The \code{strptime} format dates are read and written in,
-#'   \code{"\%Y-\%m-\%d"} by default. Text is parsed with it and must match it
+#'   passed, not the intermediate one. Defaults to `col_type(v)`.
+#' @param date_format The `strptime` format dates are read and written in,
+#'   `"%Y-%m-%d"` by default. Text is parsed with it and must match it
 #'   exactly, and a Date written back out to text is formatted with it, so the
 #'   two directions stay inverse to one another.
 #' @param truncate Whether a cast may drop a fraction: a double to an integer
 #'   (toward zero), a number to a Date (to the day it prints as), a timestamp
 #'   to a Date (the time of day). When it does, the result carries a
-#'   \code{"truncated"} attribute: the count, up to three examples and the
+#'   `"truncated"` attribute: the count, up to three examples and the
 #'   positions of every truncated value. When FALSE, the cast is refused
 #'   instead.
 #' @param nan_is_na Whether NaN and NA are the same missing value. NaN has no
 #'   integer or Date form and becomes NA on the way; with FALSE that would hide
 #'   a difference, so the cast is refused instead.
-#' @return \code{v} converted to \code{to}, or an error naming the column, the
+#' @return `v` converted to `to`, or an error naming the column, the
 #'   pair of types, the reason and up to three offending values.
 #' @noRd
 cast_value <- function(
@@ -309,25 +309,25 @@ truncated_empty <- function() {
 
 #' Cast a table's columns to a reference table's types
 #'
-#' Cast the columns of \code{y} to the types they have in the reference
-#' \code{x}. Every column is validated and converted before any is written, so a
-#' refusal leaves \code{y} exactly as it was.
+#' Cast the columns of `y` to the types they have in the reference
+#' `x`. Every column is validated and converted before any is written, so a
+#' refusal leaves `y` exactly as it was.
 #'
 #' A truncation is reported, never silent: the columns, counts, examples and
-#' the row numbers of \code{y} truncated (list column \code{rows}) are
-#' recorded on \code{y} as \code{attr(y, "truncated")} (an empty table when
+#' the row numbers of `y` truncated (list column `rows`) are
+#' recorded on `y` as `attr(y, "truncated")` (an empty table when
 #' nothing was truncated) and announced in one message of class
-#' \code{daffiz_message_truncation}.
+#' `daffiz_message_truncation`.
 #'
 #' @param x The reference table, whose column types are the targets.
 #' @param y The table to convert. Modified by reference, so it must be a
-#'   data.table; columns only in \code{y} are left alone.
+#'   data.table; columns only in `y` are left alone.
 #' @param cols The columns to cast, by default those present in both tables.
-#' @param date_format,truncate,nan_is_na See \code{cast_value()}.
+#' @param date_format,truncate,nan_is_na See `cast_value()`.
 #' @param labels How each column is named in messages, by column; the column
-#'   names themselves by default. \code{diff_table()} passes the caller's own
+#'   names themselves by default. `diff_table()` passes the caller's own
 #'   spelling of names it has normalized.
-#' @return \code{y}, invisibly.
+#' @return `y`, invisibly.
 #' @noRd
 cast_dt <- function(
   x,

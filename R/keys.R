@@ -9,7 +9,7 @@
 #' @param along Names the measure column, which is part of the identity of a
 #'   molten row but not of the key.
 #' @return TRUE or FALSE, with the offending groups and their counts on the
-#'   \code{"duplicates"} attribute.
+#'   `"duplicates"` attribute.
 #' @noRd
 unique_by_key <- function(dt, along = "metric") {
   if (!is.data.table(dt)) {
@@ -33,7 +33,7 @@ unique_by_key <- function(dt, along = "metric") {
 #'
 #' Variant 1 of the two answers to a non-unique key: adds a sequence number
 #' within each key group so the key becomes unique, and re-keys the table to
-#' include it. See \code{aggregate_by_key()} for the variant that invents
+#' include it. See `aggregate_by_key()` for the variant that invents
 #' nothing.
 #'
 #' Rows are numbered in arrival order. That is stable when values change, so a
@@ -42,15 +42,15 @@ unique_by_key <- function(dt, along = "metric") {
 #' instead would pair rows so as to minimise the differences, and ranking within
 #' each measure would pair a different source row for each measure.
 #'
-#' \code{diff_table()} numbers the wide table, one row per source row, before
+#' `diff_table()` numbers the wide table, one row per source row, before
 #' melting, so a row keeps one number across all its measures by construction.
-#' On a melted table the numbering runs within each measure (\code{along}).
+#' On a melted table the numbering runs within each measure (`along`).
 #'
 #' @param long A keyed data.table, modified by reference.
 #' @param by The key columns to number within.
 #' @param along Names the measure column, grouped on alongside the key.
 #' @param seq.name Name of the sequence column to add.
-#' @return \code{long}, invisibly, re-keyed on \code{by} plus \code{seq.name}.
+#' @return `long`, invisibly, re-keyed on `by` plus `seq.name`.
 #' @noRd
 disambiguate_by_key <- function(
   long,
@@ -77,7 +77,7 @@ disambiguate_by_key <- function(
 #' Variant 2 of the two answers to a non-unique key: do not invent identity. One
 #' row per key group and measure, holding the count and a description of the
 #' values in it. Nothing is matched up row by row, so nothing can be matched up
-#' wrongly. See \code{disambiguate_by_key()} for the variant that manufactures
+#' wrongly. See `disambiguate_by_key()` for the variant that manufactures
 #' an identity.
 #'
 #' NAs are counted rather than dropped, so a group that gained one is visible.
@@ -88,16 +88,16 @@ disambiguate_by_key <- function(
 #' @param by The key columns to group by.
 #' @param along Names the measure column, grouped on alongside the key.
 #' @param value.name The value column to summarize.
-#' @param stats \code{"moments"} (the default) keeps order-invariant summaries:
+#' @param stats `"moments"` (the default) keeps order-invariant summaries:
 #'   a count, the sum and sum of squares, and the range. No single one of these
-#'   separates \{1,3\} from \{2,2\} -- together they do. Use it when you want to
-#'   compare with a tolerance. \code{"exact"} keeps the whole multiset instead,
-#'   as its values in hex float (\code{\%a}, which round-trips exactly) sorted
+#'   separates `{1,3}` from `{2,2}` -- together they do. Use it when you want to
+#'   compare with a tolerance. `"exact"` keeps the whole multiset instead,
+#'   as its values in hex float (`%a`, which round-trips exactly) sorted
 #'   and pasted. Two groups compare equal only if they hold exactly the same
 #'   values. Use it for "same or not".
-#' @param nan_is_na For \code{"exact"}: whether NaN and NA are the same missing
-#'   value. \code{\%a} writes them differently, so NaN is mapped to NA first.
-#' @return A data.table keyed by \code{by}, one row per key group and measure.
+#' @param nan_is_na For `"exact"`: whether NaN and NA are the same missing
+#'   value. `%a` writes them differently, so NaN is mapped to NA first.
+#' @return A data.table keyed by `by`, one row per key group and measure.
 #' @noRd
 aggregate_by_key <- function(
   long,
@@ -172,11 +172,11 @@ aggregate_by_key <- function(
 #' For a table with no key column of its own, or when the caller wants rows
 #' paired by position rather than by value.
 #'
-#' \code{"position"} is the row number: row i of one table pairs with row i of
+#' `"position"` is the row number: row i of one table pairs with row i of
 #' the other, so the comparison also says whether the rows come in the same
 #' order.
 #'
-#' \code{"sorted"} is the row's number once the table is sorted by all its
+#' `"sorted"` is the row's number once the table is sorted by all its
 #' compared columns (within each group of the other key columns, when there
 #' are any), so row order does not matter. Compared exactly, that pairs the
 #' two tables as multisets of rows: if every pair matches, the tables hold the
@@ -187,15 +187,15 @@ aggregate_by_key <- function(
 #' differently on the two sides.
 #'
 #' Sorting is radix, in the C locale, with missing values last, so both
-#' tables sort the same way in any session. With \code{nan_is_na}, NaN sorts as
+#' tables sort the same way in any session. With `nan_is_na`, NaN sorts as
 #' NA does.
 #'
 #' @param dt The table, already cast to the reference types.
-#' @param how \code{"position"} or \code{"sorted"}.
+#' @param how `"position"` or `"sorted"`.
 #' @param groups The other key columns, numbered within.
-#' @param sort_by The measure columns, sorted on after \code{groups}.
+#' @param sort_by The measure columns, sorted on after `groups`.
 #' @param nan_is_na Whether NaN sorts as NA.
-#' @return An integer vector, one number per row of \code{dt}.
+#' @return An integer vector, one number per row of `dt`.
 #' @noRd
 virtual_key <- function(
   dt,

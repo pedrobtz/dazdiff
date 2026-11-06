@@ -2,13 +2,13 @@
 
 #' Summarize the columns of a table
 #'
-#' One row per column of \code{dt}: its name, type and number of unique values.
-#' The type is \code{col_type()}'s, the one vocabulary every other part of the
-#' package reads, so an IDate is a \code{Date} here as it is everywhere else.
+#' One row per column of `dt`: its name, type and number of unique values.
+#' The type is `col_type()`'s, the one vocabulary every other part of the
+#' package reads, so an IDate is a `Date` here as it is everywhere else.
 #'
 #' @param dt A data.frame (or data.table).
-#' @return A data.table with one row per column of \code{dt} and columns
-#'   \code{colname}, \code{type} and \code{n_unique}.
+#' @return A data.table with one row per column of `dt` and columns
+#'   `colname`, `type` and `n_unique`.
 #' @noRd
 summarize_dt <- function(dt) {
   if (!is.data.frame(dt)) {

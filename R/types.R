@@ -92,13 +92,13 @@ CAST_RULES <- rbindlist(lapply(CAST_FROM, function(from) {
 #' Look up the casting rule for one type pair
 #'
 #' The rule for one pair, or a 1-row NA table when there is none. The index is
-#' built outside the \code{[ ]} on purpose: inside \code{[.data.table} the names
-#' \code{from} and \code{to} would resolve to the table's own columns instead of
+#' built outside the `[ ]` on purpose: inside `[.data.table` the names
+#' `from` and `to` would resolve to the table's own columns instead of
 #' these arguments.
 #'
-#' @param from Source type, as \code{col_type()} names it.
-#' @param to Target type, one of \code{CAST_TYPES}.
-#' @return The matching one-row slice of \code{CAST_RULES}, with \code{allowed}
+#' @param from Source type, as `col_type()` names it.
+#' @param to Target type, one of `CAST_TYPES`.
+#' @return The matching one-row slice of `CAST_RULES`, with `allowed`
 #'   NA when the pair has no rule.
 #' @noRd
 cast_rule <- function(from, to) {
@@ -162,16 +162,16 @@ cast_rules <- function(wide = TRUE) {
 #' the package: summaries, measure selection and casting all read it, so a
 #' column cannot be one type to one of them and another type to the next.
 #'
-#' integer64 is stored as a double, and \code{is.numeric()} says so; read as a
+#' integer64 is stored as a double, and `is.numeric()` says so; read as a
 #' number it would be silently wrong. It is named for what it is, and converted
-#' through bit64 (see \code{CAST_RULES}); it is never a target type, so a
-#' benchmark holding one is refused with a pointer to \code{normalize_dt()}.
+#' through bit64 (see `CAST_RULES`); it is never a target type, so a
+#' benchmark holding one is refused with a pointer to `normalize_dt()`.
 #'
-#' An ordered factor is a factor (its first class is \code{"ordered"}), and is
+#' An ordered factor is a factor (its first class is `"ordered"`), and is
 #' named as one.
 #'
 #' @param v A vector.
-#' @return A length-1 character: one of \code{CAST_FROM}, or the vector's first
+#' @return A length-1 character: one of `CAST_FROM`, or the vector's first
 #'   class when it is something else entirely.
 #' @noRd
 col_type <- function(v) {

@@ -11,10 +11,10 @@ MEASURE_TYPES <- list(
 #' Resolve which columns are measures
 #'
 #' @param dt A data.frame.
-#' @param measures A type keyword from \code{MEASURE_TYPES}, or column names.
+#' @param measures A type keyword from `MEASURE_TYPES`, or column names.
 #'   Named columns must be numeric or integer: they are melted into one double
 #'   value column, and a Date or a string has no place there.
-#' @return The measure column names, in \code{dt}'s column order for a keyword
+#' @return The measure column names, in `dt`'s column order for a keyword
 #'   and in the given order for names. Possibly empty.
 #' @noRd
 select_measures <- function(dt, measures = "numeric") {
@@ -63,17 +63,17 @@ select_measures <- function(dt, measures = "numeric") {
 
 #' Number and key the rows of a table
 #'
-#' The wide table the rest of the pipeline works on: \code{row_id} first, then
-#' the id columns and the measures, keyed by the ids. \code{row_id} ties every
-#' row, and later every molten value, back to the row of \code{dt} it came
+#' The wide table the rest of the pipeline works on: `row_id` first, then
+#' the id columns and the measures, keyed by the ids. `row_id` ties every
+#' row, and later every molten value, back to the row of `dt` it came
 #' from; downstream reads it as a presence marker, so it is never missing.
 #'
-#' The selected columns are copied. \code{setkeyv()} reorders rows in place,
+#' The selected columns are copied. `setkeyv()` reorders rows in place,
 #' writing into the column vectors, and those may be the caller's: a column of
-#' a data.table subset, or of a table renamed by \code{shallow_dt()}, is the
+#' a data.table subset, or of a table renamed by `shallow_dt()`, is the
 #' caller's vector, not a copy of it. Columns in neither role are left out.
 #'
-#' Integer measures are promoted to double here: \code{melt()} puts all
+#' Integer measures are promoted to double here: `melt()` puts all
 #' measures into one value column, and warns when it has to widen them itself.
 #'
 #' @param dt A data.frame.
@@ -83,7 +83,7 @@ select_measures <- function(dt, measures = "numeric") {
 #'   groups NA and NaN as different keys, so without this a row keyed NaN on
 #'   one side and NA on the other would not align.
 #' @return A keyed data.table. Every missing value in a double id column holds
-#'   one bit pattern; see \code{canonical_missing()}.
+#'   one bit pattern; see `canonical_missing()`.
 #' @noRd
 index_dt <- function(dt, ids, measures = character(), nan_to_na = FALSE) {
   cols <- c(ids, measures)
@@ -106,17 +106,17 @@ index_dt <- function(dt, ids, measures = character(), nan_to_na = FALSE) {
 #' One bit pattern per missing value in a double key
 #'
 #' R calls NA any NaN whose low word is 1954, and arithmetic on NA
-#' (\code{NA + 0}, \code{as.Date(NA) + 1}, \code{x / 1000}) sets the quiet bit
+#' (`NA + 0`, `as.Date(NA) + 1`, `x / 1000`) sets the quiet bit
 #' on the way, so a computed key column often holds two NA patterns.
 #' data.table joins them as one key, but its keyed grouping keeps them apart,
 #' so duplicate numbering and the fanout check disagreed with the join.
-#' Writing every NA back as \code{NA_real_} and every NaN as \code{NaN} gives
+#' Writing every NA back as `NA_real_` and every NaN as `NaN` gives
 #' data.table one pattern for each, in every class built on a double (Date
 #' and POSIXct included).
 #'
 #' @param v A vector; only doubles are touched.
 #' @param nan_to_na Whether NaN becomes NA too.
-#' @return \code{v}, with its class and attributes.
+#' @return `v`, with its class and attributes.
 #' @noRd
 canonical_missing <- function(v, nan_to_na = FALSE) {
   if (!is.double(v) || !anyNA(v)) {
@@ -135,25 +135,25 @@ canonical_missing <- function(v, nan_to_na = FALSE) {
 
 #' Melt a table, choosing the measures by type or by name
 #'
-#' Long form of \code{dt}, measuring the columns \code{measures} selects and
+#' Long form of `dt`, measuring the columns `measures` selects and
 #' carrying the rest along as ids. The measure names come back as character
-#' rather than the factor \code{melt()} defaults to, so they compare and join
+#' rather than the factor `melt()` defaults to, so they compare and join
 #' like any label.
 #'
-#' A table that already carries \code{row_id} is taken as indexed by
-#' \code{index_dt()} and melted as it is, keeping its key (\code{key_seq}
+#' A table that already carries `row_id` is taken as indexed by
+#' `index_dt()` and melted as it is, keeping its key (`key_seq`
 #' included, when duplicates were numbered). Any other table is indexed first,
 #' with every column that is not a measure as its identity. User columns can
-#' never be called \code{row_id}: \code{diff_table()} normalizes their names to
+#' never be called `row_id`: `diff_table()` normalizes their names to
 #' upper case first.
 #'
 #' @param dt A data.frame (or data.table).
-#' @param measures \code{"numeric"} (the default) melts only the double columns.
-#'   \code{"numeric+integer"} melts the integers too, as doubles. Column names
+#' @param measures `"numeric"` (the default) melts only the double columns.
+#'   `"numeric+integer"` melts the integers too, as doubles. Column names
 #'   melt exactly those.
 #' @param variable.name Name of the column holding the measure names.
 #' @param value.name Name of the column holding the measured values.
-#' @return A long data.table keyed by the id columns, with \code{row_id} carried
+#' @return A long data.table keyed by the id columns, with `row_id` carried
 #'   along as a column but left out of the key, so the key is made of real
 #'   values. With no measures there is nothing to melt, and the indexed table
 #'   comes back as it is: one row per row.

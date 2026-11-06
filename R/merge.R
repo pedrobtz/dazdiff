@@ -6,23 +6,23 @@
 #' match counts, so nothing but integer vectors is allocated and the merged
 #' table is never built.
 #'
-#' \code{est_merge_rows} is the exact size an inner join would have, and
-#' \code{max_fanout} the most rows a single key would produce. Both are exact,
+#' `est_merge_rows` is the exact size an inner join would have, and
+#' `max_fanout` the most rows a single key would produce. Both are exact,
 #' not estimates.
 #'
-#' \code{one_to_one} says whether the join is safe to run as it stands. When it
+#' `one_to_one` says whether the join is safe to run as it stands. When it
 #' is FALSE a key repeats on one or both sides and the merge would multiply rows
-#' out -- the case \code{allow.cartesian} exists to wave through, which we never
-#' want. Give those rows an identity with \code{disambiguate_by_key()}, or stop
-#' pretending they have one with \code{aggregate_by_key()}, then join.
-#' \code{dups_x} / \code{dups_y} say which side needs the treatment.
+#' out -- the case `allow.cartesian` exists to wave through, which we never
+#' want. Give those rows an identity with `disambiguate_by_key()`, or stop
+#' pretending they have one with `aggregate_by_key()`, then join.
+#' `dups_x` / `dups_y` say which side needs the treatment.
 #'
 #' @param x The left table.
 #' @param y The right table.
-#' @param on The columns to join on, by default \code{x}'s key.
+#' @param on The columns to join on, by default `x`'s key.
 #' @return A one-row data.table: row and key counts per side, how many rows and
-#'   what share of each side would match, \code{est_merge_rows},
-#'   \code{max_fanout}, \code{dups_x}, \code{dups_y} and \code{one_to_one}.
+#'   what share of each side would match, `est_merge_rows`,
+#'   `max_fanout`, `dups_x`, `dups_y` and `one_to_one`.
 #' @noRd
 merge_dry_run <- function(x, y, on = key(x)) {
   if (!is.data.table(x) || !is.data.table(y)) {
@@ -82,30 +82,30 @@ merge_dry_run <- function(x, y, on = key(x)) {
 
 #' Merge two tables, but only one to one
 #'
-#' Merge \code{x} and \code{y}, but only when the keys line up exactly one to
-#' one. The gate is \code{merge_dry_run()}: if any key would produce more than
+#' Merge `x` and `y`, but only when the keys line up exactly one to
+#' one. The gate is `merge_dry_run()`: if any key would produce more than
 #' one row the merge is refused, rather than waved through with
-#' \code{allow.cartesian}. Give the rows an identity with
-#' \code{disambiguate_by_key()}, or drop the pretence with
-#' \code{aggregate_by_key()}, and try again.
+#' `allow.cartesian`. Give the rows an identity with
+#' `disambiguate_by_key()`, or drop the pretence with
+#' `aggregate_by_key()`, and try again.
 #'
-#' Columns of \code{y} whose name \code{x} already uses get \code{suffix};
-#' \code{x}'s own names never move.
+#' Columns of `y` whose name `x` already uses get `suffix`;
+#' `x`'s own names never move.
 #'
 #' @param x The left table.
 #' @param y The right table.
-#' @param on The columns to join on, by default \code{x}'s key.
-#' @param mode \code{"new"} (the default) returns a new table, \code{x}
-#'   untouched. \code{"in_place"} adds \code{y}'s columns to \code{x} by
-#'   reference, matching on \code{on}. No second table is built, so a wide merge
+#' @param on The columns to join on, by default `x`'s key.
+#' @param mode `"new"` (the default) returns a new table, `x`
+#'   untouched. `"in_place"` adds `y`'s columns to `x` by
+#'   reference, matching on `on`. No second table is built, so a wide merge
 #'   costs only the new columns. It is a left join by construction: every row of
-#'   \code{x} stays, and rows with no match in \code{y} get NA.
-#' @param all For \code{mode = "new"}, picks the join: FALSE keeps only matching
-#'   rows, TRUE keeps everything. Does not apply to \code{"in_place"}.
-#' @param suffix Appended to the names of \code{y}'s columns that clash with
-#'   \code{x}'s.
-#' @return For \code{mode = "new"}, the merged table. For \code{"in_place"},
-#'   \code{x}, invisibly.
+#'   `x` stays, and rows with no match in `y` get NA.
+#' @param all For `mode = "new"`, picks the join: FALSE keeps only matching
+#'   rows, TRUE keeps everything. Does not apply to `"in_place"`.
+#' @param suffix Appended to the names of `y`'s columns that clash with
+#'   `x`'s.
+#' @return For `mode = "new"`, the merged table. For `"in_place"`,
+#'   `x`, invisibly.
 #' @noRd
 merge_dt <- function(
   x,
