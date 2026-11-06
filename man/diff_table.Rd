@@ -98,9 +98,10 @@ both tables.
 \itemize{
 \item \code{"benchmark"}: does \code{y} match the benchmark \code{x}? Columns of \code{y} that \code{x}
 does not have are dropped, with a message. A column of \code{x} missing from
-\code{y} is an error. Each column of \code{y} is cast to the type it has in \code{x}
-(see \code{\link[=cast_rules]{cast_rules()}}), so a number stored as text, or a double stored as
-an integer, still compares.
+\code{y} is an error. Each compared column of \code{y} (in \code{by} or \code{measures}) is
+cast to the type it has in \code{x} (see \code{\link[=cast_rules]{cast_rules()}}), so a number stored as
+text, or a double stored as an integer, still compares. Columns that are
+not compared are neither cast nor type-checked.
 \item \code{"equal"}: are \code{x} and \code{y} equal? Every column must be in both tables and
 have the same type in both; nothing is cast. The result is symmetric:
 swapping \code{x} and \code{y} swaps \code{only_x} with \code{only_y} and negates \code{diff}.

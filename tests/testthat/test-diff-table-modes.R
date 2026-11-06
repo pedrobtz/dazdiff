@@ -151,7 +151,7 @@ test_that("a comparison that truncated nothing has an empty record", {
 
 test_that("a cast error names the column in the tested table's spelling", {
   expect_error(
-    diff_table(data.table(id = 1, `unit price` = 1), data.table(id = 1, Unit.Price = "x")),
+    diff_table(data.table(id = 1L, `unit price` = 1), data.table(id = 1L, Unit.Price = "x")),
     'column "Unit.Price" \\(UNIT_PRICE\\): character -> numeric, not a number'
   )
 })

@@ -15,9 +15,10 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #' @section Modes:
 #' * `"benchmark"`: does `y` match the benchmark `x`? Columns of `y` that `x`
 #'   does not have are dropped, with a message. A column of `x` missing from
-#'   `y` is an error. Each column of `y` is cast to the type it has in `x`
-#'   (see [cast_rules()]), so a number stored as text, or a double stored as
-#'   an integer, still compares.
+#'   `y` is an error. Each compared column of `y` (in `by` or `measures`) is
+#'   cast to the type it has in `x` (see [cast_rules()]), so a number stored as
+#'   text, or a double stored as an integer, still compares. Columns that are
+#'   not compared are neither cast nor type-checked.
 #' * `"equal"`: are `x` and `y` equal? Every column must be in both tables and
 #'   have the same type in both; nothing is cast. The result is symmetric:
 #'   swapping `x` and `y` swaps `only_x` with `only_y` and negates `diff`.
@@ -307,67 +308,7 @@ diff_table <- function(
   label_x <- structure(map_x$label, names = map_x$column)
   label_y <- structure(map_y$label[at_y], names = map_x$column)
 
-  # 4. Types --------------------------------------------------------------------
-  types_x <- vapply(xx, col_type, character(1L))
-  types_y <- vapply(yy, col_type, character(1L))
-  # x supplies the target types, so every one of its columns has to be a type
-  # we can cast to. Refused rather than converted here: which day a timestamp
-  # belongs to, or what a factor's codes mean, is the caller's call to make
-  # with normalize_dt().
-  unsupported <- types_x[!types_x %in% CAST_TYPES]
-  if (length(unsupported)) {
-    daffiz_abort(
-      "daffiz_error_types",
-      paste0(
-        "x has column(s) of unsupported type: ",
-        paste(
-          sprintf("%s (%s)", label_x[names(unsupported)], unsupported),
-          collapse = ", "
-        ),
-        "; convert them with normalize_dt() first"
-      ),
-      columns = names(unsupported)
-    )
-  }
-  if (cast) {
-    cast_dt(
-      xx,
-      yy,
-      date_format = date_format,
-      truncate = truncate,
-      nan_is_na = nan_is_na,
-      labels = label_y
-    )
-  } else {
-    # Nothing is being aligned, so the types have to line up already. Without
-    # this the failure surfaces much later, as a missing key or as data.table's
-    # own "Incompatible join types", neither of which names the real problem.
-    off <- names(types_x)[types_x != types_y]
-    if (length(off)) {
-      daffiz_abort(
-        "daffiz_error_types",
-        paste0(
-          if (mode == "equal") {
-            "mode = \"equal\" does not cast"
-          } else {
-            "cast = FALSE"
-          },
-          ", but x and y disagree on the type of: ",
-          paste(
-            sprintf("%s (%s vs %s)", label_x[off], types_x[off], types_y[off]),
-            collapse = ", "
-          )
-        ),
-        columns = off
-      )
-    }
-  }
-  truncated <- attr(yy, "truncated")
-  if (is.null(truncated)) {
-    truncated <- truncated_empty()
-  }
-
-  # 5. Roles --------------------------------------------------------------------
+  # 4. Roles --------------------------------------------------------------------
   if (!is.null(by)) {
     by <- canonical_names(by)
     problems <- c(
@@ -411,26 +352,11 @@ diff_table <- function(
     }
   }
   ids <- if (is.null(by)) setdiff(names(xx), measure) else by
+  # Roles come from x's types, which casting never changes, so they are
+  # decided first: a column the call does not compare is never type-checked
+  # or cast, and cannot refuse the comparison or report a truncation.
 
-  # A table is well-formed when it has at least one key column; it may have no
-  # measures. Without a key, rows cannot be aligned at all, so the caller
-  # either names one or asks for a virtual one: the row number, as the rows
-  # come or after sorting both tables by what they hold.
-  if (row_key != "none") {
-    set(
-      xx,
-      j = "row_number",
-      value = virtual_key(xx, row_key, ids, measure, nan_is_na)
-    )
-    set(
-      yy,
-      j = "row_number",
-      value = virtual_key(yy, row_key, ids, measure, nan_is_na)
-    )
-    label_x[["row_number"]] <- "row_number"
-    ids <- c(ids, "row_number")
-  }
-  if (!length(ids)) {
+  if (!length(ids) && row_key == "none") {
     daffiz_abort(
       "daffiz_error_keys",
       paste0(
@@ -479,6 +405,87 @@ diff_table <- function(
     )
   }
 
+  # 5. Types --------------------------------------------------------------------
+  compared <- c(ids, measure)
+  types_x <- vapply(as.list(xx)[compared], col_type, character(1L))
+  types_y <- vapply(as.list(yy)[compared], col_type, character(1L))
+  # x supplies the target types, so every one of its columns has to be a type
+  # we can cast to. Refused rather than converted here: which day a timestamp
+  # belongs to, or what a factor's codes mean, is the caller's call to make
+  # with normalize_dt().
+  unsupported <- types_x[!types_x %in% CAST_TYPES]
+  if (length(unsupported)) {
+    daffiz_abort(
+      "daffiz_error_types",
+      paste0(
+        "x has column(s) of unsupported type: ",
+        paste(
+          sprintf("%s (%s)", label_x[names(unsupported)], unsupported),
+          collapse = ", "
+        ),
+        "; convert them with normalize_dt() first"
+      ),
+      columns = names(unsupported)
+    )
+  }
+  if (cast) {
+    cast_dt(
+      xx,
+      yy,
+      date_format = date_format,
+      truncate = truncate,
+      cols = compared,
+      nan_is_na = nan_is_na,
+      labels = label_y
+    )
+  } else {
+    # Nothing is being aligned, so the types have to line up already. Without
+    # this the failure surfaces much later, as a missing key or as data.table's
+    # own "Incompatible join types", neither of which names the real problem.
+    off <- names(types_x)[types_x != types_y]
+    if (length(off)) {
+      daffiz_abort(
+        "daffiz_error_types",
+        paste0(
+          if (mode == "equal") {
+            "mode = \"equal\" does not cast"
+          } else {
+            "cast = FALSE"
+          },
+          ", but x and y disagree on the type of: ",
+          paste(
+            sprintf("%s (%s vs %s)", label_x[off], types_x[off], types_y[off]),
+            collapse = ", "
+          )
+        ),
+        columns = off
+      )
+    }
+  }
+  truncated <- attr(yy, "truncated")
+  if (is.null(truncated)) {
+    truncated <- truncated_empty()
+  }
+
+  # A virtual key is numbered on the cast values, so it comes after the cast.
+  # A table is well-formed when it has at least one key column; it may have no
+  # measures. Without a key, rows cannot be aligned at all, so the caller
+  # either names one or asks for a virtual one: the row number, as the rows
+  # come or after sorting both tables by what they hold.
+  if (row_key != "none") {
+    set(
+      xx,
+      j = "row_number",
+      value = virtual_key(xx, row_key, ids, measure, nan_is_na)
+    )
+    set(
+      yy,
+      j = "row_number",
+      value = virtual_key(yy, row_key, ids, measure, nan_is_na)
+    )
+    label_x[["row_number"]] <- "row_number"
+    ids <- c(ids, "row_number")
+  }
   # 6-7. Index ------------------------------------------------------------------
   # Our own copies of the id and measure columns, numbered and keyed.
   wx <- index_dt(xx, ids, measure, nan_is_na = nan_is_na)

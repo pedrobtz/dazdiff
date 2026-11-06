@@ -59,7 +59,7 @@ calls lives in its own file and is tested on its own:
 
 | File | Responsibility |
 |---|---|
-| `R/diff-table.R` | `diff_table()`: arguments, names, columns per mode, types, roles, index, duplicates, alignment, melt, merge, classification |
+| `R/diff-table.R` | `diff_table()`: arguments, names, columns per mode, roles, types (of the compared columns only), index, duplicates, alignment, melt, merge, classification |
 | `R/names.R` | `canonical_names()`, `name_map()`, `check_names()`, `shallow_dt()` |
 | `R/types.R` | `col_type()`, the only type vocabulary; `CAST_RULES`; `cast_rules()` |
 | `R/cast.R` | `cast_value()`, `cast_dt()` (truncation record and message), `normalize_dt()` |
