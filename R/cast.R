@@ -346,6 +346,63 @@ cast_value <- function(
   out
 }
 
+#' Store a Date the way a reference Date is stored
+#'
+#' A Date is a double, an IDate (and a Date built from integers) an integer,
+#' and `col_type()` calls both `"Date"`. Left mismatched, the rows of the two
+#' tables are later stacked into one key column, and data.table coerces a
+#' double into an integer column with its own, unclassed warning. `d` is a
+#' whole-day Date by the time it gets here, so changing its storage loses
+#' nothing.
+#'
+#' @param d A Date, IDate or integer-stored Date of whole days.
+#' @param ref The reference column whose storage `d` takes.
+#' @return `d` stored as `ref` is, with its `"truncated"` attribute kept.
+#' @noRd
+date_like <- function(d, ref) {
+  if (identical(typeof(d), typeof(ref)) && identical(class(d), class(ref))) {
+    return(d)
+  }
+  rec <- attr(d, "truncated")
+  out <- if (inherits(ref, "IDate")) {
+    as.IDate(d)
+  } else if (is.integer(ref)) {
+    structure(as.integer(unclass(d)), class = "Date")
+  } else {
+    structure(as.double(unclass(d)), class = "Date")
+  }
+  attr(out, "truncated") <- rec
+  out
+}
+
+#' Widen integer-stored Dates to doubles where the other table has doubles
+#'
+#' Where nothing is cast (`mode = "equal"`, `cast = FALSE`), a Date in one
+#' table and an IDate in the other are still one type to `col_type()`, but
+#' stacking a double Date that holds part of a day into an integer column
+#' truncates it with data.table's unclassed warning. Widening the integer
+#' side to a double loses nothing. Columns are replaced, never written into.
+#'
+#' @param x,y data.tables with the same column names.
+#' @return `NULL`, invisibly; `x` and `y` are modified by reference.
+#' @noRd
+widen_dates <- function(x, y) {
+  for (nm in names(x)) {
+    a <- x[[nm]]
+    b <- y[[nm]]
+    if (inherits(a, "Date") && inherits(b, "Date") && typeof(a) != typeof(b)) {
+      wide <- if (is.integer(a)) x else y
+      v <- wide[[nm]]
+      set(
+        wide,
+        j = nm,
+        value = structure(as.double(unclass(v)), class = "Date")
+      )
+    }
+  }
+  invisible(NULL)
+}
+
 # The record of a cast that truncated nothing.
 truncated_empty <- function() {
   data.table(
@@ -424,14 +481,27 @@ cast_dt <- function(
   }
   values <- Map(
     function(nm, to) {
-      cast_value(
-        y[[nm]],
+      v <- y[[nm]]
+      ref <- x[[nm]]
+      # col_type() calls an IDate (integer storage) and a Date (double) one
+      # type, so cast_value() would pass a Date onto an IDate untouched. A
+      # double Date can hold part of a day, which an integer cannot: it goes
+      # through numeric -> Date instead, floored and recorded like any number.
+      if (
+        to == "Date" && inherits(v, "Date") && is.double(v) && is.integer(ref)
+      ) {
+        v <- as.numeric(v)
+      }
+      out <- cast_value(
+        v,
         to,
         labels[[nm]],
+        origin = col_type(y[[nm]]),
         date_format = date_format,
         truncate = truncate,
         nan_is_na = nan_is_na
       )
+      if (to == "Date") date_like(out, ref) else out
     },
     cols,
     targets

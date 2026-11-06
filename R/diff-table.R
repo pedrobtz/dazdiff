@@ -361,6 +361,7 @@ diff_table <- function(
         columns = off
       )
     }
+    widen_dates(xx, yy)
   }
   truncated <- attr(yy, "truncated")
   if (is.null(truncated)) {
