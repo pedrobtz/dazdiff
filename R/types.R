@@ -46,6 +46,9 @@ CAST_RULES <- rbindlist(lapply(CAST_FROM, function(from) {
   from == "POSIXct" & to == "character",
   note := "\"%Y-%m-%d %H:%M:%S\", plus \".ffffff\" (to the microsecond, trailing zeros dropped) when the stamp has a fraction of a second: the local time in the stamp's own timezone, which the text does not record"
 ][
+  from == "Date" & to == "character",
+  note := "written in date_format; a fraction of a day is truncated (refused with truncate = FALSE)"
+][
   to == "integer" & from %in% c("numeric", "Date", "POSIXct", "character"),
   note := "a fraction is truncated toward zero (refused with truncate = FALSE); must be within integer range"
 ][
@@ -118,7 +121,8 @@ cast_rule <- function(from, to) {
 #' refused rather than made.
 #'
 #' A cast that drops the fraction of a value (a double to an integer, a
-#' timestamp to its calendar day) is a *truncation*: it is made when
+#' timestamp to its calendar day, a Date holding part of a day to its text) is
+#' a *truncation*: it is made when
 #' `truncate = TRUE`, which is the default, and refused otherwise.
 #'
 #' Text is parsed strictly: anything that is not a number, a logical literal

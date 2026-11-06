@@ -24,7 +24,8 @@ refused rather than made.
 }
 \details{
 A cast that drops the fraction of a value (a double to an integer, a
-timestamp to its calendar day) is a \emph{truncation}: it is made when
+timestamp to its calendar day, a Date holding part of a day to its text) is
+a \emph{truncation}: it is made when
 \code{truncate = TRUE}, which is the default, and refused otherwise.
 
 Text is parsed strictly: anything that is not a number, a logical literal

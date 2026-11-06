@@ -219,6 +219,11 @@ cast_value <- function(
     # text ids writes it (see num_to_text()), and a timestamp in one fixed
     # format (see stamp_to_text()). Everything else is as.character()'s job.
     character = if (from == "Date") {
+      # A Date can hold part of a day, which no date format writes: it is
+      # written as the day it falls in, the same loss numeric -> Date records.
+      day <- unclass(v)
+      lost <- is.finite(day) & day != floor(day)
+      why <- "not a whole day"
       format(v, date_format)
     } else if (from == "POSIXct") {
       stamp_to_text(v)
@@ -309,8 +314,11 @@ cast_value <- function(
   )
 
   if (!is.null(lost) && any(lost)) {
+    # A Date's fraction of a day does not print, so "2024-01-01 -> 2024-01-01"
+    # would hide the loss; the day count shows it.
+    src <- if (from == "Date") unclass(v) else v
     if (!truncate) {
-      refuse(paste0(why, " (truncate = FALSE)"), v[lost])
+      refuse(paste0(why, " (truncate = FALSE)"), src[lost])
     }
     # One example per distinct value: a repeated value says nothing new.
     at <- which(lost)
@@ -323,7 +331,7 @@ cast_value <- function(
       examples = vapply(
         shown,
         function(i) {
-          paste(format(v[i]), "->", format(out[i]))
+          paste(format(src[i]), "->", format(out[i]))
         },
         character(1L)
       ),

@@ -48,7 +48,7 @@ test_that("the truncating casts say so in their notes", {
   truncating <- rules[grepl("truncate = FALSE", note), paste(from, to)]
   expect_setequal(truncating, c(
     "character integer", "Date integer", "numeric integer", "POSIXct integer",
-    "numeric Date", "POSIXct Date"
+    "numeric Date", "POSIXct Date", "Date character"
   ))
 })
 
