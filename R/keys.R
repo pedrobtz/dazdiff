@@ -9,7 +9,7 @@
 #' @param along Names the measure column, which is part of the identity of a
 #'   molten row but not of the key.
 #' @return TRUE or FALSE, with the offending groups and their counts on the
-#'   \code{"duplicates"} attribute.
+#'   `"duplicates"` attribute.
 #' @noRd
 unique_by_key <- function(dt, along = "metric") {
   if (!is.data.table(dt)) {
@@ -33,27 +33,31 @@ unique_by_key <- function(dt, along = "metric") {
 #'
 #' Variant 1 of the two answers to a non-unique key: adds a sequence number
 #' within each key group so the key becomes unique, and re-keys the table to
-#' include it. See \code{aggregate_by_key()} for the variant that invents
+#' include it. See `aggregate_by_key()` for the variant that invents
 #' nothing.
 #'
 #' Rows are numbered in arrival order. That is stable when values change, so a
 #' changed row keeps its number; it moves only if rows are reordered, and then
 #' the comparison reports changes rather than hiding them. Numbering by value
-#' instead would pair rows so as to minimise the differences, and ranking within
+#' instead would pair rows so as to minimize the differences, and ranking within
 #' each measure would pair a different source row for each measure.
 #'
-#' \code{diff_table()} numbers the wide table, one row per source row, before
+#' `diff_table()` numbers the wide table, one row per source row, before
 #' melting, so a row keeps one number across all its measures by construction.
-#' On a melted table the numbering runs within each measure (\code{along}).
+#' On a melted table the numbering runs within each measure (`along`).
 #'
 #' @param long A keyed data.table, modified by reference.
 #' @param by The key columns to number within.
 #' @param along Names the measure column, grouped on alongside the key.
-#' @param seq.name Name of the sequence column to add.
-#' @return \code{long}, invisibly, re-keyed on \code{by} plus \code{seq.name}.
+#' @param seq_name Name of the sequence column to add.
+#' @return `long`, invisibly, re-keyed on `by` plus `seq_name`.
 #' @noRd
-disambiguate_by_key <- function(long, by = key(long), along = "metric",
-                                seq.name = "key_seq") {
+disambiguate_by_key <- function(
+  long,
+  by = key(long),
+  along = "metric",
+  seq_name = "key_seq"
+) {
   if (!is.data.table(long)) {
     dazdiff_abort("dazdiff_error_input", "`long` must be a data.table")
   }
@@ -62,9 +66,9 @@ disambiguate_by_key <- function(long, by = key(long), along = "metric",
   }
 
   grp <- c(by, intersect(along, names(long)))
-  long[, (seq.name) := seq_len(.N), by = grp]
+  long[, (seq_name) := seq_len(.N), by = grp]
 
-  setkeyv(long, c(by, seq.name))
+  setkeyv(long, c(by, seq_name))
   invisible(long)
 }
 
@@ -73,7 +77,7 @@ disambiguate_by_key <- function(long, by = key(long), along = "metric",
 #' Variant 2 of the two answers to a non-unique key: do not invent identity. One
 #' row per key group and measure, holding the count and a description of the
 #' values in it. Nothing is matched up row by row, so nothing can be matched up
-#' wrongly. See \code{disambiguate_by_key()} for the variant that manufactures
+#' wrongly. See `disambiguate_by_key()` for the variant that manufactures
 #' an identity.
 #'
 #' NAs are counted rather than dropped, so a group that gained one is visible.
@@ -83,32 +87,36 @@ disambiguate_by_key <- function(long, by = key(long), along = "metric",
 #' @param long A keyed data.table.
 #' @param by The key columns to group by.
 #' @param along Names the measure column, grouped on alongside the key.
-#' @param value.name The value column to summarize.
-#' @param stats \code{"moments"} (the default) keeps order-invariant summaries:
+#' @param value_name The value column to summarize.
+#' @param stats `"moments"` (the default) keeps order-invariant summaries:
 #'   a count, the sum and sum of squares, and the range. No single one of these
-#'   separates \{1,3\} from \{2,2\} -- together they do. Use it when you want to
-#'   compare with a tolerance. \code{"exact"} keeps the whole multiset instead,
-#'   as its values in hex float (\code{\%a}, which round-trips exactly) sorted
+#'   separates `{1,3}` from `{2,2}` -- together they do. Use it when you want to
+#'   compare with a tolerance. `"exact"` keeps the whole multiset instead,
+#'   as its values in hex float (`%a`, which round-trips exactly) sorted
 #'   and pasted. Two groups compare equal only if they hold exactly the same
 #'   values. Use it for "same or not".
-#' @param nan_is_na For \code{"exact"}: whether NaN and NA are the same missing
-#'   value. \code{\%a} writes them differently, so NaN is mapped to NA first.
-#' @return A data.table keyed by \code{by}, one row per key group and measure.
+#' @param nan_is_na For `"exact"`: whether NaN and NA are the same missing
+#'   value. `%a` writes them differently, so NaN is mapped to NA first.
+#' @return A data.table keyed by `by`, one row per key group and measure.
 #' @noRd
-aggregate_by_key <- function(long, by = key(long), along = "metric",
-                             value.name = "value",
-                             stats = c("moments", "exact"),
-                             nan_is_na = TRUE) {
+aggregate_by_key <- function(
+  long,
+  by = key(long),
+  along = "metric",
+  value_name = "value",
+  stats = c("moments", "exact"),
+  nan_is_na = TRUE
+) {
   if (!is.data.table(long)) {
     dazdiff_abort("dazdiff_error_input", "`long` must be a data.table")
   }
-  stats <- match.arg(stats)
+  stats <- arg_match(stats)
   if (!length(by)) {
     dazdiff_abort("dazdiff_error_keys", "no key to aggregate by")
   }
 
   grp <- c(by, intersect(along, names(long)))
-  if (!value.name %in% names(long)) {
+  if (!value_name %in% names(long)) {
     return(setkeyv(long[, .(n_rows = .N), by = grp], by)[])
   }
 
@@ -117,34 +125,43 @@ aggregate_by_key <- function(long, by = key(long), along = "metric",
 
   # The branch stays outside [: j must yield the same columns for every group.
   out <- if (stats == "moments") {
-    long[, {
-      v <- get(value.name)
-      .(
-        n_rows = .N,
-        n_na = sum(is.na(v)),
-        value_sum = safe(sum, v),
-        value_sumsq = safe(function(z) sum(z^2), v),
-        value_min = safe(min, v),
-        value_max = safe(max, v)
-      )
-    }, by = grp]
+    long[,
+      {
+        v <- get(value_name)
+        .(
+          n_rows = .N,
+          n_na = sum(is.na(v)),
+          value_sum = safe(sum, v),
+          value_sumsq = safe(function(z) sum(z^2), v),
+          value_min = safe(min, v),
+          value_max = safe(max, v)
+        )
+      },
+      by = grp
+    ]
   } else {
-    long[, {
-      # `+ 0` turns -0 into 0, which `==` already treats as equal but `%a`
-      # writes differently. The encoded strings are sorted, not the values:
-      # sort() leaves NA and NaN in arrival order among themselves, so the
-      # same multiset could otherwise encode two ways. Radix sorting is in the
-      # C locale, so the encoding does not depend on the session either.
-      v <- get(value.name) + 0
-      if (nan_is_na) {
-        v[is.nan(v)] <- NA_real_
-      }
-      .(
-        n_rows = .N,
-        n_na = sum(is.na(v)),
-        value_key = paste(sort(sprintf("%a", v), method = "radix"), collapse = "|")
-      )
-    }, by = grp]
+    long[,
+      {
+        # `+ 0` turns -0 into 0, which `==` already treats as equal but `%a`
+        # writes differently. The encoded strings are sorted, not the values:
+        # sort() leaves NA and NaN in arrival order among themselves, so the
+        # same multiset could otherwise encode two ways. Radix sorting is in the
+        # C locale, so the encoding does not depend on the session either.
+        v <- get(value_name) + 0
+        if (nan_is_na) {
+          v[is.nan(v)] <- NA_real_
+        }
+        .(
+          n_rows = .N,
+          n_na = sum(is.na(v)),
+          value_key = paste(
+            sort(sprintf("%a", v), method = "radix"),
+            collapse = "|"
+          )
+        )
+      },
+      by = grp
+    ]
   }
 
   setkeyv(out, by)[]
@@ -155,11 +172,11 @@ aggregate_by_key <- function(long, by = key(long), along = "metric",
 #' For a table with no key column of its own, or when the caller wants rows
 #' paired by position rather than by value.
 #'
-#' \code{"position"} is the row number: row i of one table pairs with row i of
+#' `"position"` is the row number: row i of one table pairs with row i of
 #' the other, so the comparison also says whether the rows come in the same
 #' order.
 #'
-#' \code{"sorted"} is the row's number once the table is sorted by all its
+#' `"sorted"` is the row's number once the table is sorted by all its
 #' compared columns (within each group of the other key columns, when there
 #' are any), so row order does not matter. Compared exactly, that pairs the
 #' two tables as multisets of rows: if every pair matches, the tables hold the
@@ -170,26 +187,33 @@ aggregate_by_key <- function(long, by = key(long), along = "metric",
 #' differently on the two sides.
 #'
 #' Sorting is radix, in the C locale, with missing values last, so both
-#' tables sort the same way in any session. With \code{nan_is_na}, NaN sorts as
+#' tables sort the same way in any session. With `nan_is_na`, NaN sorts as
 #' NA does.
 #'
 #' @param dt The table, already cast to the reference types.
-#' @param how \code{"position"} or \code{"sorted"}.
+#' @param how `"position"` or `"sorted"`.
 #' @param groups The other key columns, numbered within.
-#' @param sort_by The measure columns, sorted on after \code{groups}.
+#' @param sort_by The measure columns, sorted on after `groups`.
 #' @param nan_is_na Whether NaN sorts as NA.
-#' @return An integer vector, one number per row of \code{dt}.
+#' @return An integer vector, one number per row of `dt`.
 #' @noRd
-virtual_key <- function(dt, how = c("position", "sorted"), groups = character(),
-                        sort_by = character(), nan_is_na = TRUE) {
-  how <- match.arg(how)
+virtual_key <- function(
+  dt,
+  how = c("position", "sorted"),
+  groups = character(),
+  sort_by = character(),
+  nan_is_na = TRUE
+) {
+  how <- arg_match(how)
   n <- nrow(dt)
   if (how == "position" || !n) {
     return(seq_len(n))
   }
 
-  keys <- lapply(as.list(dt)[c(groups, sort_by)], canonical_missing,
-    nan_to_na = nan_is_na
+  keys <- lapply(
+    as.list(dt)[c(groups, sort_by)],
+    canonical_missing,
+    nan_is_na = nan_is_na
   )
   o <- do.call(order, c(unname(keys), list(method = "radix", na.last = TRUE)))
   out <- integer(n)

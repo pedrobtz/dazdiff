@@ -1,7 +1,7 @@
-# Ported from .agents/test.R. Setup between blocks stays at file level,
-# in order, because later checks reuse what earlier ones built.
+# Ported from .agents/test.R. Every block builds what it checks, so the file
+# runs in any order (devtools::test(shuffle = TRUE)).
 
-test_that("col_type", {
+test_that("col_type names each type", {
   check("col_type: character", col_type("a") == "character")
   check("col_type: logical", col_type(TRUE) == "logical")
   check("col_type: integer", col_type(1L) == "integer")
@@ -21,7 +21,7 @@ test_that("col_type names integer64 for what it is, not as a number", {
   expect_error(cast_dt(data.table(id = big), data.table(id = "1")), class = "dazdiff_error_types")
 })
 
-test_that("cast rules table", {
+test_that("the cast rules table covers every pair", {
   check("CAST_RULES: covers every from x to pair but the identities", nrow(CAST_RULES) == length(CAST_FROM) * length(CAST_TYPES) - length(CAST_TYPES))
   check("CAST_RULES: no self-conversions", all(CAST_RULES$from != CAST_RULES$to))
   check("CAST_RULES: every rule carries a note", all(nzchar(CAST_RULES$note)))
@@ -33,9 +33,8 @@ test_that("cast rules table", {
   check("cast_rules(FALSE): a copy, not the original", !identical(address(cast_rules(FALSE)), address(CAST_RULES)))
 })
 
-w <- cast_rules()
-
-test_that("cast rules table", {
+test_that("cast_rules() draws the rules as a matrix", {
+  w <- cast_rules()
   check("cast_rules(): one row per source type", nrow(w) == length(CAST_FROM))
   check("cast_rules(): one column per target type, plus from", identical(names(w), c("from", CAST_TYPES)))
   check("cast_rules(): the diagonal reads '='", w[from == "integer", integer] == "=")
@@ -48,7 +47,7 @@ test_that("the truncating casts say so in their notes", {
   truncating <- rules[grepl("truncate = FALSE", note), paste(from, to)]
   expect_setequal(truncating, c(
     "character integer", "Date integer", "numeric integer", "POSIXct integer",
-    "numeric Date", "POSIXct Date"
+    "numeric Date", "POSIXct Date", "Date character"
   ))
 })
 

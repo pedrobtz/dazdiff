@@ -6,8 +6,11 @@ check <- function(label, ok) {
   testthat::expect_true(isTRUE(ok), label = label)
 }
 
-# `expr` stays unevaluated until it is forced inside tryCatch().
-check_error <- function(label, expr, pattern = NULL) {
+# `expr` must raise an error of `class`. Which check fired is told by the
+# class, never by the wording: the wording is pinned by the snapshots in
+# test-messages.R. `expr` stays unevaluated until it is forced inside
+# tryCatch().
+check_error <- function(label, expr, class) {
   e <- tryCatch(
     {
       force(expr)
@@ -15,9 +18,12 @@ check_error <- function(label, expr, pattern = NULL) {
     },
     error = function(e) e
   )
-  hit <- !is.null(e) && (is.null(pattern) || grepl(pattern, conditionMessage(e)))
-  info <- if (is.null(e)) "no error" else paste("got:", conditionMessage(e))
-  testthat::expect_true(hit, label = label, info = info)
+  info <- if (is.null(e)) {
+    "no error"
+  } else {
+    paste0("got <", paste(class(e), collapse = "/"), ">: ", conditionMessage(e))
+  }
+  testthat::expect_true(inherits(e, class), label = label, info = info)
 }
 
 # `expr` must be TRUE and must warn; `pattern` pins which warning.

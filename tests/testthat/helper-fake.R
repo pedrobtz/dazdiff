@@ -75,8 +75,10 @@ default_distint <- function(n, n_cols = FAKE_COLS) {
 #   Defaults to default_distint(n, n_cols); NULL is the same as all Inf.
 fake_dt <- function(n = 100L, n_cols = FAKE_COLS,
                     n_distinct = default_distint(n, n_cols), seed = NULL) {
+  # The caller's RNG stream is restored on exit, so a seeded table leaves no
+  # trace on whatever runs next.
   if (!is.null(seed)) {
-    set.seed(seed)
+    withr::local_seed(seed)
   }
 
   layout <- fake_layout(n_cols)
@@ -211,7 +213,7 @@ fuzz_dt <- function(dt, pct_replace = 0.1, pct_new = 0, cols = names(dt),
     length(new_ratio) == 1L, new_ratio >= 0, new_ratio <= 1
   )
   if (!is.null(seed)) {
-    set.seed(seed)
+    withr::local_seed(seed)
   }
 
   unknown <- setdiff(cols, names(dt))

@@ -59,7 +59,7 @@ calls lives in its own file and is tested on its own:
 
 | File | Responsibility |
 |---|---|
-| `R/diff-table.R` | `diff_table()`: arguments, names, columns per mode, types, roles, index, duplicates, alignment, melt, merge, classification |
+| `R/diff-table.R` | `diff_table()`: arguments, names, columns per mode, roles, types (of the compared columns only), index, duplicates, alignment, melt, merge, classification |
 | `R/names.R` | `canonical_names()`, `name_map()`, `check_names()`, `shallow_dt()` |
 | `R/types.R` | `col_type()`, the only type vocabulary; `CAST_RULES`; `cast_rules()` |
 | `R/cast.R` | `cast_value()`, `cast_dt()` (truncation record and message), `normalize_dt()` |
@@ -74,20 +74,34 @@ calls lives in its own file and is tested on its own:
 
 The tests in `test-types.R`, `test-cast.R`, `test-columns.R`, `test-melt.R`,
 `test-keys.R`, `test-merge.R`, `test-diff-table.R` and
-`test-diff-table-cases.R` were ported mechanically from `.agents/test.R` and
-`.agents/test-cases.R`. They use the `check()` helpers in `helper-check.R`,
-and the setup between their `test_that()` blocks runs at file level on
-purpose, because later checks reuse it. New tests are ordinary testthat
-(`test-diff-table-modes.R`, `test-names.R`, `test-summary.R`,
-`test-expect.R`, `test-report.R`, whose drawings are snapshots in
-`_snaps/report.md`).
+`test-diff-table-cases.R` were ported from `.agents/test.R` and
+`.agents/test-cases.R`. They use the `check()` helpers in `helper-check.R`.
+New tests are ordinary testthat (`test-diff-table-modes.R`, `test-names.R`,
+`test-summary.R`, `test-expect.R`, `test-report.R`, whose drawings are
+snapshots in `_snaps/report.md`).
+
+The suite is shuffle-safe: it passes under `devtools::test(shuffle = TRUE)`,
+which reorders every top-level expression of a file. So setup lives inside
+the `test_that()` blocks, and shared fixtures are functions in
+`helper-fixtures.R` that build a fresh table each call; nothing runs at file
+level. Global state (seed, time zone, collation, mocks) goes through
+`withr::local_*()` or `testthat::local_mocked_bindings()`.
+
+Error paths are asserted by condition class (`expect_error(class = )`,
+`check_error(label, expr, class)`) and the fields a condition carries, never
+by its wording. The wording of every `dazdiff_abort()`, `dazdiff_warn()` and
+`dazdiff_inform()` site is pinned once in `test-messages.R`
+(`_snaps/messages.md`); a new site needs a snapshot there.
 
 ## Load-bearing details
 
 Each is covered by a test.
 
-- **User column names are normalized to `A-Z`, `0-9` and `_`; every internal
-  column contains a lowercase letter.** That is what makes a collision
+- **User column names are normalized to upper-case letters, digits and `_`;
+  every internal column contains a lowercase ASCII letter.** ASCII is
+  upper-cased by table (`chartr()`), so no normalized name holds one in any
+  locale, Turkish included; non-ASCII letters are kept, since erasing them
+  paired `Größe` with `Grüße` across tables. That is what makes a collision
   between the two impossible (`test-names.R` asserts it for every internal
   name). A new internal column name must contain a lowercase letter. Names
   that normalize to nothing, or to the same thing within one table, are an
@@ -130,6 +144,14 @@ Each is covered by a test.
   `"aggregate"`, and double key columns. data.table joins and groups NA and
   NaN as different keys (verified), so skipping the keys splits a row into
   `only_x` + `only_y`.
+- **Every zero in a double key is written as `+0`.** A join treats `-0` and
+  `0` as one key but keyed grouping keeps them apart, so a key holding both
+  slipped past the duplicate check and paired one row twice: a silent false
+  pass in the rows shape. `canonical_missing()` does it, and skips
+  `integer64`, whose `NA` has the bit pattern of `-0`.
+- **Roles are decided before casting, and only compared columns are cast.**
+  Roles depend on `x`'s types, which a cast never changes; casting first let
+  a column the call ignores refuse the comparison or report a truncation.
 - **The `%a` multiset encoding sorts the encoded strings, in radix (C
   locale) order, after `+ 0`.** `sort()` leaves NA and NaN in arrival order
   among themselves, and `%a` writes `-0` and `0` differently.

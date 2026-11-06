@@ -8,6 +8,12 @@
 # - a warning: the answer may be wrong (identity was invented);
 # - a message: an expected consequence of the settings the caller chose
 #   (values truncated by a cast, columns dropped or ignored).
+#
+# Wording follows base R for errors and warnings: they start in lower case
+# (or with a quoted name such as `by`) and do not end with a period; further
+# clauses follow a semicolon, not a new sentence. Messages are sentences,
+# capitalised and ending with a period, since they read as a note on a run
+# that went ahead.
 
 dazdiff_abort <- function(subclass, message, ...) {
   cond <- structure(
@@ -37,11 +43,44 @@ dazdiff_inform <- function(subclass, message, ...) {
 # Formats a character vector for inclusion in a message, bounded so that a
 # comparison of a very wide table still produces a readable error.
 fmt_names <- function(x, max_n = 10L) {
-  if (!length(x)) return("<none>")
-  shown <- utils::head(x, max_n)
+  if (!length(x)) {
+    return("<none>")
+  }
+  shown <- head(x, max_n)
   out <- paste(shown, collapse = ", ")
   if (length(x) > max_n) {
     out <- paste0(out, ", ... (", length(x) - max_n, " more)")
   }
   out
+}
+
+# match.arg(), raising a classed dazdiff_error_input instead of base R's bare
+# "'arg' should be one of" error, which no caller can tell apart from any
+# other. Called as `mode <- arg_match(mode)` from the function whose formal
+# lists the choices, like match.arg().
+arg_match <- function(arg, choices = NULL) {
+  name <- deparse(substitute(arg))
+  if (is.null(choices)) {
+    fn <- sys.function(sys.parent())
+    choices <- eval(formals(fn)[[name]], envir = parent.frame())
+  }
+  if (identical(arg, choices)) {
+    return(choices[1L])
+  }
+  i <- if (is.character(arg) && length(arg) == 1L && !is.na(arg)) {
+    pmatch(arg, choices)
+  } else {
+    NA_integer_
+  }
+  if (is.na(i)) {
+    dazdiff_abort(
+      "dazdiff_error_input",
+      sprintf(
+        "`%s` must be one of %s",
+        name,
+        paste0("\"", choices, "\"", collapse = ", ")
+      )
+    )
+  }
+  choices[i]
 }

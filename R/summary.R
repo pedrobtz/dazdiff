@@ -27,28 +27,40 @@ diff_summary <- function(d) {
   check_diff_result(d)
   shape <- attr(d, "shape")
   grp <- intersect("metric", names(d))
-  counts <- d[, .(
-    n = .N,
-    n_same = sum(status == "same"),
-    n_changed = sum(status == "changed"),
-    n_only_x = sum(status == "only_x"),
-    n_only_y = sum(status == "only_y")
-  ), by = grp]
+  counts <- d[,
+    .(
+      n = .N,
+      n_same = sum(status == "same"),
+      n_changed = sum(status == "changed"),
+      n_only_x = sum(status == "only_x"),
+      n_only_y = sum(status == "only_y")
+    ),
+    by = grp
+  ]
   if (!length(grp) && !nrow(counts)) {
-    counts <- data.table(n = 0L, n_same = 0L, n_changed = 0L, n_only_x = 0L, n_only_y = 0L)
+    counts <- data.table(
+      n = 0L,
+      n_same = 0L,
+      n_changed = 0L,
+      n_only_x = 0L,
+      n_only_y = 0L
+    )
   }
 
   if (shape == "cells") {
-    sizes <- d[, {
-      finite <- is_finite_pair(value_x, value_y)
-      z <- (value_y - value_x)[finite]
-      .(
-        max_abs_diff = if (length(z)) max(abs(z)) else NA_real_,
-        mean_abs_diff = if (length(z)) mean(abs(z)) else NA_real_,
-        rmse = scaled_rmse(z),
-        max_rel_diff = if (length(z)) max(rel_diff[finite]) else NA_real_
-      )
-    }, by = metric]
+    sizes <- d[,
+      {
+        finite <- is_finite_pair(value_x, value_y)
+        z <- (value_y - value_x)[finite]
+        .(
+          max_abs_diff = if (length(z)) max(abs(z)) else NA_real_,
+          mean_abs_diff = if (length(z)) mean(abs(z)) else NA_real_,
+          rmse = scaled_rmse(z),
+          max_rel_diff = if (length(z)) max(rel_diff[finite]) else NA_real_
+        )
+      },
+      by = metric
+    ]
     counts <- counts[sizes, on = "metric"]
   }
 
@@ -60,7 +72,9 @@ diff_summary <- function(d) {
 }
 
 check_diff_result <- function(d) {
-  if (!is.data.table(d) || is.null(attr(d, "shape")) || !"status" %in% names(d)) {
+  if (
+    !is.data.table(d) || is.null(attr(d, "shape")) || !"status" %in% names(d)
+  ) {
     dazdiff_abort("dazdiff_error_input", "`d` must be a result of diff_table()")
   }
   invisible(d)
@@ -77,9 +91,15 @@ is_finite_pair <- function(value_x, value_y) {
 # overflow. Plain `sqrt(mean(z^2))` returns Inf for any difference above about
 # 1.3e154, well inside the representable range.
 scaled_rmse <- function(z) {
-  if (!length(z)) return(NA_real_)
+  if (!length(z)) {
+    return(NA_real_)
+  }
   m <- max(abs(z))
-  if (!is.finite(m)) return(Inf)
-  if (m == 0) return(0)
+  if (!is.finite(m)) {
+    return(Inf)
+  }
+  if (m == 0) {
+    return(0)
+  }
   m * sqrt(mean((z / m)^2))
 }

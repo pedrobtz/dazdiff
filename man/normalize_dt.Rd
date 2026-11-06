@@ -9,10 +9,12 @@ normalize_dt(dt, to = c(factor = "character"), cols = names(dt))
 \arguments{
 \item{dt}{A data.frame or data.table.}
 
-\item{to}{Named character: which supported type each other type becomes,
-named by \code{"factor"}, \code{"POSIXct"} or \code{"integer64"}. The default only maps
-\code{factor} to \code{"character"}. A column whose type is not named here is an
-error, not a guess.}
+\item{to}{Named character: which supported type (\code{"character"},
+\code{"logical"}, \code{"Date"}, \code{"numeric"} or \code{"integer"}) each other type
+becomes, named by \code{"factor"}, \code{"POSIXct"} or \code{"integer64"}. The mappings
+given are added to the default, \code{factor} to \code{"character"}, and replace it
+only where they name \code{factor} themselves. A column whose type is in
+neither is an error, not a guess.}
 
 \item{cols}{The columns to consider, by default all of them.}
 }
@@ -34,7 +36,9 @@ A factor (ordered or not) becomes its labels by default. A timestamp
 the stamp's own zone (the session's zone for a stamp with none, as it
 prints) and drops the time, so two stamps on the same day become one
 value; \code{c(POSIXct = "character")} keeps the stamp as text, written as its
-local time in its own zone without naming the zone, so the same instant
+local time in its own zone as \code{"\%Y-\%m-\%d \%H:\%M:\%S"} (with the fraction of
+a second, to the microsecond, when it has one) and without naming the
+zone, so the same instant
 held in two zones becomes two different strings: give both tables the
 same zone first. Name the one you mean in \code{to}.
 

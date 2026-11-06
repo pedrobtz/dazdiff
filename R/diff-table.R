@@ -15,20 +15,22 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #' @section Modes:
 #' * `"benchmark"`: does `y` match the benchmark `x`? Columns of `y` that `x`
 #'   does not have are dropped, with a message. A column of `x` missing from
-#'   `y` is an error. Each column of `y` is cast to the type it has in `x`
-#'   (see [cast_rules()]), so a number stored as text, or a double stored as
-#'   an integer, still compares.
+#'   `y` is an error. Each compared column of `y` (in `by` or `measures`) is
+#'   cast to the type it has in `x` (see [cast_rules()]), so a number stored as
+#'   text, or a double stored as an integer, still compares. Columns that are
+#'   not compared are neither cast nor type-checked.
 #' * `"equal"`: are `x` and `y` equal? Every column must be in both tables and
 #'   have the same type in both; nothing is cast. The result is symmetric:
 #'   swapping `x` and `y` swaps `only_x` with `only_y` and negates `diff`.
 #'
 #' @section Column names:
 #' Column names are normalized in both tables before anything else: upper
-#' case, with every run of characters other than `A-Z` and `0-9` replaced by
-#' `_`, and `_` trimmed from the ends. So `unit price`, `Unit.Price` and
+#' case, with every run of characters other than letters and digits replaced
+#' by `_`, and `_` trimmed from the ends. Letters outside ASCII are kept, so
+#' `Größe` and `Grüße` stay two columns. So `unit price`, `Unit.Price` and
 #' `UNIT_PRICE` are one column, in either table. Two names in one table that
 #' normalize to the same thing are an error to fix before comparing. The
-#' result uses the normalized names; `attr(, "name_map")` maps them back.
+#' result uses the normalized names; `attr(d, "name_map")` maps them back.
 #'
 #' @section Truncation:
 #' In benchmark mode a cast that drops a fraction -- a double to an integer, a
@@ -36,7 +38,7 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #' benchmark's types are taken as the truth: storage such as Spark or Delta
 #' turns a locally built double into an integer, and the comparison has to
 #' follow it. Each truncation is announced in a message and recorded in
-#' `attr(, "truncated")`: per column, the count, up to three examples, and
+#' `attr(d, "truncated")`: per column, the count, up to three examples, and
 #' in the list column `rows` the row numbers of `y` that were truncated,
 #' which are the `row_id_y` of the result. A truncated key column can pair
 #' rows that differ (`1.5` in `y` becomes `1` and aligns with `x`'s `1`), so
@@ -89,9 +91,9 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #' A value is `same` when both are equal, or when both are finite and their
 #' difference is within `tolerance` or within `rel_tol` relative to the larger
 #' of the two: `abs_diff <= tolerance` or `rel_diff <= rel_tol`. Both
-#' tolerances default to 0, so by default only equal values are the same. Two missing values are the same; with
-#' `nan_is_na = TRUE` NaN and NA are the same missing value, in measures and in
-#' key columns alike.
+#' tolerances default to 0, so by default only equal values are the same. Two
+#' missing values are the same; with `nan_is_na = TRUE` NaN and NA are the
+#' same missing value, in measures and in key columns alike.
 #'
 #' @section Conditions:
 #' Every condition `diff_table()` signals has a class, so it can be caught
@@ -125,7 +127,8 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #'   virtual `row_number` key column. See Well-formed tables.
 #' @param measures `"numeric"` (the default) compares the double columns;
 #'   `"numeric+integer"` the integer columns too. Or column names, which must
-#'   be numeric or integer.
+#'   be numeric or integer, or `character(0)` for none, which compares whole
+#'   rows.
 #' @param tolerance The largest absolute difference still counted as `same`.
 #' @param rel_tol The largest relative difference still counted as `same`,
 #'   relative to the larger magnitude of the two values. A value is `same`
@@ -144,7 +147,7 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #' @return A `data.table` keyed by the identity columns (and `key_seq`,
 #'   `metric` when present), with `status` a factor with levels `same`,
 #'   `changed`, `only_x` and `only_y`. The key includes `row_number` when
-#'   `row_key` added it. Its shape is in `attr(, "shape")`:
+#'   `row_key` added it. Its shape is in `attr(d, "shape")`:
 #'   * `"cells"`, the usual one: one row per row and measure, with `key_seq`
 #'     (only when duplicates were numbered), `metric`, `row_id_x`, `row_id_y`
 #'     (the source rows, `NA` on the side the row is missing from),
@@ -154,13 +157,15 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #'     `status`.
 #'   * `"groups"`, with `duplicates = "aggregate"`: one row per key and
 #'     measure, with `n_rows_x`, `n_rows_y`, `n_na_x`, `n_na_y`,
-#'     `value_key_x`, `value_key_y` (the exact multiset of values) and
-#'     `status`. Without measures only the row counts are compared.
+#'     `value_key_x`, `value_key_y` (the exact multiset of values, as
+#'     hexadecimal text from the C library: compare them within one session,
+#'     not with text stored on another platform) and `status`. Without measures only the row counts are compared.
 #'   * `"rows"`, when there are no measures: one row per row, with `key_seq`
 #'     (when present), `row_id_x`, `row_id_y` and `status`, which is never
 #'     `changed`.
 #'
-#'   The attributes `mode`, `tolerance` (`abs` and `rel`), `name_map` (each column's name in `x` and `y`),
+#'   The attributes `mode`, `tolerance` (`abs` and `rel`), `name_map` (each
+#'   column's name in `x` and `y`),
 #'   `dropped` (columns of `y` dropped in benchmark mode), `ignored` (columns
 #'   not compared) and `truncated` (the casts that truncated, with the rows
 #'   of `y` each one touched) record what was done on the way.
@@ -188,34 +193,43 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #'
 #' # No measures: do the tables have the same rows?
 #' diff_table(data.frame(k = c("a", "b")), data.frame(k = c("b", "c", "a")))
-diff_table <- function(x, y,
-                       mode = c("benchmark", "equal"),
-                       by = NULL,
-                       row_key = c("none", "position", "sorted"),
-                       measures = "numeric",
-                       tolerance = 0,
-                       rel_tol = 0,
-                       duplicates = c("disambiguate", "aggregate", "error"),
-                       cast = mode == "benchmark",
-                       truncate = TRUE,
-                       nan_is_na = TRUE,
-                       date_format = "%Y-%m-%d") {
+diff_table <- function(
+  x,
+  y,
+  mode = c("benchmark", "equal"),
+  by = NULL,
+  row_key = c("none", "position", "sorted"),
+  measures = "numeric",
+  tolerance = 0,
+  rel_tol = 0,
+  duplicates = c("disambiguate", "aggregate", "error"),
+  cast = mode == "benchmark",
+  truncate = TRUE,
+  nan_is_na = TRUE,
+  date_format = "%Y-%m-%d"
+) {
   # 1. Arguments ----------------------------------------------------------------
   if (!is.data.frame(x) || !is.data.frame(y)) {
     dazdiff_abort("dazdiff_error_input", "`x` and `y` must be data.frames")
   }
-  mode <- match.arg(mode)
-  row_key <- match.arg(row_key)
-  duplicates <- match.arg(duplicates)
+  mode <- arg_match(mode)
+  row_key <- arg_match(row_key)
+  duplicates <- arg_match(duplicates)
   for (arg in c("tolerance", "rel_tol")) {
     v <- get(arg)
     if (!is.numeric(v) || length(v) != 1L || !is.finite(v) || v < 0) {
-      dazdiff_abort("dazdiff_error_input", sprintf("`%s` must be a single finite number >= 0", arg))
+      dazdiff_abort(
+        "dazdiff_error_input",
+        sprintf("`%s` must be a single finite number >= 0", arg)
+      )
     }
   }
   for (arg in c("truncate", "nan_is_na")) {
     if (!is_flag(get(arg))) {
-      dazdiff_abort("dazdiff_error_input", sprintf("`%s` must be TRUE or FALSE", arg))
+      dazdiff_abort(
+        "dazdiff_error_input",
+        sprintf("`%s` must be TRUE or FALSE", arg)
+      )
     }
   }
   if (mode == "equal" && !missing(cast) && isTRUE(cast)) {
@@ -255,7 +269,7 @@ diff_table <- function(x, y,
         "dazdiff_error_columns",
         paste0(
           "`y` is missing column(s) the benchmark `x` has: ",
-          fmt_names(only_x$label), "."
+          fmt_names(only_x$label)
         ),
         columns = only_x$name
       )
@@ -265,7 +279,8 @@ diff_table <- function(x, y,
         "dazdiff_message_dropped_columns",
         paste0(
           "Dropped column(s) of `y` that the benchmark `x` does not have: ",
-          fmt_names(only_y$name), "."
+          fmt_names(only_y$name),
+          "."
         ),
         columns = only_y$name
       )
@@ -274,11 +289,15 @@ diff_table <- function(x, y,
     dazdiff_abort(
       "dazdiff_error_columns",
       paste0(
-        "mode = \"equal\" needs the same columns in both tables.\n",
-        "  only in `x`: ", fmt_names(only_x$label), "\n",
-        "  only in `y`: ", fmt_names(only_y$label)
+        "mode = \"equal\" needs the same columns in both tables\n",
+        "  only in `x`: ",
+        fmt_names(only_x$label),
+        "\n",
+        "  only in `y`: ",
+        fmt_names(only_y$label)
       ),
-      only_x = only_x$name, only_y = only_y$name
+      only_x = only_x$name,
+      only_y = only_y$name
     )
   }
 
@@ -291,9 +310,120 @@ diff_table <- function(x, y,
   label_x <- structure(map_x$label, names = map_x$column)
   label_y <- structure(map_y$label[at_y], names = map_x$column)
 
-  # 4. Types --------------------------------------------------------------------
-  types_x <- vapply(xx, col_type, character(1L))
-  types_y <- vapply(yy, col_type, character(1L))
+  # 4. Roles --------------------------------------------------------------------
+  if (!is.null(by)) {
+    # Messages quote `by` as the caller wrote it, not as normalized.
+    by_given <- by
+    by <- canonical_names(by)
+    unknown <- !by %in% names(xx)
+    dropped <- unknown & by %in% map_y$column
+    problems <- c(
+      if (anyDuplicated(by)) {
+        paste0(
+          "names a column more than once: ",
+          fmt_names(unique(by_given[
+            duplicated(by) | duplicated(by, fromLast = TRUE)
+          ]))
+        )
+      },
+      if (any(unknown & !dropped)) {
+        paste0(
+          "names column(s) not in the tables: ",
+          fmt_names(by_given[unknown & !dropped])
+        )
+      },
+      if (any(dropped)) {
+        paste0(
+          "names column(s) only `y` has, which benchmark mode drops: ",
+          fmt_names(by_given[dropped])
+        )
+      }
+    )
+    if (length(problems)) {
+      dazdiff_abort(
+        "dazdiff_error_columns",
+        paste0("`by` ", paste(problems, collapse = "; "))
+      )
+    }
+  }
+  keyword <- is.character(measures) &&
+    length(measures) == 1L &&
+    measures %in% names(MEASURE_TYPES)
+  if (keyword) {
+    pool <- setdiff(names(xx), by)
+    measure <- select_measures(shallow_dt(xx, pool), measures)
+  } else {
+    given <- measures
+    if (is.character(measures)) {
+      measures <- canonical_names(measures)
+    }
+    measure <- select_measures(xx, measures, labels = label_x, given = given)
+    both <- intersect(measure, by)
+    if (length(both)) {
+      dazdiff_abort(
+        "dazdiff_error_measures",
+        paste0("`by` and `measures` both name: ", fmt_names(label_x[both]))
+      )
+    }
+  }
+  ids <- if (is.null(by)) setdiff(names(xx), measure) else by
+  # Roles come from x's types, which casting never changes, so they are
+  # decided first: a column the call does not compare is never type-checked
+  # or cast, and cannot refuse the comparison or report a truncation.
+
+  if (!length(ids) && row_key == "none") {
+    dazdiff_abort(
+      "dazdiff_error_keys",
+      paste0(
+        "the tables are not well-formed: they have no key column, since every ",
+        "column is a measure, so rows cannot be aligned; name the key with ",
+        "`by`, leave some columns out of `measures`, or add a virtual key: ",
+        "row_key = \"position\" pairs the rows as they come, and ",
+        "row_key = \"sorted\" pairs them after sorting both tables by their values"
+      )
+    )
+  }
+  ignored <- setdiff(names(xx), c(ids, measure))
+  if (length(ignored)) {
+    if (mode == "equal") {
+      dazdiff_abort(
+        "dazdiff_error_columns",
+        paste0(
+          "mode = \"equal\" compares every column, but these are in neither ",
+          "`by` nor `measures`: ",
+          fmt_names(label_x[ignored]),
+          "; add them to ",
+          "`by` (matched exactly, as part of the row identity) or, if numeric, ",
+          "to `measures`"
+        ),
+        columns = ignored
+      )
+    }
+    dazdiff_inform(
+      "dazdiff_message_ignored_columns",
+      paste0(
+        "Not compared, being in neither `by` nor `measures`: ",
+        fmt_names(label_x[ignored]),
+        "."
+      ),
+      columns = ignored
+    )
+  }
+  if (!length(measure)) {
+    dazdiff_inform(
+      "dazdiff_message_no_measures",
+      paste0(
+        "No measure columns (measures = ",
+        paste(deparse(measures), collapse = ""),
+        "), so rows are compared as wholes: do the two tables have the same rows?"
+      )
+    )
+  }
+
+  # 5. Types --------------------------------------------------------------------
+  compared <- c(ids, measure)
+  types_x <- vapply(as.list(xx)[compared], col_type, character(1L))
+  types_y <- vapply(as.list(yy)[compared], col_type, character(1L))
   # x supplies the target types, so every one of its columns has to be a type
   # we can cast to. Refused rather than converted here: which day a timestamp
   # belongs to, or what a factor's codes mean, is the caller's call to make
@@ -304,15 +434,23 @@ diff_table <- function(x, y,
       "dazdiff_error_types",
       paste0(
         "x has column(s) of unsupported type: ",
-        paste(sprintf("%s (%s)", label_x[names(unsupported)], unsupported), collapse = ", "),
-        "; convert them with normalize_dt() first"
+        paste(
+          sprintf("%s (%s)", label_x[names(unsupported)], unsupported),
+          collapse = ", "
+        ),
+        fix_hint(label_x[names(unsupported)], unsupported)
       ),
       columns = names(unsupported)
     )
   }
   if (cast) {
-    cast_dt(xx, yy,
-      date_format = date_format, truncate = truncate, nan_is_na = nan_is_na,
+    cast_dt(
+      xx,
+      yy,
+      date_format = date_format,
+      truncate = truncate,
+      cols = compared,
+      nan_is_na = nan_is_na,
       labels = label_y
     )
   } else {
@@ -324,109 +462,50 @@ diff_table <- function(x, y,
       dazdiff_abort(
         "dazdiff_error_types",
         paste0(
-          if (mode == "equal") "mode = \"equal\" does not cast" else "cast = FALSE",
+          if (mode == "equal") {
+            "mode = \"equal\" does not cast"
+          } else {
+            "cast = FALSE"
+          },
           ", but x and y disagree on the type of: ",
-          paste(sprintf("%s (%s vs %s)", label_x[off], types_x[off], types_y[off]), collapse = ", ")
+          paste(
+            sprintf("%s (%s vs %s)", label_x[off], types_x[off], types_y[off]),
+            collapse = ", "
+          )
         ),
         columns = off
       )
     }
+    widen_dates(xx, yy)
   }
   truncated <- attr(yy, "truncated")
   if (is.null(truncated)) {
     truncated <- truncated_empty()
   }
 
-  # 5. Roles --------------------------------------------------------------------
-  if (!is.null(by)) {
-    by <- canonical_names(by)
-    problems <- c(
-      if (anyDuplicated(by)) paste0("names a column more than once: ", fmt_names(unique(by[duplicated(by)]))),
-      if (length(setdiff(by, names(xx)))) paste0("names column(s) not in the tables: ", fmt_names(setdiff(by, names(xx))))
-    )
-    if (length(problems)) {
-      dazdiff_abort("dazdiff_error_columns", paste0("`by` ", paste(problems, collapse = "; ")))
-    }
-  }
-  keyword <- is.character(measures) && length(measures) == 1L &&
-    measures %in% names(MEASURE_TYPES)
-  if (keyword) {
-    pool <- setdiff(names(xx), by)
-    measure <- select_measures(shallow_dt(xx, pool), measures)
-  } else {
-    if (is.character(measures)) {
-      measures <- canonical_names(measures)
-    }
-    measure <- select_measures(xx, measures)
-    both <- intersect(measure, by)
-    if (length(both)) {
-      dazdiff_abort(
-        "dazdiff_error_measures",
-        paste0("`by` and `measures` both name: ", fmt_names(label_x[both]))
-      )
-    }
-  }
-  ids <- if (is.null(by)) setdiff(names(xx), measure) else by
-
+  # A virtual key is numbered on the cast values, so it comes after the cast.
   # A table is well-formed when it has at least one key column; it may have no
   # measures. Without a key, rows cannot be aligned at all, so the caller
   # either names one or asks for a virtual one: the row number, as the rows
   # come or after sorting both tables by what they hold.
   if (row_key != "none") {
-    set(xx, j = "row_number", value = virtual_key(xx, row_key, ids, measure, nan_is_na))
-    set(yy, j = "row_number", value = virtual_key(yy, row_key, ids, measure, nan_is_na))
+    set(
+      xx,
+      j = "row_number",
+      value = virtual_key(xx, row_key, ids, measure, nan_is_na)
+    )
+    set(
+      yy,
+      j = "row_number",
+      value = virtual_key(yy, row_key, ids, measure, nan_is_na)
+    )
     label_x[["row_number"]] <- "row_number"
     ids <- c(ids, "row_number")
   }
-  if (!length(ids)) {
-    dazdiff_abort(
-      "dazdiff_error_keys",
-      paste0(
-        "The tables are not well-formed: they have no key column, since every ",
-        "column is a measure, so rows cannot be aligned. Name the key with ",
-        "`by=`, leave some columns out of `measures`, or add a virtual key: ",
-        "row_key = \"position\" pairs the rows as they come, and ",
-        "row_key = \"sorted\" pairs them after sorting both tables by their values."
-      )
-    )
-  }
-  ignored <- setdiff(names(xx), c(ids, measure))
-  if (length(ignored)) {
-    if (mode == "equal") {
-      dazdiff_abort(
-        "dazdiff_error_columns",
-        paste0(
-          "mode = \"equal\" compares every column, but these are in neither ",
-          "`by` nor `measures`: ", fmt_names(label_x[ignored]), ". Add them to ",
-          "`by` (matched exactly, as part of the row identity) or, if numeric, ",
-          "to `measures`."
-        ),
-        columns = ignored
-      )
-    }
-    dazdiff_inform(
-      "dazdiff_message_ignored_columns",
-      paste0(
-        "Not compared, being in neither `by` nor `measures`: ",
-        fmt_names(label_x[ignored]), "."
-      ),
-      columns = ignored
-    )
-  }
-  if (!length(measure)) {
-    dazdiff_inform(
-      "dazdiff_message_no_measures",
-      paste0(
-        "No measure columns (measures = ", paste(deparse(measures), collapse = ""),
-        "), so rows are compared as wholes: do the two tables have the same rows?"
-      )
-    )
-  }
-
   # 6-7. Index ------------------------------------------------------------------
   # Our own copies of the id and measure columns, numbered and keyed.
-  wx <- index_dt(xx, ids, measure, nan_to_na = nan_is_na)
-  wy <- index_dt(yy, ids, measure, nan_to_na = nan_is_na)
+  wx <- index_dt(xx, ids, measure, nan_is_na = nan_is_na)
+  wy <- index_dt(yy, ids, measure, nan_is_na = nan_is_na)
 
   # 8. Duplicate keys -----------------------------------------------------------
   # Checked on the wide tables, one row per source row: the answer is the same
@@ -442,12 +521,16 @@ diff_table <- function(x, y,
       )
       head_line <- sprintf(
         "the id columns do not tell rows apart: %s key(s) repeat (identity: %s)",
-        format(uniqueN(groups, by = ids), big.mark = ","), fmt_names(ids)
+        format(uniqueN(groups, by = ids), big.mark = ","),
+        fmt_names(label_x[ids])
       )
       if (duplicates == "error") {
         dazdiff_abort(
           "dazdiff_error_duplicates",
-          paste0(head_line, "; use duplicates = \"disambiguate\" or \"aggregate\""),
+          paste0(
+            head_line,
+            "; use duplicates = \"disambiguate\" or \"aggregate\""
+          ),
           duplicates = groups
         )
       }
@@ -457,8 +540,9 @@ diff_table <- function(x, y,
         dazdiff_warn(
           "dazdiff_warning_duplicates",
           paste0(
-            head_line, ". Rows within each were paired in arrival order ",
-            "(key_seq), which assumes both tables list them in the same order."
+            head_line,
+            "; rows within each were paired in arrival order ",
+            "(key_seq), which assumes both tables list them in the same order"
           ),
           duplicates = groups
         )
@@ -480,14 +564,17 @@ diff_table <- function(x, y,
         "dazdiff_error_disjoint",
         paste0(
           if (whole_rows) {
-            "No row of `x` appears in `y`"
+            "no row of `x` appears in `y`"
           } else {
-            paste0("No identity value of `x` appears in `y` (identity: ", fmt_names(ids), ")")
+            paste0(
+              "no identity value of `x` appears in `y` (identity: ",
+              fmt_names(label_x[ids]),
+              ")"
+            )
           },
           ", so nothing can be compared",
           if (!nrow(wx) || !nrow(wy)) " (one table is empty)",
-          if (!whole_rows) ". Check `by`, and the format of the key values",
-          "."
+          if (!whole_rows) "; check `by`, and the format of the key values"
         ),
         dry_run = dry
       )
@@ -502,7 +589,13 @@ diff_table <- function(x, y,
     lx <- aggregate_by_key(lx, by = ids, stats = "exact", nan_is_na = nan_is_na)
     ly <- aggregate_by_key(ly, by = ids, stats = "exact", nan_is_na = nan_is_na)
   }
-  shape <- if (duplicates == "aggregate") "groups" else if (length(measure)) "cells" else "rows"
+  shape <- if (duplicates == "aggregate") {
+    "groups"
+  } else if (length(measure)) {
+    "cells"
+  } else {
+    "rows"
+  }
 
   # 11. Merge -------------------------------------------------------------------
   # In place, into the melted copy of x this function owns, so no second table
@@ -513,7 +606,11 @@ diff_table <- function(x, y,
   out <- lx
   extra <- ly[!out, on = on]
   if (nrow(extra)) {
-    setnames(extra, setdiff(names(extra), on), paste0(setdiff(names(extra), on), "_y"))
+    setnames(
+      extra,
+      setdiff(names(extra), on),
+      paste0(setdiff(names(extra), on), "_y")
+    )
     out <- rbind(out, extra, fill = TRUE)
   }
   # x's own columns kept their names through the merge; label them now. Every
@@ -529,7 +626,8 @@ diff_table <- function(x, y,
   in_x <- !is.na(out[[paste0(present, "_x")]])
   in_y <- !is.na(out[[paste0(present, "_y")]])
 
-  unchanged <- switch(shape,
+  unchanged <- switch(
+    shape,
     cells = {
       vx <- out$value_x
       vy <- out$value_y
@@ -540,7 +638,11 @@ diff_table <- function(x, y,
       finite <- is_finite_pair(vx, vy)
       m <- pmax(abs(vx), abs(vy))
       rel <- rep(NA_real_, length(vx))
-      rel[finite] <- ifelse(m[finite] == 0, 0, abs(vy[finite] / m[finite] - vx[finite] / m[finite]))
+      rel[finite] <- ifelse(
+        m[finite] == 0,
+        0,
+        abs(vy[finite] / m[finite] - vx[finite] / m[finite])
+      )
       out[, abs_diff := abs(diff)]
       out[, rel_diff := rel]
       # Two missing values are the same, and with nan_is_na a NaN is just a
@@ -549,7 +651,8 @@ diff_table <- function(x, y,
       both_missing <- if (nan_is_na) {
         is.na(vx) & is.na(vy)
       } else {
-        (is.nan(vx) & is.nan(vy)) | (is.na(vx) & !is.nan(vx) & is.na(vy) & !is.nan(vy))
+        (is.nan(vx) & is.nan(vy)) |
+          (is.na(vx) & !is.nan(vx) & is.na(vy) & !is.nan(vy))
       }
       # The tolerances apply to finite pairs only: rel_tol times an infinite
       # magnitude would otherwise call 1 and Inf the same.
@@ -559,36 +662,68 @@ diff_table <- function(x, y,
     },
     groups = {
       same_n <- out$n_rows_x == out$n_rows_y
-      if ("value_key_x" %in% names(out)) same_n & out$value_key_x == out$value_key_y else same_n
+      if ("value_key_x" %in% names(out)) {
+        same_n & out$value_key_x == out$value_key_y
+      } else {
+        same_n
+      }
     },
     rows = rep(TRUE, nrow(out))
   )
-  out[, status := factor(
-    fcase(
-      !in_x & in_y, "only_y",
-      in_x & !in_y, "only_x",
-      unchanged, "same",
-      default = "changed"
-    ),
-    levels = STATUS_LEVELS
-  )]
+  out[,
+    status := factor(
+      fcase(
+        !in_x & in_y,
+        "only_y",
+        in_x & !in_y,
+        "only_x",
+        unchanged,
+        "same",
+        default = "changed"
+      ),
+      levels = STATUS_LEVELS
+    )
+  ]
 
   # 13. Result ------------------------------------------------------------------
-  setcolorder(out, intersect(c(
-    ids, "key_seq", "metric",
-    "row_id_x", "row_id_y", "value_x", "value_y", "diff", "abs_diff", "rel_diff",
-    "n_rows_x", "n_rows_y", "n_na_x", "n_na_y", "value_key_x", "value_key_y",
-    "status"
-  ), names(out)))
+  setcolorder(
+    out,
+    intersect(
+      c(
+        ids,
+        "key_seq",
+        "metric",
+        "row_id_x",
+        "row_id_y",
+        "value_x",
+        "value_y",
+        "diff",
+        "abs_diff",
+        "rel_diff",
+        "n_rows_x",
+        "n_rows_y",
+        "n_na_x",
+        "n_na_y",
+        "value_key_x",
+        "value_key_y",
+        "status"
+      ),
+      names(out)
+    )
+  )
   setkeyv(out, on)
   setattr(out, "shape", shape)
   setattr(out, "mode", mode)
   setattr(out, "tolerance", list(abs = tolerance, rel = rel_tol))
-  setattr(out, "name_map", data.table(
-    column = map_x$column,
-    name_x = map_x$name,
-    name_y = map_y$name[at_y]
-  ))
+  setattr(
+    out,
+    "name_map",
+    data.table(
+      column = map_x$column,
+      name_x = map_x$name,
+      name_y = map_y$name[at_y]
+    )
+  )
   setattr(out, "dropped", only_y$name)
   setattr(out, "ignored", ignored)
   setattr(out, "truncated", truncated)

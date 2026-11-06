@@ -1,68 +1,34 @@
-# Ported from .agents/test.R. Setup between blocks stays at file level,
-# in order, because later checks reuse what earlier ones built.
+# Ported from .agents/test.R. Every block builds what it checks, so the file
+# runs in any order (devtools::test(shuffle = TRUE)).
 
-# One representative value per source type, chosen so an allowed conversion
-# has something it can actually convert.
-cast_sample <- function(from, to) {
-  switch(from,
-    character = switch(to,
-      logical = "TRUE",
-      Date = "2024-03-05",
-      integer = "3",
-      numeric = "1.5",
-      "abc"
-    ),
-    logical = TRUE,
-    Date = as.Date("2024-03-05"),
-    numeric = 3.5,
-    integer = 3L,
-    POSIXct = as.POSIXct("2024-03-05 23:30:00", tz = "UTC"),
-    factor = factor("abc"),
-    integer64 = bit64::as.integer64(3)
-  )
-}
-
-# integer64 converts through bit64, a suggested package.
-cast_rules_here <- if (requireNamespace("bit64", quietly = TRUE)) {
-  CAST_RULES
-} else {
-  CAST_RULES[from != "integer64"]
-}
-
-allowed_ok <- cast_rules_here[allowed == TRUE][, .(
-  ok = {
-    v <- cast_sample(from, to)
-    out <- tryCatch(cast_value(v, to, "col"), error = function(e) e)
-    !inherits(out, "error") && col_type(out) == to && !is.na(out)
+test_that("cast_value: every allowed pair in the rules table converts", {
+  rules <- cast_rules_here()[allowed == TRUE]
+  for (i in seq_len(nrow(rules))) {
+    from <- rules$from[i]
+    to <- rules$to[i]
+    out <- cast_value(cast_sample(from, to), to, "col")
+    expect_identical(col_type(out), to, info = paste(from, "->", to))
+    expect_false(is.na(out), info = paste(from, "->", to))
   }
-), by = .(from, to)]
-
-test_that("cast_value: every pair in the rules table", {
-  check(
-    paste0("cast_value: all ", nrow(allowed_ok), " allowed pairs convert"),
-    all(allowed_ok$ok)
-  )
 })
 
-if (!all(allowed_ok$ok)) print(allowed_ok[ok == FALSE])
-
-refused_ok <- cast_rules_here[allowed == FALSE][, .(
-  ok = inherits(
-    tryCatch(cast_value(cast_sample(from, to), to, "col"), error = function(e) e),
-    "error"
-  )
-), by = .(from, to)]
-
-test_that("cast_value: every pair in the rules table", {
-  check(
-    paste0("cast_value: all ", nrow(refused_ok), " refused pairs error"),
-    all(refused_ok$ok)
-  )
+test_that("cast_value: every refused pair in the rules table is a cast error", {
+  rules <- cast_rules_here()[allowed == FALSE]
+  expect_gt(nrow(rules), 0L)
+  for (i in seq_len(nrow(rules))) {
+    from <- rules$from[i]
+    to <- rules$to[i]
+    expect_error(
+      cast_value(cast_sample(from, to), to, "col"),
+      class = "dazdiff_error_cast",
+      info = paste(from, "->", to)
+    )
+  }
 })
-
-if (!all(refused_ok$ok)) print(refused_ok[ok == FALSE])
 
 test_that("cast_value: the details of each conversion", {
+  # Each refusal is told by its class here; its wording, which says why, is
+  # pinned by the snapshots in test-messages.R.
   check("cast_value: same type is returned untouched", identical(cast_value(3L, "integer", "col"), 3L))
   check("cast_value: text to number", cast_value("1.5", "numeric", "col") == 1.5)
   check("cast_value: text to integer truncates toward zero", cast_value("3.7", "integer", "col") == 3L)
@@ -84,36 +50,37 @@ test_that("cast_value: the details of each conversion", {
     "cast_value: POSIXct to integer is seconds since the epoch",
     cast_value(as.POSIXct("1970-01-01 00:01:00", tz = "UTC"), "integer", "col") == 60L
   )
-  check_error("cast_value: text that is not a number", cast_value(c("1", "abc"), "numeric", "col"), "not a number")
-  check_error("cast_value: text that is not a date", cast_value("05/03/2024", "Date", "col"), "not a date in format")
+  check_error("cast_value: text that is not a number", cast_value(c("1", "abc"), "numeric", "col"), class = "dazdiff_error_cast")
+  check_error("cast_value: text that is not a date", cast_value("05/03/2024", "Date", "col"), class = "dazdiff_error_cast")
   # as.Date() ignores whatever trails the format, so parsing alone is not enough:
   # the parsed date has to format back to exactly the text it came from.
   check_error(
     "cast_value: text with trailing junk is not a date",
-    cast_value("2024-01-01junk", "Date", "col"), "not a canonical"
+    cast_value("2024-01-01junk", "Date", "col"),
+    class = "dazdiff_error_cast"
   )
   check_error(
     "cast_value: a two-digit year is not silently the year 24",
-    cast_value("24-01-01", "Date", "col"), "not a canonical"
+    cast_value("24-01-01", "Date", "col"),
+    class = "dazdiff_error_cast"
   )
   check_error(
     "cast_value: an unpadded date is not canonical",
-    cast_value("2024-1-1", "Date", "col"), "not a canonical"
+    cast_value("2024-1-1", "Date", "col"),
+    class = "dazdiff_error_cast"
   )
   check_error(
     "cast_value: surrounding whitespace is not canonical",
-    cast_value(" 2024-01-01", "Date", "col"), "not a canonical"
+    cast_value(" 2024-01-01", "Date", "col"),
+    class = "dazdiff_error_cast"
   )
   # as.character() gives 15 significant digits, so doubles that differ further
   # out collapse onto one key. Finding 2, numeric half.
   check_error(
     "cast_value: a double that loses precision as text is refused",
-    cast_value(1 + .Machine$double.eps, "character", "col"), "loses precision as text"
+    cast_value(1 + .Machine$double.eps, "character", "col"),
+    class = "dazdiff_error_cast"
   )
-  check("cast_value: the message prints the value at full precision", {
-    msg <- tryCatch(cast_value(1 + .Machine$double.eps, "character", "col"), error = conditionMessage)
-    grepl("1.0000000000000002", msg, fixed = TRUE)
-  })
   check("cast_value: an ordinary double still converts", cast_value(1.5, "character", "col") == "1.5")
   check("cast_value: non-finite doubles round-trip as text", {
     all(cast_value(c(Inf, -Inf), "character", "col") == c("Inf", "-Inf"))
@@ -121,7 +88,7 @@ test_that("cast_value: the details of each conversion", {
   check_error(
     "diff_table: a double id that collides with a character id is refused",
     diff_table(data.table(ID = "1", V = 5), data.table(ID = 1 + .Machine$double.eps, V = 5)),
-    "loses precision as text"
+    class = "dazdiff_error_cast"
   )
   check("cast_value: a canonical date still converts", cast_value("2024-01-01", "Date", "col") == as.Date("2024-01-01"))
   check("cast_value: NA stays NA through the round-trip check", is.na(cast_value(NA_character_, "Date", "col")))
@@ -132,11 +99,13 @@ test_that("cast_value: the details of each conversion", {
   )
   check_error(
     "cast_value: date_format still refuses trailing junk",
-    cast_value("05/03/2024junk", "Date", "col", date_format = "%d/%m/%Y"), "not a canonical"
+    cast_value("05/03/2024junk", "Date", "col", date_format = "%d/%m/%Y"),
+    class = "dazdiff_error_cast"
   )
   check_error(
     "cast_value: an ISO date is refused under a non-ISO date_format",
-    cast_value("2024-03-05", "Date", "col", date_format = "%d/%m/%Y"), "not a date in format"
+    cast_value("2024-03-05", "Date", "col", date_format = "%d/%m/%Y"),
+    class = "dazdiff_error_cast"
   )
   check(
     "cast_value: a Date goes back out through date_format",
@@ -147,13 +116,13 @@ test_that("cast_value: the details of each conversion", {
     cast_value(cast_value("05/03/2024", "Date", "col", date_format = "%d/%m/%Y"),
                "character", "col", date_format = "%d/%m/%Y") == "05/03/2024"
   )
-  check_error("cast_value: date_format must be one string", cast_value("2024-01-01", "Date", "col", date_format = c("%Y", "%m")), "single format string")
+  check_error("cast_value: date_format must be one string", cast_value("2024-01-01", "Date", "col", date_format = c("%Y", "%m")), class = "dazdiff_error_input")
   # The parameter has to survive the trip from diff_table() down to cast_value().
   check_error(
     "diff_table: trailing junk in a date key is refused",
     diff_table(data.table(D = as.Date("2024-01-01"), V = 1),
                data.table(D = "2024-01-01junk", V = 1)),
-    "not a canonical"
+    class = "dazdiff_error_cast"
   )
   check(
     "diff_table: date_format reaches the cast",
@@ -161,75 +130,64 @@ test_that("cast_value: the details of each conversion", {
                data.table(D = "05/03/2024", V = 1),
                date_format = "%d/%m/%Y")$status == "same"
   )
-  check_error("cast_value: text that is not a logical", cast_value(c("TRUE", "maybe"), "logical", "col"), "not a logical literal")
-  check_error("cast_value: 0/1 is a number, not a flag", cast_value(c(0, 1), "logical", "col"), "no sound conversion")
-  check_error("cast_value: a factor is not parsed implicitly", cast_value(factor("1"), "numeric", "col"), "as.character")
-  check_error("cast_value: out of integer range", cast_value("3000000000", "integer", "col"), "outside integer range")
-  check_error("cast_value: an unsupported source type", cast_value(complex(real = 1), "numeric", "col"), "unsupported source type")
-  check_error("cast_value: an unsupported target type", cast_value("2024-03-05", "POSIXct", "col"), "no rule for this pair")
-  check_error("cast_value: the message names the column", cast_value("abc", "numeric", "THE_COL"), "column THE_COL")
-  check_error("cast_value: the message names up to three offenders", cast_value(c("a", "b", "c", "d"), "numeric", "col"), "a, b, c$")
-  check_error(
-    "cast_value: the message names the type the caller passed, not the hop",
-    cast_value(factor(c("a", "b")), "numeric", "col"),
-    "factor -> numeric"
-  )
+  check_error("cast_value: text that is not a logical", cast_value(c("TRUE", "maybe"), "logical", "col"), class = "dazdiff_error_cast")
+  check_error("cast_value: 0/1 is a number, not a flag", cast_value(c(0, 1), "logical", "col"), class = "dazdiff_error_cast")
+  check_error("cast_value: a factor is not parsed implicitly", cast_value(factor("1"), "numeric", "col"), class = "dazdiff_error_cast")
+  check_error("cast_value: out of integer range", cast_value("3000000000", "integer", "col"), class = "dazdiff_error_cast")
+  check_error("cast_value: an unsupported source type", cast_value(complex(real = 1), "numeric", "col"), class = "dazdiff_error_cast")
+  check_error("cast_value: an unsupported target type", cast_value("2024-03-05", "POSIXct", "col"), class = "dazdiff_error_cast")
 })
 
-x_ref <- data.table(id = 1L, score = 1.5, day = as.Date("2024-01-01"), flag = TRUE)
 
-y_cand <- data.table(id = "2", score = "3.5", day = as.POSIXct("2024-01-02 23:30:00", tz = "UTC"), flag = "FALSE")
-
-suppressMessages(cast_dt(x_ref, y_cand))
-
-test_that("cast_dt", {
+test_that("cast_dt casts every shared column to x's type", {
+  x_ref <- data.table(id = 1L, score = 1.5, day = as.Date("2024-01-01"), flag = TRUE)
+  y_cand <- data.table(id = "2", score = "3.5", day = as.POSIXct("2024-01-02 23:30:00", tz = "UTC"), flag = "FALSE")
+  expect_message(cast_dt(x_ref, y_cand), class = "dazdiff_message_truncation")
   check("cast_dt: casts every shared column to x's type", identical(summarize_dt(y_cand)$type, summarize_dt(x_ref)$type))
   check("cast_dt: converts the values, not just the types", y_cand$id == 2L && y_cand$score == 3.5)
 })
 
-y_partial <- data.table(id = "2", extra = "left alone")
-
-cast_dt(x_ref, y_partial)
-
-test_that("cast_dt", {
+test_that("cast_dt leaves a y-only column alone", {
+  x_ref <- data.table(id = 1L, score = 1.5)
+  y_partial <- data.table(id = "2", extra = "left alone")
+  cast_dt(x_ref, y_partial)
   check("cast_dt: a y-only column is left alone", is.character(y_partial$extra))
 })
 
-y_cols <- data.table(id = "2", score = "3.5")
-
-cast_dt(x_ref, y_cols, cols = "id")
-
-test_that("cast_dt", {
+test_that("cast_dt casts only `cols`", {
+  x_ref <- data.table(id = 1L, score = 1.5)
+  y_cols <- data.table(id = "2", score = "3.5")
+  cast_dt(x_ref, y_cols, cols = "id")
   check("cast_dt: `cols` limits what is cast", is.integer(y_cols$id) && is.character(y_cols$score))
 })
 
-y_atomic <- data.table(id = "2", score = "not a number")
-
-test_that("cast_dt", {
-  check_error("cast_dt: refuses the whole table on one bad column", cast_dt(x_ref, y_atomic), "not a number")
+test_that("cast_dt refuses bad input, and returns y itself", {
+  x_ref <- data.table(id = 1L, score = 1.5)
+  y_atomic <- data.table(id = "2", score = "not a number")
+  check_error("cast_dt: refuses the whole table on one bad column", cast_dt(x_ref, y_atomic), class = "dazdiff_error_cast")
   check("cast_dt: a refusal leaves y exactly as it was", identical(y_atomic, data.table(id = "2", score = "not a number")))
-  check("cast_dt: returns y invisibly", identical(address(cast_dt(x_ref, y_partial)), address(y_partial)))
-  check_error("cast_dt: an unknown column", cast_dt(x_ref, copy(y_cand), cols = "nope"), "missing from x or y")
-  check_error("cast_dt: y must be a data.table, not a data.frame", cast_dt(x_ref, data.frame(id = "2")))
+  y_partial <- data.table(id = "2", extra = "left alone")
+  expect_invisible(out <- cast_dt(x_ref, y_partial))
+  check("cast_dt: returns y itself, not a copy", identical(address(out), address(y_partial)))
+  check_error("cast_dt: an unknown column", cast_dt(x_ref, data.table(id = "2"), cols = "nope"), class = "dazdiff_error_columns")
+  check_error("cast_dt: y must be a data.table, not a data.frame", cast_dt(x_ref, data.frame(id = "2")), class = "dazdiff_error_input")
   check_error(
     "cast_dt: x with a column of unsupported type",
     cast_dt(data.table(id = complex(real = 1)), data.table(id = "2")),
-    "unsupported type"
+    class = "dazdiff_error_types"
   )
 })
 
-test_that("normalize_dt", {
+test_that("NORMALIZE_TO maps only a factor, to a baseline type", {
   check("NORMALIZE_TO: only a factor has a default", identical(NORMALIZE_TO, c(factor = "character")))
   check("NORMALIZE_TO: every target is a baseline type", all(NORMALIZE_TO %in% CAST_TYPES))
 })
 
-stamps <- data.table(t = as.POSIXct(c("2024-01-01 10:00", "2024-01-02 10:00"), tz = "UTC"), v = c(1, 2))
-
-b1 <- normalize_dt(stamps, to = c(POSIXct = "Date"))
-
-test_that("normalize_dt", {
+test_that("normalize_dt converts a POSIXct only when told what to", {
+  stamps <- data.table(t = as.POSIXct(c("2024-01-01 10:00", "2024-01-02 10:00"), tz = "UTC"), v = c(1, 2))
+  b1 <- normalize_dt(stamps, to = c(POSIXct = "Date"))
   check("normalize_dt: POSIXct becomes a Date when asked", col_type(b1$t) == "Date")
-  check_error("normalize_dt: a POSIXct has no default target", normalize_dt(stamps), "t \\(POSIXct\\)")
+  check_error("normalize_dt: a POSIXct has no default target", normalize_dt(stamps), class = "dazdiff_error_types")
   check("normalize_dt: on the day the stamp prints", b1$t[1L] == as.Date("2024-01-01"))
   check("normalize_dt: a baseline column is untouched", identical(b1$v, stamps$v))
   check("normalize_dt: the input is not modified", col_type(stamps$t) == "POSIXct")
@@ -247,33 +205,34 @@ test_that("normalize_dt", {
   )
   check("normalize_dt: a factor becomes its labels", identical(normalize_dt(data.table(f = factor(c("7", "9"))))$f, c("7", "9")))
   check("normalize_dt: `cols` limits what is converted", col_type(normalize_dt(stamps, cols = "v")$t) == "POSIXct")
+  check("normalize_dt: keeps no truncation record", is.null(attr(b1$t, "truncated")))
 })
 
-clean <- data.table(id = "a", v = 1)
-
-test_that("normalize_dt", {
+test_that("normalize_dt refuses what it cannot convert, and passes the rest through", {
+  stamps <- data.table(t = as.POSIXct(c("2024-01-01 10:00", "2024-01-02 10:00"), tz = "UTC"), v = c(1, 2))
+  clean <- data.table(id = "a", v = 1)
   check("normalize_dt: a table already in baseline types comes back as is", identical(normalize_dt(clean), clean))
   check("normalize_dt: zero rows", nrow(normalize_dt(stamps[0], to = c(POSIXct = "Date"))) == 0L)
-  check("normalize_dt: keeps no truncation record", is.null(attr(b1$t, "truncated")))
-  check_error("normalize_dt: an unmapped type is refused, not guessed", normalize_dt(data.table(z = complex(real = 1))), "no conversion given")
-  check_error("normalize_dt: the refusal names the column and its type", normalize_dt(data.table(z = complex(real = 1))), "z \\(complex\\)")
-  check_error("normalize_dt: an empty `to` refuses everything unconvertible", normalize_dt(stamps, to = character()), "no conversion given")
-  check_error("normalize_dt: a target with no cast rule", normalize_dt(stamps, to = c(POSIXct = "logical")), "no sound conversion")
-  check_error("normalize_dt: an unknown column", normalize_dt(stamps, cols = "nope"), "unknown column")
-  check_error("normalize_dt: refuses a non-table", normalize_dt(1:3))
+  check_error("normalize_dt: an unmapped type is refused, not guessed", normalize_dt(data.table(z = complex(real = 1))), class = "dazdiff_error_types")
+  check_error("normalize_dt: an empty `to` refuses everything unconvertible", normalize_dt(stamps, to = character()), class = "dazdiff_error_types")
+  check_error("normalize_dt: a target with no cast rule", normalize_dt(stamps, to = c(POSIXct = "logical")), class = "dazdiff_error_cast")
+  check_error("normalize_dt: an unknown column", normalize_dt(stamps, cols = "nope"), class = "dazdiff_error_columns")
+  check_error("normalize_dt: refuses a non-table", normalize_dt(1:3), class = "dazdiff_error_input")
 })
 
 test_that("truncate = FALSE refuses every cast that drops a fraction", {
-  expect_error(cast_value(1.7, "integer", "N", truncate = FALSE), "not a whole number", class = "dazdiff_error_cast")
-  expect_error(cast_value("3.7", "integer", "N", truncate = FALSE), "character -> integer, not a whole number")
-  expect_error(cast_value(1.5, "Date", "D", truncate = FALSE), "not a whole day")
+  expect_error(cast_value(1.7, "integer", "N", truncate = FALSE), class = "dazdiff_error_cast")
+  # Text truncates in two hops, but the error names the type the caller had.
+  err <- expect_error(cast_value("3.7", "integer", "N", truncate = FALSE), class = "dazdiff_error_cast")
+  expect_identical(c(err$from, err$to), c("character", "integer"))
+  expect_error(cast_value(1.5, "Date", "D", truncate = FALSE), class = "dazdiff_error_cast")
   expect_error(
     cast_value(as.POSIXct("2024-01-01 10:00", tz = "UTC"), "Date", "D", truncate = FALSE),
-    "has a time of day"
+    class = "dazdiff_error_cast"
   )
   expect_error(
     cast_value(as.POSIXct(90.5, tz = "UTC"), "integer", "S", truncate = FALSE),
-    "not a whole number"
+    class = "dazdiff_error_cast"
   )
   # Exact values pass either way.
   expect_identical(cast_value(c(1, 2), "integer", "N", truncate = FALSE), c(1L, 2L))
@@ -305,18 +264,8 @@ test_that("a number becomes the Date it prints as, never a fractional one", {
   expect_identical(format(d), c("1970-01-02", "1969-12-31"))
 })
 
-local_tz <- function(tz, env = parent.frame()) {
-  old_tz <- Sys.getenv("TZ", unset = NA)
-  Sys.setenv(TZ = tz)
-  do.call(on.exit, list(quote(
-    if (is.na(old_tz)) Sys.unsetenv("TZ") else Sys.setenv(TZ = old_tz)
-  ), add = TRUE), envir = env)
-  env$old_tz <- old_tz
-  invisible()
-}
-
 test_that("a stamp with no zone is read in the session's zone, as it prints", {
-  local_tz("America/New_York")
+  withr::local_timezone("America/New_York")
   stamp <- as.POSIXct("2024-01-01 23:30:00")
   expect_identical(attr(stamp, "tzone"), "")
   out <- cast_value(stamp, "Date", "D")
@@ -332,7 +281,7 @@ test_that("a stamp with no zone is read in the session's zone, as it prints", {
 })
 
 test_that("a stamp with a zone is read in that zone, whatever the session's", {
-  local_tz("America/New_York")
+  withr::local_timezone("America/New_York")
   expect_equal(
     as.vector(cast_value(as.POSIXct("2024-01-01 23:30:00", tz = "UTC"), "Date", "D")),
     as.Date("2024-01-01")
@@ -358,7 +307,7 @@ test_that("a stamp on a day with no midnight is truncated, not a crash", {
   )
   expect_error(
     cast_value(stamp, "Date", "D", truncate = FALSE),
-    "has a time of day", class = "dazdiff_error_cast"
+    class = "dazdiff_error_cast"
   )
 })
 
@@ -372,7 +321,7 @@ test_that("a double written as text has no exponent", {
     )
   )
   # More than 15 significant digits is still refused.
-  expect_error(cast_value(0.1 + 0.2, "character", "C"), "loses precision", class = "dazdiff_error_cast")
+  expect_error(cast_value(0.1 + 0.2, "character", "C"), class = "dazdiff_error_cast")
   # Text ids in the benchmark meet numeric ids in the candidate.
   x <- data.frame(id = c("100000", "123456"), v = c(1, 2))
   y <- data.frame(id = c(100000, 123456), v = c(1, 2))
@@ -386,7 +335,7 @@ test_that("text NaN and Inf parse as numbers; the text NA does not", {
     cast_value(c("1", "NaN", "Inf", "-Inf", NA), "numeric", "N"),
     c(1, NaN, Inf, -Inf, NA)
   )
-  expect_error(cast_value(c("1", "NA"), "numeric", "N"), "not a number: NA", class = "dazdiff_error_cast")
+  expect_error(cast_value(c("1", "NA"), "numeric", "N"), class = "dazdiff_error_cast")
   d <- diff_table(data.frame(id = 1:2, v = c(1, NaN)), data.frame(id = 1:2, v = c("1", "NaN")))
   expect_identical(as.character(d$status), c("same", "same"))
   # With nan_is_na = FALSE, the parsed NaN is still a NaN.
@@ -412,12 +361,12 @@ test_that("integer64 converts through bit64, exactly or not at all", {
   expect_identical(cast_value(small, "numeric", "N"), c(1, -2, NA))
   expect_identical(cast_value(small, "integer", "N"), c(1L, -2L, NA))
   expect_identical(cast_value(big, "character", "N"), c("1", "-2", NA, "9007199254740993"))
-  expect_error(cast_value(big, "numeric", "N"), "2\\^53 or more.*9007199254740993", class = "dazdiff_error_cast")
+  expect_error(cast_value(big, "numeric", "N"), class = "dazdiff_error_cast")
   expect_error(
     cast_value(bit64::as.integer64("3000000000"), "integer", "N"),
-    "outside integer range", class = "dazdiff_error_cast"
+    class = "dazdiff_error_cast"
   )
-  expect_error(cast_value(small, "Date", "N"), "no sound conversion", class = "dazdiff_error_cast")
+  expect_error(cast_value(small, "Date", "N"), class = "dazdiff_error_cast")
 
   y <- data.frame(id = small[1:2], v = c(1, 2))
   out <- normalize_dt(y, to = c(integer64 = "numeric"))
@@ -436,16 +385,16 @@ test_that("normalize_dt's documented default is its real one", {
 
 test_that("NaN becomes NA only when they are the same missing value", {
   expect_true(is.na(cast_value(NaN, "integer", "N")))
-  expect_error(cast_value(NaN, "integer", "N", nan_is_na = FALSE), "NaN", class = "dazdiff_error_cast")
-  expect_error(cast_value(NaN, "Date", "D", nan_is_na = FALSE), "NaN")
+  expect_error(cast_value(NaN, "integer", "N", nan_is_na = FALSE), class = "dazdiff_error_cast")
+  expect_error(cast_value(NaN, "Date", "D", nan_is_na = FALSE), class = "dazdiff_error_cast")
   # Text keeps NaN as "NaN", so there is nothing to refuse.
   expect_identical(cast_value(NaN, "character", "C", nan_is_na = FALSE), "NaN")
 })
 
-test_that("cast_dt reports truncation once, as a message with a record", {
+test_that("cast_dt reports truncation once, as a message (not a warning) with a record", {
   x <- data.table(a = 1L, b = 1L, c = "k")
   y <- data.table(a = c(1.7, 2), b = c("3.2", "3.2"), c = "k")
-  expect_message(cast_dt(x, y), class = "dazdiff_message_truncation")
+  expect_no_warning(expect_message(cast_dt(x, y), class = "dazdiff_message_truncation"))
   rec <- attr(y, "truncated")
   expect_identical(rec$column, c("a", "b"))
   expect_identical(rec$n, c(1L, 2L))
@@ -463,23 +412,25 @@ test_that("cast_dt is quiet, with an empty record, when nothing was truncated", 
 test_that("cast_dt with truncate = FALSE refuses before writing anything", {
   y <- data.table(a = c("1", "2"), b = c(1.5, 2))
   before <- copy(y)
-  expect_error(cast_dt(data.table(a = 1L, b = 1L), y, truncate = FALSE), "column b")
+  err <- expect_error(cast_dt(data.table(a = 1L, b = 1L), y, truncate = FALSE), class = "dazdiff_error_cast")
+  expect_identical(err$column, "b")
   expect_identical(y, before)
 })
 
 test_that("cast_dt names columns by their labels in messages", {
   y <- data.table(AMOUNT = "x")
-  expect_error(
+  err <- expect_error(
     cast_dt(data.table(AMOUNT = 1), y, labels = c(AMOUNT = "\"amount\" (AMOUNT)")),
-    "column \"amount\" \\(AMOUNT\\)"
+    class = "dazdiff_error_cast"
   )
+  expect_identical(err$column, "\"amount\" (AMOUNT)")
 })
 
 test_that("a short year is refused on every platform, not only where %Y pads", {
   # glibc formats year 24 as "24", so the text round trip alone would accept
   # "24-01-01" on Linux. The year is checked on the date itself.
-  expect_error(cast_value("24-01-01", "Date", "col"), "not a canonical", class = "dazdiff_error_cast")
-  expect_error(cast_value("024-01-01", "Date", "col"), "not a canonical")
-  expect_error(cast_value("0024-01-01", "Date", "col"), "not a canonical")
+  expect_error(cast_value("24-01-01", "Date", "col"), class = "dazdiff_error_cast")
+  expect_error(cast_value("024-01-01", "Date", "col"), class = "dazdiff_error_cast")
+  expect_error(cast_value("0024-01-01", "Date", "col"), class = "dazdiff_error_cast")
   expect_equal(cast_value("1024-01-01", "Date", "col"), as.Date("1024-01-01"))
 })

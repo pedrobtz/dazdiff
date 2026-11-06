@@ -28,7 +28,8 @@ exactly, it defaults to 0.}
 }
 \value{
 The \code{\link[=diff_table]{diff_table()}} result, invisibly. On failure it is also
-attached to the failed expectation, as its \code{"diff"} attribute.
+attached to the failed expectation, as its \code{"diff"} attribute. \code{NULL}
+when the tables share no key, since there is no result.
 }
 \description{
 A testthat expectation built on \code{\link[=diff_table]{diff_table()}}: it passes when every
@@ -46,11 +47,17 @@ agrees with its stored copy to the last bit (\code{0.1 + 0.2} is not \code{0.3})
 a test should not fail on that. It is still far below any difference a
 person would call real. Pass \code{rel_tol = 0} for an exact comparison.
 
-Duplicate keys fail the expectation rather than being paired: pairing rows
-by arrival order is an assumption, and an assertion should not rest on one.
-The exception is a comparison with no measures, where the repeated rows are
-identical in every compared column and pairing them assumes nothing. Pass
+Duplicate keys are an error (\code{dazdiff_error_duplicates}), not a failure:
+pairing rows by arrival order is an assumption, and an assertion should not
+rest on one, so the test cannot be judged as written. The exception is a
+comparison with no measures, where the repeated rows are identical in every
+compared column and pairing them assumes nothing. Pass
 \code{duplicates = "disambiguate"} or \code{"aggregate"} to accept duplicates.
+
+Tables that share no key -- most often because \code{object} came back empty --
+fail the expectation. \code{\link[=diff_table]{diff_table()}} refuses such a comparison as
+ill-formed, but under test it is an answer: the two tables differ in every
+row.
 }
 \examples{
 \dontshow{if (requireNamespace("testthat", quietly = TRUE)) withAutoprint(\{ # examplesIf}

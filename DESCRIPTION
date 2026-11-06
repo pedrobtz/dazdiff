@@ -20,10 +20,11 @@ Roxygen: list(markdown = TRUE)
 Depends:
     R (>= 4.1)
 Imports:
-    data.table,
+    data.table (>= 1.13.0),
     utils
 Suggests:
     bit64,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    withr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.1

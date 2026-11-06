@@ -35,7 +35,8 @@ virtual \code{row_number} key column. See Well-formed tables.}
 
 \item{measures}{\code{"numeric"} (the default) compares the double columns;
 \code{"numeric+integer"} the integer columns too. Or column names, which must
-be numeric or integer.}
+be numeric or integer, or \code{character(0)} for none, which compares whole
+rows.}
 
 \item{tolerance}{The largest absolute difference still counted as \code{same}.}
 
@@ -62,7 +63,7 @@ refused rather than read as one.}
 A \code{data.table} keyed by the identity columns (and \code{key_seq},
 \code{metric} when present), with \code{status} a factor with levels \code{same},
 \code{changed}, \code{only_x} and \code{only_y}. The key includes \code{row_number} when
-\code{row_key} added it. Its shape is in \code{attr(, "shape")}:
+\code{row_key} added it. Its shape is in \code{attr(d, "shape")}:
 \itemize{
 \item \code{"cells"}, the usual one: one row per row and measure, with \code{key_seq}
 (only when duplicates were numbered), \code{metric}, \code{row_id_x}, \code{row_id_y}
@@ -72,14 +73,16 @@ A \code{data.table} keyed by the identity columns (and \code{key_seq},
 \code{status}.
 \item \code{"groups"}, with \code{duplicates = "aggregate"}: one row per key and
 measure, with \code{n_rows_x}, \code{n_rows_y}, \code{n_na_x}, \code{n_na_y},
-\code{value_key_x}, \code{value_key_y} (the exact multiset of values) and
-\code{status}. Without measures only the row counts are compared.
+\code{value_key_x}, \code{value_key_y} (the exact multiset of values, as
+hexadecimal text from the C library: compare them within one session,
+not with text stored on another platform) and \code{status}. Without measures only the row counts are compared.
 \item \code{"rows"}, when there are no measures: one row per row, with \code{key_seq}
 (when present), \code{row_id_x}, \code{row_id_y} and \code{status}, which is never
 \code{changed}.
 }
 
-The attributes \code{mode}, \code{tolerance} (\code{abs} and \code{rel}), \code{name_map} (each column's name in \code{x} and \code{y}),
+The attributes \code{mode}, \code{tolerance} (\code{abs} and \code{rel}), \code{name_map} (each
+column's name in \code{x} and \code{y}),
 \code{dropped} (columns of \code{y} dropped in benchmark mode), \code{ignored} (columns
 not compared) and \code{truncated} (the casts that truncated, with the rows
 of \code{y} each one touched) record what was done on the way.
@@ -97,9 +100,10 @@ both tables.
 \itemize{
 \item \code{"benchmark"}: does \code{y} match the benchmark \code{x}? Columns of \code{y} that \code{x}
 does not have are dropped, with a message. A column of \code{x} missing from
-\code{y} is an error. Each column of \code{y} is cast to the type it has in \code{x}
-(see \code{\link[=cast_rules]{cast_rules()}}), so a number stored as text, or a double stored as
-an integer, still compares.
+\code{y} is an error. Each compared column of \code{y} (in \code{by} or \code{measures}) is
+cast to the type it has in \code{x} (see \code{\link[=cast_rules]{cast_rules()}}), so a number stored as
+text, or a double stored as an integer, still compares. Columns that are
+not compared are neither cast nor type-checked.
 \item \code{"equal"}: are \code{x} and \code{y} equal? Every column must be in both tables and
 have the same type in both; nothing is cast. The result is symmetric:
 swapping \code{x} and \code{y} swaps \code{only_x} with \code{only_y} and negates \code{diff}.
@@ -109,11 +113,12 @@ swapping \code{x} and \code{y} swaps \code{only_x} with \code{only_y} and negate
 \section{Column names}{
 
 Column names are normalized in both tables before anything else: upper
-case, with every run of characters other than \code{A-Z} and \code{0-9} replaced by
-\verb{_}, and \verb{_} trimmed from the ends. So \verb{unit price}, \code{Unit.Price} and
+case, with every run of characters other than letters and digits replaced
+by \verb{_}, and \verb{_} trimmed from the ends. Letters outside ASCII are kept, so
+\code{Größe} and \code{Grüße} stay two columns. So \verb{unit price}, \code{Unit.Price} and
 \code{UNIT_PRICE} are one column, in either table. Two names in one table that
 normalize to the same thing are an error to fix before comparing. The
-result uses the normalized names; \code{attr(, "name_map")} maps them back.
+result uses the normalized names; \code{attr(d, "name_map")} maps them back.
 }
 
 \section{Truncation}{
@@ -123,7 +128,7 @@ number or a timestamp to a whole day -- is made by default, because the
 benchmark's types are taken as the truth: storage such as Spark or Delta
 turns a locally built double into an integer, and the comparison has to
 follow it. Each truncation is announced in a message and recorded in
-\code{attr(, "truncated")}: per column, the count, up to three examples, and
+\code{attr(d, "truncated")}: per column, the count, up to three examples, and
 in the list column \code{rows} the row numbers of \code{y} that were truncated,
 which are the \code{row_id_y} of the result. A truncated key column can pair
 rows that differ (\code{1.5} in \code{y} becomes \code{1} and aligns with \code{x}'s \code{1}), so
@@ -188,9 +193,9 @@ instead, exactly (\code{tolerance} must be 0).
 A value is \code{same} when both are equal, or when both are finite and their
 difference is within \code{tolerance} or within \code{rel_tol} relative to the larger
 of the two: \code{abs_diff <= tolerance} or \code{rel_diff <= rel_tol}. Both
-tolerances default to 0, so by default only equal values are the same. Two missing values are the same; with
-\code{nan_is_na = TRUE} NaN and NA are the same missing value, in measures and in
-key columns alike.
+tolerances default to 0, so by default only equal values are the same. Two
+missing values are the same; with \code{nan_is_na = TRUE} NaN and NA are the
+same missing value, in measures and in key columns alike.
 }
 
 \section{Conditions}{

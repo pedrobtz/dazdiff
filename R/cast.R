@@ -2,16 +2,16 @@
 
 #' Write doubles as text the way a table of text ids writes them
 #'
-#' \code{as.character()} follows R's \code{scipen} rule, so a round number
-#' whose exponent form is shorter comes out as \code{"1e+05"}, and never joins
-#' the benchmark's \code{"100000"}. Values are written in fixed notation with
+#' `as.character()` follows R's `scipen` rule, so a round number
+#' whose exponent form is shorter comes out as `"1e+05"`, and never joins
+#' the benchmark's `"100000"`. Values are written in fixed notation with
 #' up to 15 significant digits instead, which is how such ids are written.
 #' Outside [1e-15, 2^53) fixed notation would mean a run of zeros or digits
 #' beyond the double's precision, and no table of ids writes those, so they
-#' keep \code{as.character()}'s form.
+#' keep `as.character()`'s form.
 #'
 #' @param v A double vector.
-#' @return A character vector, NA where \code{v} is NA (NaN is \code{"NaN"}).
+#' @return A character vector, NA where `v` is NA (NaN is `"NaN"`).
 #' @noRd
 num_to_text <- function(v) {
   txt <- as.character(v)
@@ -23,39 +23,92 @@ num_to_text <- function(v) {
   txt
 }
 
+#' Write timestamps as text in one fixed format
+#'
+#' `as.character()` cannot be used: since R 4.3 it drops the time from each
+#' stamp that is exactly at midnight and keeps it on the others, so one
+#' column comes out in two formats, and before 4.3 it dropped the time for the
+#' whole column only when every stamp was at midnight. Either way a midnight
+#' stamp never joined the benchmark's `"2024-01-01 00:00:00"`, and the output
+#' depended on the R version.
+#'
+#' Every stamp is written `"%Y-%m-%d %H:%M:%S"`, the local time in the stamp's
+#' own zone (the session's, for a stamp with none). A stamp with a fraction of
+#' a second adds it after a dot, to the microsecond (what databases store),
+#' without trailing zeros. The fraction is rounded off the stamp's seconds
+#' before formatting, because `format()` truncates `%OS` digits and a double
+#' rarely holds a decimal fraction exactly: 0.1 s would print as `.099999`.
+#'
+#' @param v A POSIXct vector.
+#' @return A character vector, NA where `v` is NA.
+#' @noRd
+stamp_to_text <- function(v) {
+  s <- as.numeric(v)
+  whole <- floor(s)
+  us <- round((s - whole) * 1e6)
+  # Rounding can reach the next second: 0.9999996 s is 1 s, not 0.1000000.
+  carry <- !is.na(us) & us >= 1e6
+  whole[carry] <- whole[carry] + 1
+  us[carry] <- 0
+  txt <- format(.POSIXct(whole, tz = attr(v, "tzone")), "%Y-%m-%d %H:%M:%S")
+  frac <- !is.na(us) & us > 0
+  if (any(frac)) {
+    txt[frac] <- paste0(
+      txt[frac],
+      ".",
+      sub("0+$", "", sprintf("%06.0f", us[frac]))
+    )
+  }
+  txt
+}
+
 #' Cast one column to a target type
 #'
-#' One column of \code{v} cast to \code{to}. Refuses anything ambiguous instead
+#' One column of `v` cast to `to`. Refuses anything ambiguous instead
 #' of letting R's coercion rules quietly produce NAs. The one loss it will
 #' accept is a truncation -- a fraction dropped on the way to a whole integer
-#' or a whole day -- and only when \code{truncate} says so.
+#' or a whole day -- and only when `truncate` says so.
 #'
 #' @param v The vector to convert.
-#' @param to The target type, one of \code{CAST_TYPES}.
+#' @param to The target type, one of `CAST_TYPES`.
 #' @param nm The column's name, used in error messages.
 #' @param origin The type the value arrived as. Text and factors are converted
 #'   in two hops, and the message should name the type the caller actually
-#'   passed, not the intermediate one. Defaults to \code{col_type(v)}.
-#' @param date_format The \code{strptime} format dates are read and written in,
-#'   \code{"\%Y-\%m-\%d"} by default. Text is parsed with it and must match it
+#'   passed, not the intermediate one. Defaults to `col_type(v)`.
+#' @param date_format The `strptime` format dates are read and written in,
+#'   `"%Y-%m-%d"` by default. Text is parsed with it and must match it
 #'   exactly, and a Date written back out to text is formatted with it, so the
 #'   two directions stay inverse to one another.
 #' @param truncate Whether a cast may drop a fraction: a double to an integer
 #'   (toward zero), a number to a Date (to the day it prints as), a timestamp
 #'   to a Date (the time of day). When it does, the result carries a
-#'   \code{"truncated"} attribute: the count, up to three examples and the
+#'   `"truncated"` attribute: the count, up to three examples and the
 #'   positions of every truncated value. When FALSE, the cast is refused
 #'   instead.
 #' @param nan_is_na Whether NaN and NA are the same missing value. NaN has no
 #'   integer or Date form and becomes NA on the way; with FALSE that would hide
 #'   a difference, so the cast is refused instead.
-#' @return \code{v} converted to \code{to}, or an error naming the column, the
+#' @return `v` converted to `to`, or an error naming the column, the
 #'   pair of types, the reason and up to three offending values.
 #' @noRd
-cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
-                       truncate = TRUE, nan_is_na = TRUE) {
-  if (!is.character(date_format) || length(date_format) != 1L || is.na(date_format)) {
-    dazdiff_abort("dazdiff_error_input", "`date_format` must be a single format string")
+cast_value <- function(
+  v,
+  to,
+  nm,
+  origin = NULL,
+  date_format = "%Y-%m-%d",
+  truncate = TRUE,
+  nan_is_na = TRUE
+) {
+  if (
+    !is.character(date_format) ||
+      length(date_format) != 1L ||
+      is.na(date_format)
+  ) {
+    dazdiff_abort(
+      "dazdiff_error_input",
+      "`date_format` must be a single format string"
+    )
   }
   from <- col_type(v)
   if (is.null(origin)) {
@@ -69,10 +122,30 @@ cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
     if (length(vals)) {
       msg <- paste0(msg, ": ", paste(head(unique(vals), 3L), collapse = ", "))
     }
-    dazdiff_abort("dazdiff_error_cast", msg, column = nm, from = origin, to = to)
+    dazdiff_abort(
+      "dazdiff_error_cast",
+      msg,
+      column = nm,
+      from = origin,
+      to = to
+    )
   }
   if (!from %in% CAST_FROM) {
     refuse("unsupported source type")
+  }
+
+  # Readers such as read.csv() and fread() type a column with no values as
+  # logical. It stands for a column of the target type with no values, so it
+  # becomes one, before the rules are read: logical -> Date is refused for
+  # any column that has a value (see CAST_RULES).
+  if (from == "logical" && all(is.na(v)) && to %in% CAST_TYPES) {
+    return(switch(
+      to,
+      character = rep(NA_character_, length(v)),
+      integer = rep(NA_integer_, length(v)),
+      numeric = rep(NA_real_, length(v)),
+      Date = structure(rep(NA_real_, length(v)), class = "Date")
+    ))
   }
 
   rule <- cast_rule(from, to)
@@ -81,9 +154,14 @@ cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
   }
 
   hop <- function(value) {
-    cast_value(value, to, nm,
-      origin = origin, date_format = date_format,
-      truncate = truncate, nan_is_na = nan_is_na
+    cast_value(
+      value,
+      to,
+      nm,
+      origin = origin,
+      date_format = date_format,
+      truncate = truncate,
+      nan_is_na = nan_is_na
     )
   }
 
@@ -145,20 +223,30 @@ cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
   # NaN has no integer or Date form, so it becomes NA on the way. When NaN and
   # NA are the same missing value that loses nothing; when they are not, it
   # would turn a difference into a match.
-  if (!nan_is_na && to %in% c("integer", "Date") && is.double(v) && any(is.nan(v))) {
+  if (
+    !nan_is_na && to %in% c("integer", "Date") && is.double(v) && any(is.nan(v))
+  ) {
     refuse("NaN has no such form (nan_is_na = FALSE)")
   }
 
   # `lost` marks the values a cast truncated; `why` says what was dropped.
   lost <- NULL
   why <- NULL
-  out <- switch(to,
+  out <- switch(
+    to,
     # A Date goes back out through the same format it would be read in by, so
     # the two directions are inverse. A double is written the way a table of
-    # text ids writes it (see num_to_text()). Everything else is
-    # as.character()'s job.
+    # text ids writes it (see num_to_text()), and a timestamp in one fixed
+    # format (see stamp_to_text()). Everything else is as.character()'s job.
     character = if (from == "Date") {
+      # A Date can hold part of a day, which no date format writes: it is
+      # written as the day it falls in, the same loss numeric -> Date records.
+      day <- unclass(v)
+      lost <- is.finite(day) & day != floor(day)
+      why <- "not a whole day"
       format(v, date_format)
+    } else if (from == "POSIXct") {
+      stamp_to_text(v)
     } else if (from == "numeric") {
       txt <- num_to_text(v)
       # Fifteen significant digits, so two doubles that differ further out
@@ -183,7 +271,9 @@ cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
         num <- as.numeric(v)
         off <- num[!is.na(num) & abs(num) > .Machine$integer.max]
         if (length(off)) {
-          refuse("outside integer range", off)
+          # Written as num_to_text() writes it: pasted as a double, an
+          # integer64 of 3000000000 would read "3e+09".
+          refuse("outside integer range", num_to_text(off))
         }
         lost <- !is.na(num) & num != trunc(num)
         why <- "not a whole number"
@@ -218,7 +308,10 @@ cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
       } else if (from == "character") {
         d <- suppressWarnings(as.Date(v, format = date_format))
         if (any(is.na(d) & !is.na(v))) {
-          refuse(sprintf("not a date in format %s", date_format), v[is.na(d) & !is.na(v)])
+          refuse(
+            sprintf("not a date in format %s", date_format),
+            v[is.na(d) & !is.na(v)]
+          )
         }
         # as.Date() stops at the end of the format and ignores whatever trails
         # it, so "2024-01-01junk" parses clean and "24-01-01" quietly becomes
@@ -243,8 +336,11 @@ cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
   )
 
   if (!is.null(lost) && any(lost)) {
+    # A Date's fraction of a day does not print, so "2024-01-01 -> 2024-01-01"
+    # would hide the loss; the day count shows it.
+    src <- if (from == "Date") unclass(v) else v
     if (!truncate) {
-      refuse(paste0(why, " (truncate = FALSE)"), v[lost])
+      refuse(paste0(why, " (truncate = FALSE)"), src[lost])
     }
     # One example per distinct value: a repeated value says nothing new.
     at <- which(lost)
@@ -254,9 +350,13 @@ cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
     # 1.5 against 1 among them.
     attr(out, "truncated") <- list(
       n = sum(lost),
-      examples = vapply(shown, function(i) {
-        paste(format(v[i]), "->", format(out[i]))
-      }, character(1L)),
+      examples = vapply(
+        shown,
+        function(i) {
+          paste(format(src[i]), "->", format(out[i]))
+        },
+        character(1L)
+      ),
       rows = at
     )
   }
@@ -268,45 +368,149 @@ cast_value <- function(v, to, nm, origin = NULL, date_format = "%Y-%m-%d",
   out
 }
 
+#' Store a Date the way a reference Date is stored
+#'
+#' A Date is a double, an IDate (and a Date built from integers) an integer,
+#' and `col_type()` calls both `"Date"`. Left mismatched, the rows of the two
+#' tables are later stacked into one key column, and data.table coerces a
+#' double into an integer column with its own, unclassed warning. `d` is a
+#' whole-day Date by the time it gets here, so changing its storage loses
+#' nothing.
+#'
+#' @param d A Date, IDate or integer-stored Date of whole days.
+#' @param ref The reference column whose storage `d` takes.
+#' @return `d` stored as `ref` is, with its `"truncated"` attribute kept.
+#' @noRd
+date_like <- function(d, ref) {
+  if (identical(typeof(d), typeof(ref)) && identical(class(d), class(ref))) {
+    return(d)
+  }
+  rec <- attr(d, "truncated")
+  out <- if (inherits(ref, "IDate")) {
+    as.IDate(d)
+  } else if (is.integer(ref)) {
+    structure(as.integer(unclass(d)), class = "Date")
+  } else {
+    structure(as.double(unclass(d)), class = "Date")
+  }
+  attr(out, "truncated") <- rec
+  out
+}
+
+#' Widen integer-stored Dates to doubles where the other table has doubles
+#'
+#' Where nothing is cast (`mode = "equal"`, `cast = FALSE`), a Date in one
+#' table and an IDate in the other are still one type to `col_type()`, but
+#' stacking a double Date that holds part of a day into an integer column
+#' truncates it with data.table's unclassed warning. Widening the integer
+#' side to a double loses nothing. Columns are replaced, never written into.
+#'
+#' @param x,y data.tables with the same column names.
+#' @return `NULL`, invisibly; `x` and `y` are modified by reference.
+#' @noRd
+widen_dates <- function(x, y) {
+  for (nm in names(x)) {
+    a <- x[[nm]]
+    b <- y[[nm]]
+    if (inherits(a, "Date") && inherits(b, "Date") && typeof(a) != typeof(b)) {
+      wide <- if (is.integer(a)) x else y
+      v <- wide[[nm]]
+      set(
+        wide,
+        j = nm,
+        value = structure(as.double(unclass(v)), class = "Date")
+      )
+    }
+  }
+  invisible(NULL)
+}
+
+#' Say how to fix columns of a type dazdiff does not compare
+#'
+#' The tail of the message refusing such columns. normalize_dt() is offered
+#' only for the types it can convert (`CAST_FROM`): offered for a difftime or
+#' a list column, it led to a second refusal and then a third, none of them a
+#' fix. Those the caller has to convert or drop.
+#'
+#' @param labels The columns, as the caller spells them.
+#' @param types Their types, as `col_type()` names them.
+#' @return A string starting with `"; "`, or `""` when there is nothing.
+#' @noRd
+fix_hint <- function(labels, types) {
+  ok <- types %in% CAST_FROM
+  paste0(
+    if (any(ok)) {
+      sprintf("; convert %s with normalize_dt() first", fmt_names(labels[ok]))
+    },
+    if (any(!ok)) {
+      sprintf(
+        paste0(
+          "; normalize_dt() cannot convert %s, so convert or drop %s ",
+          "yourself (with as.numeric() or as.character(), say)"
+        ),
+        paste(unique(types[!ok]), collapse = ", "),
+        fmt_names(labels[!ok])
+      )
+    }
+  )
+}
+
 # The record of a cast that truncated nothing.
-truncated_empty <- function() data.table(
-  column = character(), n = integer(), examples = character(), rows = list()
-)
+truncated_empty <- function() {
+  data.table(
+    column = character(),
+    n = integer(),
+    examples = character(),
+    rows = list()
+  )
+}
 
 #' Cast a table's columns to a reference table's types
 #'
-#' Cast the columns of \code{y} to the types they have in the reference
-#' \code{x}. Every column is validated and converted before any is written, so a
-#' refusal leaves \code{y} exactly as it was.
+#' Cast the columns of `y` to the types they have in the reference
+#' `x`. Every column is validated and converted before any is written, so a
+#' refusal leaves `y` exactly as it was.
 #'
 #' A truncation is reported, never silent: the columns, counts, examples and
-#' the row numbers of \code{y} truncated (list column \code{rows}) are
-#' recorded on \code{y} as \code{attr(y, "truncated")} (an empty table when
+#' the row numbers of `y` truncated (list column `rows`) are
+#' recorded on `y` as `attr(y, "truncated")` (an empty table when
 #' nothing was truncated) and announced in one message of class
-#' \code{dazdiff_message_truncation}.
+#' `dazdiff_message_truncation`.
 #'
 #' @param x The reference table, whose column types are the targets.
 #' @param y The table to convert. Modified by reference, so it must be a
-#'   data.table; columns only in \code{y} are left alone.
+#'   data.table; columns only in `y` are left alone.
 #' @param cols The columns to cast, by default those present in both tables.
-#' @param date_format,truncate,nan_is_na See \code{cast_value()}.
+#' @param date_format,truncate,nan_is_na See `cast_value()`.
 #' @param labels How each column is named in messages, by column; the column
-#'   names themselves by default. \code{diff_table()} passes the caller's own
+#'   names themselves by default. `diff_table()` passes the caller's own
 #'   spelling of names it has normalized.
-#' @return \code{y}, invisibly.
+#' @return `y`, invisibly.
 #' @noRd
-cast_dt <- function(x, y, cols = intersect(names(x), names(y)),
-                    date_format = "%Y-%m-%d", truncate = TRUE, nan_is_na = TRUE,
-                    labels = NULL) {
+cast_dt <- function(
+  x,
+  y,
+  cols = intersect(names(x), names(y)),
+  date_format = "%Y-%m-%d",
+  truncate = TRUE,
+  nan_is_na = TRUE,
+  labels = NULL
+) {
   if (!is.data.frame(x) || !is.data.table(y)) {
-    dazdiff_abort("dazdiff_error_input", "`x` must be a data.frame and `y` a data.table")
+    dazdiff_abort(
+      "dazdiff_error_input",
+      "`x` must be a data.frame and `y` a data.table"
+    )
   }
 
   unknown <- setdiff(cols, intersect(names(x), names(y)))
   if (length(unknown)) {
     dazdiff_abort(
       "dazdiff_error_columns",
-      paste0("column(s) missing from x or y: ", paste(unknown, collapse = ", ")),
+      paste0(
+        "column(s) missing from x or y: ",
+        paste(unknown, collapse = ", ")
+      ),
       columns = unknown
     )
   }
@@ -329,11 +533,30 @@ cast_dt <- function(x, y, cols = intersect(names(x), names(y)),
   }
   values <- Map(
     function(nm, to) {
-      cast_value(y[[nm]], to, labels[[nm]],
-        date_format = date_format, truncate = truncate, nan_is_na = nan_is_na
+      v <- y[[nm]]
+      ref <- x[[nm]]
+      # col_type() calls an IDate (integer storage) and a Date (double) one
+      # type, so cast_value() would pass a Date onto an IDate untouched. A
+      # double Date can hold part of a day, which an integer cannot: it goes
+      # through numeric -> Date instead, floored and recorded like any number.
+      if (
+        to == "Date" && inherits(v, "Date") && is.double(v) && is.integer(ref)
+      ) {
+        v <- as.numeric(v)
+      }
+      out <- cast_value(
+        v,
+        to,
+        labels[[nm]],
+        origin = col_type(y[[nm]]),
+        date_format = date_format,
+        truncate = truncate,
+        nan_is_na = nan_is_na
       )
+      if (to == "Date") date_like(out, ref) else out
     },
-    cols, targets
+    cols,
+    targets
   )
 
   truncated <- rbindlist(c(
@@ -344,7 +567,9 @@ cast_dt <- function(x, y, cols = intersect(names(x), names(y)),
         return(NULL)
       }
       data.table(
-        column = labels[[nm]], n = t$n, examples = paste(t$examples, collapse = ", "),
+        column = labels[[nm]],
+        n = t$n,
+        examples = paste(t$examples, collapse = ", "),
         rows = list(t$rows)
       )
     })
@@ -361,10 +586,17 @@ cast_dt <- function(x, y, cols = intersect(names(x), names(y)),
     dazdiff_inform(
       "dazdiff_message_truncation",
       paste0(
-        "Truncated ", format(sum(truncated$n), big.mark = ","),
+        "Truncated ",
+        format(sum(truncated$n), big.mark = ","),
         " value(s) while casting to the reference types:\n",
-        paste0("  ", truncated$column, ": ", format(truncated$n, big.mark = ","),
-          " (", truncated$examples, ")",
+        paste0(
+          "  ",
+          truncated$column,
+          ": ",
+          format(truncated$n, big.mark = ","),
+          " (",
+          truncated$examples,
+          ")",
           collapse = "\n"
         )
       ),
@@ -387,7 +619,9 @@ cast_dt <- function(x, y, cols = intersect(names(x), names(y)),
 #' the stamp's own zone (the session's zone for a stamp with none, as it
 #' prints) and drops the time, so two stamps on the same day become one
 #' value; `c(POSIXct = "character")` keeps the stamp as text, written as its
-#' local time in its own zone without naming the zone, so the same instant
+#' local time in its own zone as `"%Y-%m-%d %H:%M:%S"` (with the fraction of
+#' a second, to the microsecond, when it has one) and without naming the
+#' zone, so the same instant
 #' held in two zones becomes two different strings: give both tables the
 #' same zone first. Name the one you mean in `to`.
 #'
@@ -397,10 +631,12 @@ cast_dt <- function(x, y, cols = intersect(names(x), names(y)),
 #' keeps every digit.
 #'
 #' @param dt A data.frame or data.table.
-#' @param to Named character: which supported type each other type becomes,
-#'   named by `"factor"`, `"POSIXct"` or `"integer64"`. The default only maps
-#'   `factor` to `"character"`. A column whose type is not named here is an
-#'   error, not a guess.
+#' @param to Named character: which supported type (`"character"`,
+#'   `"logical"`, `"Date"`, `"numeric"` or `"integer"`) each other type
+#'   becomes, named by `"factor"`, `"POSIXct"` or `"integer64"`. The mappings
+#'   given are added to the default, `factor` to `"character"`, and replace it
+#'   only where they name `factor` themselves. A column whose type is in
+#'   neither is an error, not a guess.
 #' @param cols The columns to consider, by default all of them.
 #' @return A `data.table`. `dt` is never modified; a copy is made only when
 #'   there is something to convert, so the result is `dt` itself when there is
@@ -417,6 +653,44 @@ normalize_dt <- function(dt, to = c(factor = "character"), cols = names(dt)) {
   if (!is.data.frame(dt)) {
     dazdiff_abort("dazdiff_error_input", "`dt` must be a data.frame")
   }
+  # `to` is checked whole, before any column is looked at: a typo in it is a
+  # mistake in the call whatever the table holds, and caught here it names
+  # the valid choices rather than surfacing as a cast with "no rule".
+  sources <- setdiff(CAST_FROM, CAST_TYPES)
+  if (
+    !is.character(to) ||
+      (length(to) && is.null(names(to))) ||
+      anyNA(to) ||
+      anyDuplicated(names(to)) ||
+      !all(names(to) %in% sources) ||
+      !all(to %in% CAST_TYPES)
+  ) {
+    dazdiff_abort(
+      "dazdiff_error_input",
+      paste0(
+        "`to` must be a character vector named by type, each name one of ",
+        paste0("\"", sources, "\"", collapse = ", "),
+        " (at most once) and each value one of ",
+        paste0("\"", CAST_TYPES, "\"", collapse = ", "),
+        if (is.character(to) && length(to)) {
+          paste0(
+            "; got ",
+            paste0(
+              if (is.null(names(to))) "" else paste0(names(to), " = "),
+              "\"",
+              to,
+              "\"",
+              collapse = ", "
+            )
+          )
+        }
+      )
+    )
+  }
+  # The caller's mappings are added to the default, not put in its place:
+  # naming the one conversion a table needs should not cost the factor one.
+  to <- c(to, NORMALIZE_TO[setdiff(names(NORMALIZE_TO), names(to))])
+
   dt <- as.data.table(dt)
 
   unknown <- setdiff(cols, names(dt))
@@ -436,12 +710,23 @@ normalize_dt <- function(dt, to = c(factor = "character"), cols = names(dt)) {
 
   unmapped <- need[!types[need] %in% names(to)]
   if (length(unmapped)) {
+    # Naming a target in `to` is the fix only for a type normalize_dt() can
+    # convert; for the others, fix_hint() says so.
+    can <- types[unmapped] %in% CAST_FROM
     dazdiff_abort(
       "dazdiff_error_types",
       paste0(
         "no conversion given for column(s): ",
         paste(sprintf("%s (%s)", unmapped, types[unmapped]), collapse = ", "),
-        "; name the target type in `to`"
+        if (any(can)) {
+          sprintf(
+            "; name the target type for %s in `to`",
+            paste(unique(types[unmapped][can]), collapse = ", ")
+          )
+        },
+        if (any(!can)) {
+          fix_hint(unmapped[!can], types[unmapped][!can])
+        }
       ),
       columns = unmapped
     )

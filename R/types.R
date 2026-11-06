@@ -22,7 +22,8 @@ NORMALIZE_TO <- c(factor = "character")
 
 # Which conversions cast_dt() will attempt, and on what terms. This table is
 # the authority: cast_value() consults it before doing any work, so what you
-# see here is what the code does. `note` is the condition the values must meet
+# see here is what the code does (an all-NA logical column is the one
+# exception, noted on its rule below). `note` is the condition the values must meet
 # (an unmet condition is an error, never a silent NA).
 #
 # A cast that loses the fraction of a value -- to a whole integer, to a whole
@@ -44,7 +45,10 @@ CAST_RULES <- rbindlist(lapply(CAST_FROM, function(from) {
   note := "fixed notation, up to 15 significant digits (scientific outside [1e-15, 2^53)); refused when the text does not read back as the same number"
 ][
   from == "POSIXct" & to == "character",
-  note := "the local time in the stamp's own timezone, which the text does not record"
+  note := "\"%Y-%m-%d %H:%M:%S\", plus \".ffffff\" (to the microsecond, trailing zeros dropped) when the stamp has a fraction of a second: the local time in the stamp's own timezone, which the text does not record"
+][
+  from == "Date" & to == "character",
+  note := "written in date_format; a fraction of a day is truncated (refused with truncate = FALSE)"
 ][
   to == "integer" & from %in% c("numeric", "Date", "POSIXct", "character"),
   note := "a fraction is truncated toward zero (refused with truncate = FALSE); must be within integer range"
@@ -83,6 +87,13 @@ CAST_RULES <- rbindlist(lapply(CAST_FROM, function(from) {
     (from %in% c("logical", "integer64") & to == "Date"),
   `:=`(allowed = FALSE, note = "no sound conversion")
 ][
+  # The one exception to the table, made in cast_value() before it is read:
+  # readers such as read.csv() and fread() type a column with no values as
+  # logical, so a logical column of nothing but NA becomes NA of any target
+  # type. Only Date would otherwise refuse it; the note says so.
+  from == "logical" & to == "Date",
+  note := "no sound conversion, except that a column that is entirely NA (how readers type an empty column) becomes NA"
+][
   # A factor's labels can be parsed like any text, but doing it implicitly is
   # how codes get mistaken for values. Ask for as.character() out loud instead.
   from == "factor" & to != "character",
@@ -92,13 +103,13 @@ CAST_RULES <- rbindlist(lapply(CAST_FROM, function(from) {
 #' Look up the casting rule for one type pair
 #'
 #' The rule for one pair, or a 1-row NA table when there is none. The index is
-#' built outside the \code{[ ]} on purpose: inside \code{[.data.table} the names
-#' \code{from} and \code{to} would resolve to the table's own columns instead of
+#' built outside the `[ ]` on purpose: inside `[.data.table` the names
+#' `from` and `to` would resolve to the table's own columns instead of
 #' these arguments.
 #'
-#' @param from Source type, as \code{col_type()} names it.
-#' @param to Target type, one of \code{CAST_TYPES}.
-#' @return The matching one-row slice of \code{CAST_RULES}, with \code{allowed}
+#' @param from Source type, as `col_type()` names it.
+#' @param to Target type, one of `CAST_TYPES`.
+#' @return The matching one-row slice of `CAST_RULES`, with `allowed`
 #'   NA when the pair has no rule.
 #' @noRd
 cast_rule <- function(from, to) {
@@ -118,17 +129,25 @@ cast_rule <- function(from, to) {
 #' refused rather than made.
 #'
 #' A cast that drops the fraction of a value (a double to an integer, a
-#' timestamp to its calendar day) is a *truncation*: it is made when
-#' `truncate = TRUE`, which is the default, and refused otherwise.
+#' timestamp to its calendar day, a Date holding part of a day to its text) is
+#' a *truncation*: it is made when `truncate = TRUE`, which is the default,
+#' and refused otherwise.
 #'
 #' Text is parsed strictly: anything that is not a number, a logical literal
 #' or a date in `date_format` is refused, and that includes the text `"NA"`,
 #' since a missing value has to arrive as `NA`. `"NaN"` and `"Inf"` are
 #' numbers. A double written as text is written in fixed notation, so
-#' `100000` becomes `"100000"`, not `"1e+05"`, and a timestamp written as text
-#' is its local time in its own timezone, which the text does not record. An
+#' `100000` becomes `"100000"`, not `"1e+05"`. A timestamp written as text is
+#' its local time in its own timezone, which the text does not record, always
+#' as `"%Y-%m-%d %H:%M:%S"` (midnight included), followed by the fraction of
+#' a second to the microsecond when it has one, as in
+#' `"2024-01-01 10:00:00.25"`. An
 #' `integer64` column (from \pkg{bit64}) becomes a double when that is exact,
 #' an integer within range, or its decimal text.
+#'
+#' A logical column becomes a Date only when every value is `NA`: that is how
+#' readers such as `read.csv()` and `data.table::fread()` type a column with
+#' no values, and the Date column it stands for is then all `NA` as well.
 #'
 #' @param wide If `TRUE` (the default), a grid of source types by target types,
 #'   with `"yes"` for an allowed conversion, `"-"` for a refused one and `"="`
@@ -145,7 +164,11 @@ cast_rules <- function(wide = TRUE) {
   }
   w <- dcast(CAST_RULES, from ~ to, value.var = "allowed")
   for (nm in setdiff(names(w), "from")) {
-    set(w, j = nm, value = fifelse(is.na(w[[nm]]), "=", fifelse(w[[nm]], "yes", "-")))
+    set(
+      w,
+      j = nm,
+      value = fifelse(is.na(w[[nm]]), "=", fifelse(w[[nm]], "yes", "-"))
+    )
   }
   setcolorder(w, c("from", CAST_TYPES))[order(match(from, CAST_FROM))]
 }
@@ -158,16 +181,16 @@ cast_rules <- function(wide = TRUE) {
 #' the package: summaries, measure selection and casting all read it, so a
 #' column cannot be one type to one of them and another type to the next.
 #'
-#' integer64 is stored as a double, and \code{is.numeric()} says so; read as a
+#' integer64 is stored as a double, and `is.numeric()` says so; read as a
 #' number it would be silently wrong. It is named for what it is, and converted
-#' through bit64 (see \code{CAST_RULES}); it is never a target type, so a
-#' benchmark holding one is refused with a pointer to \code{normalize_dt()}.
+#' through bit64 (see `CAST_RULES`); it is never a target type, so a
+#' benchmark holding one is refused with a pointer to `normalize_dt()`.
 #'
-#' An ordered factor is a factor (its first class is \code{"ordered"}), and is
+#' An ordered factor is a factor (its first class is `"ordered"`), and is
 #' named as one.
 #'
 #' @param v A vector.
-#' @return A length-1 character: one of \code{CAST_FROM}, or the vector's first
+#' @return A length-1 character: one of `CAST_FROM`, or the vector's first
 #'   class when it is something else entirely.
 #' @noRd
 col_type <- function(v) {
