@@ -14,15 +14,33 @@ MEASURE_TYPES <- list(
 #' @param measures A type keyword from `MEASURE_TYPES`, or column names.
 #'   Named columns must be numeric or integer: they are melted into one double
 #'   value column, and a Date or a string has no place there.
+#' @param labels Optional: how messages name each column, by column name.
+#' @param given Optional: `measures` as the caller wrote them, parallel to
+#'   `measures`, quoted for a name that is repeated or not a column.
 #' @return The measure column names, in `dt`'s column order for a keyword
-#'   and in the given order for names. Possibly empty.
+#'   and in the given order for names. Possibly empty: `character(0)` asks
+#'   for none.
 #' @noRd
-select_measures <- function(dt, measures = "numeric") {
-  if (!is.character(measures) || !length(measures) || anyNA(measures)) {
+select_measures <- function(
+  dt,
+  measures = "numeric",
+  labels = NULL,
+  given = measures
+) {
+  if (!is.character(measures) || anyNA(measures)) {
     daffiz_abort(
       "daffiz_error_measures",
-      "`measures` must be \"numeric\", \"numeric+integer\" or column names"
+      paste0(
+        "`measures` must be \"numeric\", \"numeric+integer\", column names, ",
+        "or character(0) for none"
+      )
     )
+  }
+  if (!length(measures)) {
+    return(character())
+  }
+  if (is.null(labels)) {
+    labels <- structure(names(dt), names = names(dt))
   }
   types <- vapply(dt, col_type, character(1L))
   if (length(measures) == 1L && measures %in% names(MEASURE_TYPES)) {
@@ -33,21 +51,22 @@ select_measures <- function(dt, measures = "numeric") {
   # would then go cartesian and silently double every count.
   dup <- unique(measures[duplicated(measures)])
   unknown <- setdiff(measures, names(dt))
+  said <- function(cols) unique(given[measures %in% cols])
   wrong <- setdiff(
     measures,
     c(unknown, names(dt)[types %in% c("numeric", "integer")])
   )
   problems <- c(
     if (length(dup)) {
-      paste0("named more than once: ", paste(dup, collapse = ", "))
+      paste0("named more than once: ", paste(said(dup), collapse = ", "))
     },
     if (length(unknown)) {
-      paste0("not a column: ", paste(unknown, collapse = ", "))
+      paste0("not a column: ", paste(said(unknown), collapse = ", "))
     },
     if (length(wrong)) {
       paste0(
         "not numeric or integer: ",
-        paste(sprintf("%s (%s)", wrong, types[wrong]), collapse = ", ")
+        paste(sprintf("%s (%s)", labels[wrong], types[wrong]), collapse = ", ")
       )
     }
   )

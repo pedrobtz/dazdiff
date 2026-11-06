@@ -127,7 +127,8 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #'   virtual `row_number` key column. See Well-formed tables.
 #' @param measures `"numeric"` (the default) compares the double columns;
 #'   `"numeric+integer"` the integer columns too. Or column names, which must
-#'   be numeric or integer.
+#'   be numeric or integer, or `character(0)` for none, which compares whole
+#'   rows.
 #' @param tolerance The largest absolute difference still counted as `same`.
 #' @param rel_tol The largest relative difference still counted as `same`,
 #'   relative to the larger magnitude of the two values. A value is `same`
@@ -311,18 +312,30 @@ diff_table <- function(
 
   # 4. Roles --------------------------------------------------------------------
   if (!is.null(by)) {
+    # Messages quote `by` as the caller wrote it, not as normalized.
+    by_given <- by
     by <- canonical_names(by)
+    unknown <- !by %in% names(xx)
+    dropped <- unknown & by %in% map_y$column
     problems <- c(
       if (anyDuplicated(by)) {
         paste0(
           "names a column more than once: ",
-          fmt_names(unique(by[duplicated(by)]))
+          fmt_names(unique(by_given[
+            duplicated(by) | duplicated(by, fromLast = TRUE)
+          ]))
         )
       },
-      if (length(setdiff(by, names(xx)))) {
+      if (any(unknown & !dropped)) {
         paste0(
           "names column(s) not in the tables: ",
-          fmt_names(setdiff(by, names(xx)))
+          fmt_names(by_given[unknown & !dropped])
+        )
+      },
+      if (any(dropped)) {
+        paste0(
+          "names column(s) only `y` has, which benchmark mode drops: ",
+          fmt_names(by_given[dropped])
         )
       }
     )
@@ -340,10 +353,11 @@ diff_table <- function(
     pool <- setdiff(names(xx), by)
     measure <- select_measures(shallow_dt(xx, pool), measures)
   } else {
+    given <- measures
     if (is.character(measures)) {
       measures <- canonical_names(measures)
     }
-    measure <- select_measures(xx, measures)
+    measure <- select_measures(xx, measures, labels = label_x, given = given)
     both <- intersect(measure, by)
     if (length(both)) {
       daffiz_abort(
@@ -363,7 +377,7 @@ diff_table <- function(
       paste0(
         "The tables are not well-formed: they have no key column, since every ",
         "column is a measure, so rows cannot be aligned. Name the key with ",
-        "`by=`, leave some columns out of `measures`, or add a virtual key: ",
+        "`by`, leave some columns out of `measures`, or add a virtual key: ",
         "row_key = \"position\" pairs the rows as they come, and ",
         "row_key = \"sorted\" pairs them after sorting both tables by their values."
       )
@@ -507,7 +521,7 @@ diff_table <- function(
       head_line <- sprintf(
         "the id columns do not tell rows apart: %s key(s) repeat (identity: %s)",
         format(uniqueN(groups, by = ids), big.mark = ","),
-        fmt_names(ids)
+        fmt_names(label_x[ids])
       )
       if (duplicates == "error") {
         daffiz_abort(
@@ -553,7 +567,7 @@ diff_table <- function(
           } else {
             paste0(
               "No identity value of `x` appears in `y` (identity: ",
-              fmt_names(ids),
+              fmt_names(label_x[ids]),
               ")"
             )
           },

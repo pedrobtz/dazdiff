@@ -35,7 +35,8 @@ virtual \code{row_number} key column. See Well-formed tables.}
 
 \item{measures}{\code{"numeric"} (the default) compares the double columns;
 \code{"numeric+integer"} the integer columns too. Or column names, which must
-be numeric or integer.}
+be numeric or integer, or \code{character(0)} for none, which compares whole
+rows.}
 
 \item{tolerance}{The largest absolute difference still counted as \code{same}.}
 

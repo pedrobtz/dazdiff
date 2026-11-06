@@ -171,7 +171,7 @@ test_that("measures can be chosen by type or by name, in either spelling", {
 
 test_that("a named measure that is not numeric is refused", {
   x <- data.table(id = c("a", "b"), v = c(1, 2))
-  expect_error(diff_table(x, x, measures = "id"), "not numeric or integer: ID \\(character\\)", class = "daffiz_error_measures")
+  expect_error(diff_table(x, x, measures = "id"), "not numeric or integer: id \\(character\\)", class = "daffiz_error_measures")
 })
 
 test_that("by picks the identity; other columns are ignored in benchmark mode", {
@@ -192,8 +192,8 @@ test_that("equal mode refuses to ignore a column", {
 
 test_that("by is validated", {
   x <- data.table(id = c("a", "b"), v = c(1, 2))
-  expect_error(diff_table(x, x, by = "nope"), "`by` names column\\(s\\) not in the tables: NOPE")
-  expect_error(diff_table(x, x, by = c("id", "ID")), "`by` names a column more than once: ID")
+  expect_error(diff_table(x, x, by = "nope"), "`by` names column\\(s\\) not in the tables: nope")
+  expect_error(diff_table(x, x, by = c("id", "ID")), "`by` names a column more than once: id, ID")
   expect_error(diff_table(x, x, by = "v", measures = "v"), "`by` and `measures` both name: v", class = "daffiz_error_measures")
   expect_error(diff_table(x, x, by = NA_character_), class = "daffiz_error_input")
 })

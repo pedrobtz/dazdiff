@@ -59,7 +59,7 @@ test_that("a named measure must be numeric or integer, named once, and exist", {
   expect_error(select_measures(d, "CHR_01"), "not numeric or integer: CHR_01 \\(character\\)", class = "daffiz_error_measures")
   expect_error(select_measures(d, c("NUM_01", "NUM_01")), "named more than once: NUM_01")
   expect_error(select_measures(d, "NOPE"), "not a column: NOPE")
-  expect_error(select_measures(d, character()), class = "daffiz_error_measures")
+  expect_identical(select_measures(d, character()), character())
   expect_error(select_measures(d, NA_character_), class = "daffiz_error_measures")
 })
 
