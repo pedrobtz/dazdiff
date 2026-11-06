@@ -253,3 +253,46 @@ test_that("normalize_dt() refuses a `to` name it cannot convert from", {
     class = "daffiz_error_input"
   )
 })
+
+# How to fix an unsupported column -----------------------------------------
+
+test_that("diff_table() points at normalize_dt() only for what it converts", {
+  x <- data.table::data.table(
+    id = 1:2,
+    t = as.POSIXct(c("2024-01-01 10:00:00", "2024-01-02 10:00:00"), tz = "UTC"),
+    span = as.difftime(c(1, 2), units = "hours")
+  )
+  err <- expect_error(diff_table(x, x), class = "daffiz_error_types")
+  msg <- conditionMessage(err)
+  expect_match(msg, "convert t with normalize_dt() first", fixed = TRUE)
+  expect_match(
+    msg,
+    "normalize_dt() cannot convert difftime, so convert or drop span",
+    fixed = TRUE
+  )
+})
+
+test_that("diff_table() does not offer normalize_dt() for a list column", {
+  x <- data.table::data.table(id = 1:2, l = list(1, "a"))
+  err <- expect_error(diff_table(x, x), class = "daffiz_error_types")
+  expect_no_match(
+    conditionMessage(err),
+    "with normalize_dt() first",
+    fixed = TRUE
+  )
+  expect_match(conditionMessage(err), "cannot convert list", fixed = TRUE)
+})
+
+test_that("normalize_dt() asks for `to` only for types it can convert", {
+  dt <- data.frame(
+    t = as.POSIXct("2024-01-01 10:00:00", tz = "UTC"),
+    span = as.difftime(1, units = "hours")
+  )
+  err <- expect_error(normalize_dt(dt), class = "daffiz_error_types")
+  msg <- conditionMessage(err)
+  expect_match(msg, "name the target type for POSIXct in `to`", fixed = TRUE)
+  expect_match(msg, "cannot convert difftime", fixed = TRUE)
+
+  err <- expect_error(normalize_dt(dt["span"]), class = "daffiz_error_types")
+  expect_no_match(conditionMessage(err), "`to`", fixed = TRUE)
+})

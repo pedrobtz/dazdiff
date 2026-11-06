@@ -324,7 +324,7 @@ diff_table <- function(
           sprintf("%s (%s)", label_x[names(unsupported)], unsupported),
           collapse = ", "
         ),
-        "; convert them with normalize_dt() first"
+        fix_hint(label_x[names(unsupported)], unsupported)
       ),
       columns = names(unsupported)
     )

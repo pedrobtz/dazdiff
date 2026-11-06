@@ -417,6 +417,36 @@ widen_dates <- function(x, y) {
   invisible(NULL)
 }
 
+#' Say how to fix columns of a type daffiz does not compare
+#'
+#' The tail of the message refusing such columns. normalize_dt() is offered
+#' only for the types it can convert (`CAST_FROM`): offered for a difftime or
+#' a list column, it led to a second refusal and then a third, none of them a
+#' fix. Those the caller has to convert or drop.
+#'
+#' @param labels The columns, as the caller spells them.
+#' @param types Their types, as `col_type()` names them.
+#' @return A string starting with `"; "`, or `""` when there is nothing.
+#' @noRd
+fix_hint <- function(labels, types) {
+  ok <- types %in% CAST_FROM
+  paste0(
+    if (any(ok)) {
+      sprintf("; convert %s with normalize_dt() first", fmt_names(labels[ok]))
+    },
+    if (any(!ok)) {
+      sprintf(
+        paste0(
+          "; normalize_dt() cannot convert %s, so convert or drop %s ",
+          "yourself (with as.numeric() or as.character(), say)"
+        ),
+        paste(unique(types[!ok]), collapse = ", "),
+        fmt_names(labels[!ok])
+      )
+    }
+  )
+}
+
 # The record of a cast that truncated nothing.
 truncated_empty <- function() {
   data.table(
@@ -672,12 +702,23 @@ normalize_dt <- function(dt, to = c(factor = "character"), cols = names(dt)) {
 
   unmapped <- need[!types[need] %in% names(to)]
   if (length(unmapped)) {
+    # Naming a target in `to` is the fix only for a type normalize_dt() can
+    # convert; for the others, fix_hint() says so.
+    can <- types[unmapped] %in% CAST_FROM
     daffiz_abort(
       "daffiz_error_types",
       paste0(
         "no conversion given for column(s): ",
         paste(sprintf("%s (%s)", unmapped, types[unmapped]), collapse = ", "),
-        "; name the target type in `to`"
+        if (any(can)) {
+          sprintf(
+            "; name the target type for %s in `to`",
+            paste(unique(types[unmapped][can]), collapse = ", ")
+          )
+        },
+        if (any(!can)) {
+          fix_hint(unmapped[!can], types[unmapped][!can])
+        }
       ),
       columns = unmapped
     )
