@@ -73,10 +73,12 @@ conversion is the caller's choice and not a silent default.</p>
 
 
 <dt id="arg-to">to<a class="anchor" aria-label="anchor" href="#arg-to"></a></dt>
-<dd><p>Named character: which supported type each other type becomes,
-named by <code>"factor"</code>, <code>"POSIXct"</code> or <code>"integer64"</code>. The default only maps
-<code>factor</code> to <code>"character"</code>. A column whose type is not named here is an
-error, not a guess.</p></dd>
+<dd><p>Named character: which supported type (<code>"character"</code>,
+<code>"logical"</code>, <code>"Date"</code>, <code>"numeric"</code> or <code>"integer"</code>) each other type
+becomes, named by <code>"factor"</code>, <code>"POSIXct"</code> or <code>"integer64"</code>. The mappings
+given are added to the default, <code>factor</code> to <code>"character"</code>, and replace it
+only where they name <code>factor</code> themselves. A column whose type is in
+neither is an error, not a guess.</p></dd>
 
 
 <dt id="arg-cols">cols<a class="anchor" aria-label="anchor" href="#arg-cols"></a></dt>
@@ -96,7 +98,9 @@ not, and callers must treat it as read-only.</p>
 the stamp's own zone (the session's zone for a stamp with none, as it
 prints) and drops the time, so two stamps on the same day become one
 value; <code>c(POSIXct = "character")</code> keeps the stamp as text, written as its
-local time in its own zone without naming the zone, so the same instant
+local time in its own zone as <code>"%Y-%m-%d %H:%M:%S"</code> (with the fraction of
+a second, to the microsecond, when it has one) and without naming the
+zone, so the same instant
 held in two zones becomes two different strings: give both tables the
 same zone first. Name the one you mean in <code>to</code>.</p>
 <p>An <code>integer64</code> column (from <span class="pkg">bit64</span>) has no default either:

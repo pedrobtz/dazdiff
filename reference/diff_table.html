@@ -109,7 +109,8 @@ virtual <code>row_number</code> key column. See Well-formed tables.</p></dd>
 <dt id="arg-measures">measures<a class="anchor" aria-label="anchor" href="#arg-measures"></a></dt>
 <dd><p><code>"numeric"</code> (the default) compares the double columns;
 <code>"numeric+integer"</code> the integer columns too. Or column names, which must
-be numeric or integer.</p></dd>
+be numeric or integer, or <code>character(0)</code> for none, which compares whole
+rows.</p></dd>
 
 
 <dt id="arg-tolerance">tolerance<a class="anchor" aria-label="anchor" href="#arg-tolerance"></a></dt>
@@ -152,7 +153,7 @@ refused rather than read as one.</p></dd>
     <p>A <code>data.table</code> keyed by the identity columns (and <code>key_seq</code>,
 <code>metric</code> when present), with <code>status</code> a factor with levels <code>same</code>,
 <code>changed</code>, <code>only_x</code> and <code>only_y</code>. The key includes <code>row_number</code> when
-<code>row_key</code> added it. Its shape is in <code>attr(, "shape")</code>:</p><ul><li><p><code>"cells"</code>, the usual one: one row per row and measure, with <code>key_seq</code>
+<code>row_key</code> added it. Its shape is in <code>attr(d, "shape")</code>:</p><ul><li><p><code>"cells"</code>, the usual one: one row per row and measure, with <code>key_seq</code>
 (only when duplicates were numbered), <code>metric</code>, <code>row_id_x</code>, <code>row_id_y</code>
 (the source rows, <code>NA</code> on the side the row is missing from),
 <code>value_x</code>, <code>value_y</code>, <code>diff</code> (<code>value_y - value_x</code>), <code>abs_diff</code>
@@ -160,12 +161,14 @@ refused rather than read as one.</p></dd>
 <code>status</code>.</p></li>
 <li><p><code>"groups"</code>, with <code>duplicates = "aggregate"</code>: one row per key and
 measure, with <code>n_rows_x</code>, <code>n_rows_y</code>, <code>n_na_x</code>, <code>n_na_y</code>,
-<code>value_key_x</code>, <code>value_key_y</code> (the exact multiset of values) and
-<code>status</code>. Without measures only the row counts are compared.</p></li>
+<code>value_key_x</code>, <code>value_key_y</code> (the exact multiset of values, as
+hexadecimal text from the C library: compare them within one session,
+not with text stored on another platform) and <code>status</code>. Without measures only the row counts are compared.</p></li>
 <li><p><code>"rows"</code>, when there are no measures: one row per row, with <code>key_seq</code>
 (when present), <code>row_id_x</code>, <code>row_id_y</code> and <code>status</code>, which is never
 <code>changed</code>.</p></li>
-</ul><p>The attributes <code>mode</code>, <code>tolerance</code> (<code>abs</code> and <code>rel</code>), <code>name_map</code> (each column's name in <code>x</code> and <code>y</code>),
+</ul><p>The attributes <code>mode</code>, <code>tolerance</code> (<code>abs</code> and <code>rel</code>), <code>name_map</code> (each
+column's name in <code>x</code> and <code>y</code>),
 <code>dropped</code> (columns of <code>y</code> dropped in benchmark mode), <code>ignored</code> (columns
 not compared) and <code>truncated</code> (the casts that truncated, with the rows
 of <code>y</code> each one touched) record what was done on the way.</p>
@@ -176,9 +179,10 @@ of <code>y</code> each one touched) record what was done on the way.</p>
 
 <ul><li><p><code>"benchmark"</code>: does <code>y</code> match the benchmark <code>x</code>? Columns of <code>y</code> that <code>x</code>
 does not have are dropped, with a message. A column of <code>x</code> missing from
-<code>y</code> is an error. Each column of <code>y</code> is cast to the type it has in <code>x</code>
-(see <code><a href="cast_rules.html">cast_rules()</a></code>), so a number stored as text, or a double stored as
-an integer, still compares.</p></li>
+<code>y</code> is an error. Each compared column of <code>y</code> (in <code>by</code> or <code>measures</code>) is
+cast to the type it has in <code>x</code> (see <code><a href="cast_rules.html">cast_rules()</a></code>), so a number stored as
+text, or a double stored as an integer, still compares. Columns that are
+not compared are neither cast nor type-checked.</p></li>
 <li><p><code>"equal"</code>: are <code>x</code> and <code>y</code> equal? Every column must be in both tables and
 have the same type in both; nothing is cast. The result is symmetric:
 swapping <code>x</code> and <code>y</code> swaps <code>only_x</code> with <code>only_y</code> and negates <code>diff</code>.</p></li>
@@ -188,11 +192,12 @@ swapping <code>x</code> and <code>y</code> swaps <code>only_x</code> with <code>
 
 
 <p>Column names are normalized in both tables before anything else: upper
-case, with every run of characters other than <code>A-Z</code> and <code>0-9</code> replaced by
-<code>_</code>, and <code>_</code> trimmed from the ends. So <code>unit price</code>, <code>Unit.Price</code> and
+case, with every run of characters other than letters and digits replaced
+by <code>_</code>, and <code>_</code> trimmed from the ends. Letters outside ASCII are kept, so
+<code>Größe</code> and <code>Grüße</code> stay two columns. So <code>unit price</code>, <code>Unit.Price</code> and
 <code>UNIT_PRICE</code> are one column, in either table. Two names in one table that
 normalize to the same thing are an error to fix before comparing. The
-result uses the normalized names; <code>attr(, "name_map")</code> maps them back.</p>
+result uses the normalized names; <code>attr(d, "name_map")</code> maps them back.</p>
     </div>
     <div id="truncation">
     <h2>Truncation</h2>
@@ -203,7 +208,7 @@ number or a timestamp to a whole day – is made by default, because the
 benchmark's types are taken as the truth: storage such as Spark or Delta
 turns a locally built double into an integer, and the comparison has to
 follow it. Each truncation is announced in a message and recorded in
-<code>attr(, "truncated")</code>: per column, the count, up to three examples, and
+<code>attr(d, "truncated")</code>: per column, the count, up to three examples, and
 in the list column <code>rows</code> the row numbers of <code>y</code> that were truncated,
 which are the <code>row_id_y</code> of the result. A truncated key column can pair
 rows that differ (<code>1.5</code> in <code>y</code> becomes <code>1</code> and aligns with <code>x</code>'s <code>1</code>), so
@@ -265,9 +270,9 @@ instead, exactly (<code>tolerance</code> must be 0).</p></li>
 <p>A value is <code>same</code> when both are equal, or when both are finite and their
 difference is within <code>tolerance</code> or within <code>rel_tol</code> relative to the larger
 of the two: <code>abs_diff &lt;= tolerance</code> or <code>rel_diff &lt;= rel_tol</code>. Both
-tolerances default to 0, so by default only equal values are the same. Two missing values are the same; with
-<code>nan_is_na = TRUE</code> NaN and NA are the same missing value, in measures and in
-key columns alike.</p>
+tolerances default to 0, so by default only equal values are the same. Two
+missing values are the same; with <code>nan_is_na = TRUE</code> NaN and NA are the
+same missing value, in measures and in key columns alike.</p>
     </div>
     <div id="conditions">
     <h2>Conditions</h2>

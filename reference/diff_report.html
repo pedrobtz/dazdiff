@@ -97,6 +97,10 @@ encoding is UTF-8), and returns the lines of text.</p>
     <h2>Details</h2>
     <p>A row counts as <code>changed</code> when any of its measures changed. With
 <code>duplicates = "aggregate"</code> the units are keys rather than rows.</p>
+<p>The counts describe the records passed in. A filtered result, such as
+<code>d[status != "same"]</code>, is reported as if it were the whole comparison, so
+its match rates are those of the subset; report the full result for
+table-level figures.</p>
 <p>The layout is adapted from the summary of the Python package
 <a href="https://github.com/Quantco/diffly" class="external-link">diffly</a>.</p>
     </div>

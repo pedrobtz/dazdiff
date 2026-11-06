@@ -77,12 +77,14 @@ normalized name <code>colname</code>, the names as written in each table (<code>
 <code>name_y</code>), the two types and whether they match, the two unique counts,
 and the value overlap (<code>n_common</code>, <code>n_union</code>, <code>over_pct</code>). Rows follow
 <code>x</code>'s column order, then whatever is only in <code>y</code>. A column missing from
-one side has <code>NA</code> for that side.</p>
+one side has <code>NA</code> for that side. A list column has <code>NA</code> counts and no
+overlap.</p>
     </div>
     <div id="details">
     <h2>Details</h2>
     <p>Column names are normalized first, as <code><a href="diff_table.html">diff_table()</a></code> does: upper case, with
-every run of other characters replaced by <code>_</code>. So <code>amount</code> in <code>x</code> and
+every run of other characters replaced by <code>_</code>, and <code>_</code> trimmed from both
+ends. So <code>amount</code> in <code>x</code> and
 <code>Amount</code> in <code>y</code> are one column. Two names in one table that normalize to
 the same thing are an error.</p>
 <p><code>over_pct</code> is the distinct values shared by both sides over the distinct

@@ -102,7 +102,8 @@ exactly, it defaults to 0.</p></dd>
     <div id="value">
     <h2>Value</h2>
     <p>The <code><a href="diff_table.html">diff_table()</a></code> result, invisibly. On failure it is also
-attached to the failed expectation, as its <code>"diff"</code> attribute.</p>
+attached to the failed expectation, as its <code>"diff"</code> attribute. <code>NULL</code>
+when the tables share no key, since there is no result.</p>
     </div>
     <div id="details">
     <h2>Details</h2>
@@ -112,11 +113,16 @@ default of testthat's <code>expect_equal()</code>: a value computed again rarely
 agrees with its stored copy to the last bit (<code>0.1 + 0.2</code> is not <code>0.3</code>), and
 a test should not fail on that. It is still far below any difference a
 person would call real. Pass <code>rel_tol = 0</code> for an exact comparison.</p>
-<p>Duplicate keys fail the expectation rather than being paired: pairing rows
-by arrival order is an assumption, and an assertion should not rest on one.
-The exception is a comparison with no measures, where the repeated rows are
-identical in every compared column and pairing them assumes nothing. Pass
+<p>Duplicate keys are an error (<code>dazdiff_error_duplicates</code>), not a failure:
+pairing rows by arrival order is an assumption, and an assertion should not
+rest on one, so the test cannot be judged as written. The exception is a
+comparison with no measures, where the repeated rows are identical in every
+compared column and pairing them assumes nothing. Pass
 <code>duplicates = "disambiguate"</code> or <code>"aggregate"</code> to accept duplicates.</p>
+<p>Tables that share no key – most often because <code>object</code> came back empty –
+fail the expectation. <code><a href="diff_table.html">diff_table()</a></code> refuses such a comparison as
+ill-formed, but under test it is an answer: the two tables differ in every
+row.</p>
     </div>
 
     <div id="ref-examples">
