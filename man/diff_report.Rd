@@ -34,6 +34,11 @@ list.
 A row counts as \code{changed} when any of its measures changed. With
 \code{duplicates = "aggregate"} the units are keys rather than rows.
 
+The counts describe the records passed in. A filtered result, such as
+\code{d[status != "same"]}, is reported as if it were the whole comparison, so
+its match rates are those of the subset; report the full result for
+table-level figures.
+
 The layout is adapted from the summary of the Python package
 \href{https://github.com/Quantco/diffly}{diffly}.
 }
