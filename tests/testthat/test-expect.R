@@ -9,8 +9,36 @@ test_that("expect_table_equal passes on matching tables, casting to the benchmar
 test_that("expect_table_equal fails with a summary and the records that differ", {
   expected <- data.frame(id = 1:3, amount = c(10, 20, 30))
   actual <- data.frame(id = 1:3, amount = c(10, 21, 30))
-  expect_failure(expect_table_equal(actual, expected), "`actual` does not match `expected`: 1 of 3")
-  expect_failure(expect_table_equal(actual, expected), "changed")
+  expect_failure(expect_table_equal(actual, expected))
+  expect_snapshot_failure(expect_table_equal(actual, expected))
+})
+
+test_that("expect_table_equal shows at most max_rows of the records that differ", {
+  expected <- data.frame(id = 1:5, amount = c(10, 20, 30, 40, 50))
+  actual <- data.frame(id = 1:5, amount = c(11, 21, 31, 41, 50))
+  expect_snapshot_failure(expect_table_equal(actual, expected, max_rows = 2))
+  # 0 shows the summary alone.
+  expect_snapshot_failure(expect_table_equal(actual, expected, max_rows = 0))
+  # Every one, when they fit.
+  cnd <- tryCatch(expect_table_equal(actual, expected, max_rows = 4), expectation = function(e) e)
+  expect_false(grepl("First", conditionMessage(cnd)))
+})
+
+test_that("max_rows must be a single number >= 0", {
+  expected <- data.frame(id = 1:2, v = c(1, 2))
+  for (bad in list(-1, NA, NA_real_, c(1, 2), "3", NULL)) {
+    expect_error(
+      expect_table_equal(expected, expected, max_rows = bad),
+      class = "daffiz_error_input",
+      info = deparse(bad)
+    )
+  }
+})
+
+test_that("expect_table_equal needs testthat", {
+  local_missing_package("testthat")
+  expected <- data.frame(id = 1:2, v = c(1, 2))
+  expect_error(expect_table_equal(expected, expected), class = "daffiz_error_dependency")
 })
 
 test_that("expect_table_equal treats expected as the benchmark", {
@@ -26,9 +54,13 @@ test_that("expect_table_equal treats expected as the benchmark", {
 test_that("expect_table_equal does not pair duplicate keys unless asked", {
   expected <- data.table(id = c("a", "a"), v = c(1, 2))
   actual <- data.table(id = c("a", "a"), v = c(2, 1))
-  expect_error(expect_table_equal(actual, expected), "does not pair duplicate keys", class = "daffiz_error_duplicates")
+  err <- expect_error(expect_table_equal(actual, expected), class = "daffiz_error_duplicates")
+  expect_identical(err$duplicates$ID, c("a", "a"))
   expect_success(expect_table_equal(actual, expected, duplicates = "aggregate"))
-  expect_failure(suppressWarnings(expect_table_equal(actual, expected, duplicates = "disambiguate")))
+  expect_warning(
+    expect_failure(expect_table_equal(actual, expected, duplicates = "disambiguate")),
+    class = "daffiz_warning_duplicates"
+  )
 })
 
 test_that("without measures, identical duplicate rows need no permission", {
