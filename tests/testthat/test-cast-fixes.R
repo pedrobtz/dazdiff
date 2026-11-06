@@ -200,3 +200,56 @@ test_that("an all-NA logical column onto an IDate takes the IDate storage", {
     c("only_y", "only_x", "same")
   )
 })
+
+# normalize_dt()'s `to` -----------------------------------------------------
+
+test_that("normalize_dt() adds the caller's mappings to the factor default", {
+  dt <- data.frame(
+    t = as.POSIXct("2024-01-01 10:00:00", tz = "UTC"),
+    f = factor("a")
+  )
+  out <- normalize_dt(dt, to = c(POSIXct = "Date"))
+  expect_identical(out$t, as.Date("2024-01-01"))
+  expect_identical(out$f, "a")
+})
+
+test_that("normalize_dt() lets the caller replace the factor default", {
+  out <- normalize_dt(
+    data.frame(f = factor(c("a", NA))),
+    to = c(factor = "character")
+  )
+  expect_identical(out$f, c("a", NA))
+  # An empty `to` still keeps the default.
+  expect_identical(
+    normalize_dt(data.frame(f = factor("a")), to = character())$f,
+    "a"
+  )
+})
+
+test_that("normalize_dt() refuses a `to` value that is not a type", {
+  err <- expect_error(
+    normalize_dt(data.frame(f = factor("a")), to = c(factor = "text")),
+    class = "daffiz_error_input"
+  )
+  expect_match(conditionMessage(err), "\"character\"", fixed = TRUE)
+  expect_match(conditionMessage(err), "factor = \"text\"", fixed = TRUE)
+})
+
+test_that("normalize_dt() refuses a `to` name it cannot convert from", {
+  expect_error(
+    normalize_dt(data.frame(a = 1), to = c(difftime = "numeric")),
+    class = "daffiz_error_input"
+  )
+  expect_error(
+    normalize_dt(data.frame(a = 1), to = "character"),
+    class = "daffiz_error_input"
+  )
+  expect_error(
+    normalize_dt(data.frame(a = 1), to = c(factor = "character", factor = "Date")),
+    class = "daffiz_error_input"
+  )
+  expect_error(
+    normalize_dt(data.frame(a = 1), to = c(factor = NA_character_)),
+    class = "daffiz_error_input"
+  )
+})

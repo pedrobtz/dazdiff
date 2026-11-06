@@ -58,6 +58,7 @@ First release.
 * `compare_columns()` shows how the columns of two tables line up,
   `normalize_dt()` converts other types (factors, timestamps, `integer64`)
   to the ones `diff_table()` compares, and `cast_rules()` lists the
-  conversions it makes.
+  conversions it makes. A factor becomes its labels by default, and the
+  mappings given in `normalize_dt(to = )` are added to that default.
 * Every error, warning and message has a class, listed under Conditions in
   `?diff_table`.

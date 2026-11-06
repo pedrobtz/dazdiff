@@ -9,10 +9,12 @@ normalize_dt(dt, to = c(factor = "character"), cols = names(dt))
 \arguments{
 \item{dt}{A data.frame or data.table.}
 
-\item{to}{Named character: which supported type each other type becomes,
-named by \code{"factor"}, \code{"POSIXct"} or \code{"integer64"}. The default only maps
-\code{factor} to \code{"character"}. A column whose type is not named here is an
-error, not a guess.}
+\item{to}{Named character: which supported type (\code{"character"},
+\code{"logical"}, \code{"Date"}, \code{"numeric"} or \code{"integer"}) each other type
+becomes, named by \code{"factor"}, \code{"POSIXct"} or \code{"integer64"}. The mappings
+given are added to the default, \code{factor} to \code{"character"}, and replace it
+only where they name \code{factor} themselves. A column whose type is in
+neither is an error, not a guess.}
 
 \item{cols}{The columns to consider, by default all of them.}
 }

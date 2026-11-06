@@ -593,10 +593,12 @@ cast_dt <- function(
 #' keeps every digit.
 #'
 #' @param dt A data.frame or data.table.
-#' @param to Named character: which supported type each other type becomes,
-#'   named by `"factor"`, `"POSIXct"` or `"integer64"`. The default only maps
-#'   `factor` to `"character"`. A column whose type is not named here is an
-#'   error, not a guess.
+#' @param to Named character: which supported type (`"character"`,
+#'   `"logical"`, `"Date"`, `"numeric"` or `"integer"`) each other type
+#'   becomes, named by `"factor"`, `"POSIXct"` or `"integer64"`. The mappings
+#'   given are added to the default, `factor` to `"character"`, and replace it
+#'   only where they name `factor` themselves. A column whose type is in
+#'   neither is an error, not a guess.
 #' @param cols The columns to consider, by default all of them.
 #' @return A `data.table`. `dt` is never modified; a copy is made only when
 #'   there is something to convert, so the result is `dt` itself when there is
@@ -613,6 +615,44 @@ normalize_dt <- function(dt, to = c(factor = "character"), cols = names(dt)) {
   if (!is.data.frame(dt)) {
     daffiz_abort("daffiz_error_input", "`dt` must be a data.frame")
   }
+  # `to` is checked whole, before any column is looked at: a typo in it is a
+  # mistake in the call whatever the table holds, and caught here it names
+  # the valid choices rather than surfacing as a cast with "no rule".
+  sources <- setdiff(CAST_FROM, CAST_TYPES)
+  if (
+    !is.character(to) ||
+      (length(to) && is.null(names(to))) ||
+      anyNA(to) ||
+      anyDuplicated(names(to)) ||
+      !all(names(to) %in% sources) ||
+      !all(to %in% CAST_TYPES)
+  ) {
+    daffiz_abort(
+      "daffiz_error_input",
+      paste0(
+        "`to` must be a character vector named by type, each name one of ",
+        paste0("\"", sources, "\"", collapse = ", "),
+        " (at most once) and each value one of ",
+        paste0("\"", CAST_TYPES, "\"", collapse = ", "),
+        if (is.character(to) && length(to)) {
+          paste0(
+            "; got ",
+            paste0(
+              if (is.null(names(to))) "" else paste0(names(to), " = "),
+              "\"",
+              to,
+              "\"",
+              collapse = ", "
+            )
+          )
+        }
+      )
+    )
+  }
+  # The caller's mappings are added to the default, not put in its place:
+  # naming the one conversion a table needs should not cost the factor one.
+  to <- c(to, NORMALIZE_TO[setdiff(names(NORMALIZE_TO), names(to))])
+
   dt <- as.data.table(dt)
 
   unknown <- setdiff(cols, names(dt))
