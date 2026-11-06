@@ -82,8 +82,8 @@ select_measures <- function(dt, measures = "numeric") {
 #' @param nan_is_na Map NaN to NA in double id columns. data.table joins and
 #'   groups NA and NaN as different keys, so without this a row keyed NaN on
 #'   one side and NA on the other would not align.
-#' @return A keyed data.table. Every missing value in a double id column holds
-#'   one bit pattern; see `canonical_missing()`.
+#' @return A keyed data.table. Every missing value and every zero in a double
+#'   id column holds one bit pattern; see `canonical_missing()`.
 #' @noRd
 index_dt <- function(dt, ids, measures = character(), nan_is_na = FALSE) {
   cols <- c(ids, measures)
@@ -103,7 +103,7 @@ index_dt <- function(dt, ids, measures = character(), nan_is_na = FALSE) {
   wide[]
 }
 
-#' One bit pattern per missing value in a double key
+#' One bit pattern per missing value, and per zero, in a double key
 #'
 #' R calls NA any NaN whose low word is 1954, and arithmetic on NA
 #' (`NA + 0`, `as.Date(NA) + 1`, `x / 1000`) sets the quiet bit
@@ -114,20 +114,29 @@ index_dt <- function(dt, ids, measures = character(), nan_is_na = FALSE) {
 #' data.table one pattern for each, in every class built on a double (Date
 #' and POSIXct included).
 #'
+#' Zero has the same problem: `-0` and `0` are one key to a join but two
+#' groups to keyed grouping, so a key holding both slipped past the duplicate
+#' check and paired one row twice. `round(-0.4)` and `-1 * 0` are `-0`, so
+#' every zero is written back as `+0`. `integer64` is left alone: its bits
+#' are not a double, and the pattern of `-0` is its `NA`.
+#'
 #' @param v A vector; only doubles are touched.
 #' @param nan_is_na Whether NaN becomes NA too.
 #' @return `v`, with its class and attributes.
 #' @noRd
 canonical_missing <- function(v, nan_is_na = FALSE) {
-  if (!is.double(v) || !anyNA(v)) {
+  if (!is.double(v) || inherits(v, "integer64")) {
     return(v)
   }
   at <- attributes(v)
   v <- as.vector(unclass(v), "double")
-  nan <- is.nan(v)
-  v[is.na(v) & (nan_is_na | !nan)] <- NA_real_
-  if (!nan_is_na) {
-    v[nan] <- NaN
+  v[!is.na(v) & v == 0] <- 0
+  if (anyNA(v)) {
+    nan <- is.nan(v)
+    v[is.na(v) & (nan_is_na | !nan)] <- NA_real_
+    if (!nan_is_na) {
+      v[nan] <- NaN
+    }
   }
   attributes(v) <- at
   v

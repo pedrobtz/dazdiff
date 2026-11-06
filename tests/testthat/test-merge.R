@@ -154,7 +154,7 @@ test_that("merge_dt", {
       setkey(data.table(id = c("a", "a"), v = 1:2), id),
       setkey(data.table(id = c("a", "a"), w = 1:2), id)
     ),
-    "disambiguate_by_key"
+    "aggregate them first"
   )
   check_error("merge_dt: an unknown mode", merge_dt(kx, ky, mode = "sideways"))
 })

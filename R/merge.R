@@ -141,7 +141,7 @@ merge_dt <- function(
         " duplicate key(s) in x, ",
         n(dry$dups_y),
         " in y). ",
-        "Use disambiguate_by_key() or aggregate_by_key() first."
+        "Number the duplicates or aggregate them first (`duplicates` in diff_table())."
       ),
       dry_run = dry
     )
