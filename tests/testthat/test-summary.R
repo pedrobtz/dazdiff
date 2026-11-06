@@ -46,5 +46,5 @@ test_that("diff_summary works on the groups and rows shapes", {
 })
 
 test_that("diff_summary refuses anything but a diff_table() result", {
-  expect_error(diff_summary(data.table(a = 1)), class = "daffiz_error_input")
+  expect_error(diff_summary(data.table(a = 1)), class = "dazdiff_error_input")
 })

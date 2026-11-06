@@ -53,10 +53,10 @@ test_that("abs_diff and rel_diff are symmetric in equal mode", {
 test_that("the tolerances are recorded and validated", {
   x <- data.table(id = "a", v = 1)
   expect_identical(attr(diff_table(x, x, tolerance = 0.5, rel_tol = 1e-6), "tolerance"), list(abs = 0.5, rel = 1e-6))
-  expect_error(diff_table(x, x, rel_tol = -1), class = "daffiz_error_input")
-  expect_error(diff_table(x, x, rel_tol = c(0, 1)), class = "daffiz_error_input")
-  expect_error(diff_table(x, x, rel_tol = Inf), class = "daffiz_error_input")
-  expect_error(diff_table(x, x, duplicates = "aggregate", rel_tol = 0.1), "rel_tol", class = "daffiz_error_input")
+  expect_error(diff_table(x, x, rel_tol = -1), class = "dazdiff_error_input")
+  expect_error(diff_table(x, x, rel_tol = c(0, 1)), class = "dazdiff_error_input")
+  expect_error(diff_table(x, x, rel_tol = Inf), class = "dazdiff_error_input")
+  expect_error(diff_table(x, x, duplicates = "aggregate", rel_tol = 0.1), "rel_tol", class = "dazdiff_error_input")
 })
 
 test_that("diff_summary and diff_report show the largest relative difference", {
@@ -91,6 +91,6 @@ test_that("expect_table_equal's default steps aside for duplicates = \"aggregate
   expect_identical(attr(d, "tolerance")$rel, 0)
   expect_error(
     expect_table_equal(expected, expected, duplicates = "aggregate", rel_tol = 0.1),
-    class = "daffiz_error_input"
+    class = "dazdiff_error_input"
   )
 })

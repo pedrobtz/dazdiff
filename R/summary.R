@@ -61,7 +61,7 @@ diff_summary <- function(d) {
 
 check_diff_result <- function(d) {
   if (!is.data.table(d) || is.null(attr(d, "shape")) || !"status" %in% names(d)) {
-    daffiz_abort("daffiz_error_input", "`d` must be a result of diff_table()")
+    dazdiff_abort("dazdiff_error_input", "`d` must be a result of diff_table()")
   }
   invisible(d)
 }

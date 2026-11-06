@@ -2,7 +2,7 @@
 # tests are skipped rather than failing to start.
 if (requireNamespace("testthat", quietly = TRUE)) {
   library(testthat)
-  library(daffiz)
+  library(dazdiff)
 
-  test_check("daffiz")
+  test_check("dazdiff")
 }

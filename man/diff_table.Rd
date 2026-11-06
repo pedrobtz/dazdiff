@@ -197,25 +197,25 @@ key columns alike.
 
 Every condition \code{diff_table()} signals has a class, so it can be caught
 or tested for without matching its text, and inherits from
-\code{daffiz_error}, \code{daffiz_warning} or \code{daffiz_message}. An error means the
+\code{dazdiff_error}, \code{dazdiff_warning} or \code{dazdiff_message}. An error means the
 question cannot be answered; a warning, that the answer may be wrong; a
 message reports an expected consequence of the settings.
 \itemize{
-\item \code{daffiz_error_input}: an argument is malformed.
-\item \code{daffiz_error_columns}: columns missing, unknown, or not compared in
+\item \code{dazdiff_error_input}: an argument is malformed.
+\item \code{dazdiff_error_columns}: columns missing, unknown, or not compared in
 equal mode; names that are empty or collide once normalized.
-\item \code{daffiz_error_types}: a column of a type that cannot be compared, or
+\item \code{dazdiff_error_types}: a column of a type that cannot be compared, or
 types that differ where nothing is cast.
-\item \code{daffiz_error_cast}: a value that cannot be cast to the benchmark's type.
-\item \code{daffiz_error_keys}: no key column to align rows on.
-\item \code{daffiz_error_measures}: \code{measures} names something that cannot be
+\item \code{dazdiff_error_cast}: a value that cannot be cast to the benchmark's type.
+\item \code{dazdiff_error_keys}: no key column to align rows on.
+\item \code{dazdiff_error_measures}: \code{measures} names something that cannot be
 measured, or a column \code{by} names too.
-\item \code{daffiz_error_duplicates}: repeated keys under \code{duplicates = "error"}.
-\item \code{daffiz_error_disjoint}: no key appears in both tables.
-\item \code{daffiz_error_dependency}: a suggested package is needed but missing.
-\item \code{daffiz_warning_duplicates}: repeated keys paired in arrival order.
-\item \code{daffiz_message_dropped_columns}, \code{daffiz_message_ignored_columns},
-\code{daffiz_message_no_measures}, \code{daffiz_message_truncation}: columns of
+\item \code{dazdiff_error_duplicates}: repeated keys under \code{duplicates = "error"}.
+\item \code{dazdiff_error_disjoint}: no key appears in both tables.
+\item \code{dazdiff_error_dependency}: a suggested package is needed but missing.
+\item \code{dazdiff_warning_duplicates}: repeated keys paired in arrival order.
+\item \code{dazdiff_message_dropped_columns}, \code{dazdiff_message_ignored_columns},
+\code{dazdiff_message_no_measures}, \code{dazdiff_message_truncation}: columns of
 \code{y} dropped, columns not compared, no measures, values truncated.
 }
 }

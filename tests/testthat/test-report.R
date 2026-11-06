@@ -86,11 +86,11 @@ test_that("counts past 2^31 are formatted", {
 
 test_that("diff_report validates its arguments", {
   d <- diff_table(x3, y3)
-  expect_error(diff_report(data.table(a = 1)), class = "daffiz_error_input")
-  expect_error(diff_report(d, top_k = -1), class = "daffiz_error_input")
-  expect_error(diff_report(d, sample_k = 1.5), class = "daffiz_error_input")
-  expect_error(diff_report(d, x_name = NA_character_), class = "daffiz_error_input")
-  expect_error(format(diff_report(d), unicode = NA), class = "daffiz_error_input")
+  expect_error(diff_report(data.table(a = 1)), class = "dazdiff_error_input")
+  expect_error(diff_report(d, top_k = -1), class = "dazdiff_error_input")
+  expect_error(diff_report(d, sample_k = 1.5), class = "dazdiff_error_input")
+  expect_error(diff_report(d, x_name = NA_character_), class = "dazdiff_error_input")
+  expect_error(format(diff_report(d), unicode = NA), class = "dazdiff_error_input")
 })
 
 test_that("the drawing", {

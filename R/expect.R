@@ -41,13 +41,13 @@ expect_table_equal <- function(object, expected, ...,
                                rel_tol = sqrt(.Machine$double.eps),
                                max_rows = 10L) {
   if (!requireNamespace("testthat", quietly = TRUE)) {
-    daffiz_abort(
-      "daffiz_error_dependency",
+    dazdiff_abort(
+      "dazdiff_error_dependency",
       "expect_table_equal() requires the suggested package 'testthat'."
     )
   }
   if (!is.numeric(max_rows) || length(max_rows) != 1L || is.na(max_rows) || max_rows < 0) {
-    daffiz_abort("daffiz_error_input", "`max_rows` must be a single number >= 0")
+    dazdiff_abort("dazdiff_error_input", "`max_rows` must be a single number >= 0")
   }
   object_label <- deparse1(substitute(object))
   expected_label <- deparse1(substitute(expected))
@@ -65,10 +65,10 @@ expect_table_equal <- function(object, expected, ...,
   refuse_pairing <- is.null(dots$duplicates)
   d <- withCallingHandlers(
     do.call(diff_table, c(list(expected, object), dots, list(rel_tol = rel_tol))),
-    daffiz_warning_duplicates = function(w) {
+    dazdiff_warning_duplicates = function(w) {
       if (refuse_pairing) {
-        daffiz_abort(
-          "daffiz_error_duplicates",
+        dazdiff_abort(
+          "dazdiff_error_duplicates",
           paste0(
             conditionMessage(w),
             "\nexpect_table_equal() does not pair duplicate keys; pass ",

@@ -3,7 +3,7 @@
 test_that("benchmark mode drops y's extra columns, with a message", {
   x <- data.table(id = 1:2, v = c(1, 2))
   y <- data.table(id = 1:2, v = c(1, 2), loaded_at = "today")
-  expect_message(d <- diff_table(x, y), "loaded_at", class = "daffiz_message_dropped_columns")
+  expect_message(d <- diff_table(x, y), "loaded_at", class = "dazdiff_message_dropped_columns")
   expect_true(all(d$status == "same"))
   expect_identical(attr(d, "dropped"), "loaded_at")
   expect_false(any(grepl("LOADED", names(d))))
@@ -12,13 +12,13 @@ test_that("benchmark mode drops y's extra columns, with a message", {
 test_that("benchmark mode refuses a column the benchmark has and y lacks", {
   x <- data.table(id = 1:2, v = c(1, 2), w = c(3, 4))
   y <- data.table(id = 1:2, v = c(1, 2))
-  expect_error(diff_table(x, y), "missing column\\(s\\) the benchmark `x` has: w", class = "daffiz_error_columns")
+  expect_error(diff_table(x, y), "missing column\\(s\\) the benchmark `x` has: w", class = "dazdiff_error_columns")
 })
 
 test_that("equal mode needs every column on both sides, and says which", {
   x <- data.table(id = 1:2, v = c(1, 2), w = c(3, 4))
   y <- data.table(id = 1:2, v = c(1, 2), z = "z")
-  err <- expect_error(diff_table(x, y, mode = "equal"), class = "daffiz_error_columns")
+  err <- expect_error(diff_table(x, y, mode = "equal"), class = "dazdiff_error_columns")
   expect_match(conditionMessage(err), "only in `x`: w")
   expect_match(conditionMessage(err), "only in `y`: z")
 })
@@ -26,8 +26,8 @@ test_that("equal mode needs every column on both sides, and says which", {
 test_that("equal mode casts nothing, and refuses to be asked to", {
   x <- data.table(id = 1:2, v = c(1, 2))
   y <- data.table(id = 1:2, v = c("1", "2"))
-  expect_error(diff_table(x, y, mode = "equal"), "does not cast.*v \\(numeric vs character\\)", class = "daffiz_error_types")
-  expect_error(diff_table(x, x, mode = "equal", cast = TRUE), "never casts", class = "daffiz_error_input")
+  expect_error(diff_table(x, y, mode = "equal"), "does not cast.*v \\(numeric vs character\\)", class = "dazdiff_error_types")
+  expect_error(diff_table(x, x, mode = "equal", cast = TRUE), "never casts", class = "dazdiff_error_input")
   # The same tables compare in benchmark mode, which casts.
   expect_true(all(diff_table(x, y)$status == "same"))
 })
@@ -80,7 +80,7 @@ test_that("a user column named like an internal one cannot collide with it", {
 test_that("a name collision is an error, in either table", {
   expect_error(
     diff_table(data.table(a = 1, A = 2), data.table(a = 1)),
-    'A <- "a", "A"', class = "daffiz_error_columns"
+    'A <- "a", "A"', class = "dazdiff_error_columns"
   )
   expect_error(
     diff_table(data.table(id = "a", v = 1), data.table(id = "a", v = 1, V = 2)),
@@ -94,7 +94,7 @@ test_that("in benchmark mode a collision among y's dropped columns does not matt
   expect_true(suppressMessages(diff_table(x, y))$status == "same")
   expect_error(
     diff_table(x, y, mode = "equal"),
-    class = "daffiz_error_columns"
+    class = "dazdiff_error_columns"
   )
 })
 
@@ -105,13 +105,13 @@ test_that("truncation in benchmark mode is announced and recorded", {
   y <- data.table(id = c("a", "b"), n = c(1.7, 2))
   expect_message(
     d <- diff_table(x, y, measures = "numeric+integer"),
-    "n: 1 \\(1.7 -> 1\\)", class = "daffiz_message_truncation"
+    "n: 1 \\(1.7 -> 1\\)", class = "dazdiff_message_truncation"
   )
   expect_true(all(d$status == "same"))
   expect_identical(attr(d, "truncated")$column, "n")
   expect_error(
     diff_table(x, y, measures = "numeric+integer", truncate = FALSE),
-    "column n: numeric -> integer, not a whole number", class = "daffiz_error_cast"
+    "column n: numeric -> integer, not a whole number", class = "dazdiff_error_cast"
   )
 })
 
@@ -171,13 +171,13 @@ test_that("measures can be chosen by type or by name, in either spelling", {
 
 test_that("a named measure that is not numeric is refused", {
   x <- data.table(id = c("a", "b"), v = c(1, 2))
-  expect_error(diff_table(x, x, measures = "id"), "not numeric or integer: ID \\(character\\)", class = "daffiz_error_measures")
+  expect_error(diff_table(x, x, measures = "id"), "not numeric or integer: ID \\(character\\)", class = "dazdiff_error_measures")
 })
 
 test_that("by picks the identity; other columns are ignored in benchmark mode", {
   x <- data.table(id = c("a", "b"), note = c("p", "q"), v = c(1, 2))
   y <- data.table(id = c("a", "b"), note = c("p", "CHANGED"), v = c(1, 2))
-  expect_message(d <- diff_table(x, y, by = "id"), "note", class = "daffiz_message_ignored_columns")
+  expect_message(d <- diff_table(x, y, by = "id"), "note", class = "dazdiff_message_ignored_columns")
   expect_true(all(d$status == "same"))
   expect_identical(attr(d, "ignored"), "NOTE")
   expect_identical(key(d), c("ID", "metric"))
@@ -185,7 +185,7 @@ test_that("by picks the identity; other columns are ignored in benchmark mode", 
 
 test_that("equal mode refuses to ignore a column", {
   x <- data.table(id = c("a", "b"), note = c("p", "q"), v = c(1, 2))
-  expect_error(diff_table(x, x, mode = "equal", by = "id"), "neither `by` nor `measures`: note", class = "daffiz_error_columns")
+  expect_error(diff_table(x, x, mode = "equal", by = "id"), "neither `by` nor `measures`: note", class = "dazdiff_error_columns")
   # Named in `by`, it takes part and the comparison runs.
   expect_true(all(diff_table(x, x, mode = "equal", by = c("id", "note"))$status == "same"))
 })
@@ -194,13 +194,13 @@ test_that("by is validated", {
   x <- data.table(id = c("a", "b"), v = c(1, 2))
   expect_error(diff_table(x, x, by = "nope"), "`by` names column\\(s\\) not in the tables: NOPE")
   expect_error(diff_table(x, x, by = c("id", "ID")), "`by` names a column more than once: ID")
-  expect_error(diff_table(x, x, by = "v", measures = "v"), "`by` and `measures` both name: v", class = "daffiz_error_measures")
-  expect_error(diff_table(x, x, by = NA_character_), class = "daffiz_error_input")
+  expect_error(diff_table(x, x, by = "v", measures = "v"), "`by` and `measures` both name: v", class = "dazdiff_error_measures")
+  expect_error(diff_table(x, x, by = NA_character_), class = "dazdiff_error_input")
 })
 
 test_that("a table with no key column is not well-formed", {
   x <- data.table(v = c(1, 2))
-  err <- expect_error(diff_table(x, x), "not well-formed: they have no key column", class = "daffiz_error_keys")
+  err <- expect_error(diff_table(x, x), "not well-formed: they have no key column", class = "dazdiff_error_keys")
   expect_match(conditionMessage(err), 'row_key = "position"', fixed = TRUE)
   expect_match(conditionMessage(err), 'row_key = "sorted"', fixed = TRUE)
 })
@@ -307,7 +307,7 @@ test_that("NA and NaN follow nan_is_na under aggregation too", {
 test_that("tolerance must be a single finite number >= 0", {
   x <- data.table(id = "a", v = 1)
   for (bad in list(-1, NA_real_, c(1, 0), "1", Inf)) {
-    expect_error(diff_table(x, x, tolerance = bad), "`tolerance` must be", class = "daffiz_error_input")
+    expect_error(diff_table(x, x, tolerance = bad), "`tolerance` must be", class = "dazdiff_error_input")
   }
   expect_error(diff_table(x, x, duplicates = "aggregate", tolerance = 0.1), "compares values exactly")
 })
@@ -325,7 +325,7 @@ test_that("status is a factor with every level", {
 test_that("with no measures, rows are compared as wholes", {
   x <- data.table(k = c("a", "b", "c"))
   y <- data.table(k = c("c", "a", "d"))
-  expect_message(d <- diff_table(x, y), class = "daffiz_message_no_measures")
+  expect_message(d <- diff_table(x, y), class = "dazdiff_message_no_measures")
   expect_identical(attr(d, "shape"), "rows")
   expect_identical(names(d), c("K", "row_id_x", "row_id_y", "status"))
   expect_identical(as.character(d$status), c("same", "only_x", "same", "only_y"))
@@ -343,7 +343,7 @@ test_that("with no measures, duplicates compare as multisets under every policy"
   expect_identical(attr(g, "shape"), "groups")
   expect_identical(as.character(g$status), c("changed", "changed"))
   expect_identical(as.character(quiet(x, x, duplicates = "aggregate")$status), c("same", "same"))
-  expect_error(quiet(x, y, duplicates = "error"), class = "daffiz_error_duplicates")
+  expect_error(quiet(x, y, duplicates = "error"), class = "dazdiff_error_duplicates")
 })
 
 test_that("with no measures, equal mode still compares every column", {
@@ -357,8 +357,8 @@ test_that("with no measures, equal mode still compares every column", {
 test_that("a comparison in which nothing aligns is refused", {
   x <- data.table(id = c("a", "b"), v = c(1, 2))
   y <- data.table(id = c("A", "B"), v = c(1, 2))
-  expect_error(diff_table(x, y), "No identity value of `x` appears in `y`", class = "daffiz_error_disjoint")
-  expect_error(diff_table(x, y[0]), "one table is empty", class = "daffiz_error_disjoint")
+  expect_error(diff_table(x, y), "No identity value of `x` appears in `y`", class = "dazdiff_error_disjoint")
+  expect_error(diff_table(x, y[0]), "one table is empty", class = "dazdiff_error_disjoint")
   expect_error(
     suppressMessages(diff_table(data.table(k = "a"), data.table(k = "b"))),
     "No row of `x` appears in `y`"
@@ -397,7 +397,7 @@ test_that("a computed NA key is the same key as a literal one: rows", {
   na_q <- NA_real_ + 0
   expect_message(
     d <- diff_table(data.frame(k = c(NA_real_, na_q)), data.frame(k = NA_real_), by = "k"),
-    class = "daffiz_message_no_measures"
+    class = "dazdiff_message_no_measures"
   )
   expect_identical(d$key_seq, 1:2)
   expect_identical(as.character(d$status), c("same", "only_x"))
@@ -411,18 +411,18 @@ test_that("a computed NA key is the same key as a literal one: cells", {
   for (nan_is_na in c(TRUE, FALSE)) {
     expect_warning(
       d <- diff_table(x, y, by = "k", nan_is_na = nan_is_na),
-      class = "daffiz_warning_duplicates"
+      class = "dazdiff_warning_duplicates"
     )
     expect_identical(as.character(d$status), c("same", "only_x"))
     expect_error(
       diff_table(x, y, by = "k", duplicates = "error", nan_is_na = nan_is_na),
-      class = "daffiz_error_duplicates"
+      class = "dazdiff_error_duplicates"
     )
   }
   # Two computed NAs against two literal ones pair up in arrival order.
   expect_warning(
     d <- diff_table(x, data.frame(k = c(na_q, NA_real_), v = c(1, 2)), by = "k", nan_is_na = FALSE),
-    class = "daffiz_warning_duplicates"
+    class = "dazdiff_warning_duplicates"
   )
   expect_identical(as.character(d$status), c("same", "same"))
   d <- diff_table(x, data.frame(k = c(na_q, NA_real_), v = c(1, 2)), by = "k", duplicates = "aggregate")

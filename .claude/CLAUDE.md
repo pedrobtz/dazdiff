@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`daffiz` is a small R package around one function, `diff_table()`, which
+`dazdiff` is a small R package around one function, `diff_table()`, which
 compares two tables value by value, plus a few helpers (`diff_summary()`, `diff_report()`,
 `expect_table_equal()`, `compare_columns()`, `normalize_dt()`,
 `cast_rules()`).
@@ -49,7 +49,7 @@ testthat::test_file("tests/testthat/test-cast.R")
 From the shell:
 
 ```sh
-R CMD build . && R CMD check --as-cran daffiz_*.tar.gz
+R CMD build . && R CMD check --as-cran dazdiff_*.tar.gz
 ```
 
 ## Architecture
@@ -70,7 +70,7 @@ calls lives in its own file and is tested on its own:
 | `R/summary.R` | `diff_summary()`, `is_finite_pair()`, `scaled_rmse()` |
 | `R/report.R` | `diff_report()` and its `format()`/`print()` methods: the text report |
 | `R/expect.R` | `expect_table_equal()` |
-| `R/conditions.R` | `daffiz_abort()`, `daffiz_warn()`, `daffiz_inform()`, `fmt_names()` |
+| `R/conditions.R` | `dazdiff_abort()`, `dazdiff_warn()`, `dazdiff_inform()`, `fmt_names()` |
 
 The tests in `test-types.R`, `test-cast.R`, `test-columns.R`, `test-melt.R`,
 `test-keys.R`, `test-merge.R`, `test-diff-table.R` and
@@ -161,7 +161,7 @@ Each is covered by a test.
 
 - `data.table` is the engine. Express comparisons as joins and grouped
   operations; avoid row-wise R loops.
-- Conditions carry a `daffiz_*` class. An *error* means the question cannot
+- Conditions carry a `dazdiff_*` class. An *error* means the question cannot
   be answered; a *warning* means the answer may be wrong; a *message* reports
   an expected consequence of the settings. Messages name columns in the
   caller's own spelling (`name_map()$label`).

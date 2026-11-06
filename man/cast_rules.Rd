@@ -2,7 +2,7 @@
 % Please edit documentation in R/types.R
 \name{cast_rules}
 \alias{cast_rules}
-\title{The type conversions daffiz will make}
+\title{The type conversions dazdiff will make}
 \usage{
 cast_rules(wide = TRUE)
 }

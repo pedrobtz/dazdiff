@@ -111,7 +111,7 @@ test_that("compare_columns refuses names that collide after normalization", {
   expect_error(
     compare_columns(data.table(amount = 1, Amount = 2), data.table(amount = 1)),
     'AMOUNT <- "amount", "Amount"',
-    class = "daffiz_error_columns"
+    class = "dazdiff_error_columns"
   )
   expect_error(
     compare_columns(data.table(a = 1), data.table(a = 1, A = 2)),

@@ -18,7 +18,7 @@ hides them.}
 table; 0 hides them.}
 }
 \value{
-A \code{daffiz_report}: a list holding the counts the report draws,
+A \code{dazdiff_report}: a list holding the counts the report draws,
 with \code{format()} and \code{print()} methods. \code{format()} takes \code{unicode}, whether
 to draw with box-drawing characters (by default, when the session's
 encoding is UTF-8), and returns the lines of text.

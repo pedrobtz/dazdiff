@@ -12,7 +12,7 @@
 #' @noRd
 summarize_dt <- function(dt) {
   if (!is.data.frame(dt)) {
-    daffiz_abort("daffiz_error_input", "`dt` must be a data.frame")
+    dazdiff_abort("dazdiff_error_input", "`dt` must be a data.frame")
   }
 
   data.table(
@@ -59,7 +59,7 @@ summarize_dt <- function(dt) {
 #' compare_columns(x, y)
 compare_columns <- function(x, y) {
   if (!is.data.frame(x) || !is.data.frame(y)) {
-    daffiz_abort("daffiz_error_input", "`x` and `y` must be data.frames")
+    dazdiff_abort("dazdiff_error_input", "`x` and `y` must be data.frames")
   }
 
   map_x <- check_names(name_map(x), "x")

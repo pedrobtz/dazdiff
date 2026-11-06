@@ -6,7 +6,7 @@ Date: 2026-09-01
 
 Lower the default warning threshold from 50 million to **10 million projected
 cells**. The threshold remains advisory and configurable through
-`options(daffiz.max_cells = ...)`.
+`options(dazdiff.max_cells = ...)`.
 
 The prior 50-million value correctly approximated the retained cell table at
 64 bytes per cell, but did not account for construction intermediates. On the
