@@ -12,8 +12,8 @@ Description: Compares two tables value by value. A candidate table can be
     the result is a long 'data.table' with one row per compared value that
     traces back to the source rows of both inputs.
 License: MIT + file LICENSE
-URL: https://github.com/pedrobtz/daffiz, https://pedrobtz.github.io/daffiz/
-BugReports: https://github.com/pedrobtz/daffiz/issues
+URL: https://github.com/pedrobtz/dazdiff, https://pedrobtz.github.io/dazdiff/
+BugReports: https://github.com/pedrobtz/dazdiff/issues
 Encoding: UTF-8
 Language: en-US
 Roxygen: list(markdown = TRUE)

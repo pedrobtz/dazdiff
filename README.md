@@ -1,8 +1,8 @@
 # daffiz
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/pedrobtz/daffiz/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/pedrobtz/daffiz/actions/workflows/R-CMD-check.yaml)
-![Coverage](https://github.com/pedrobtz/daffiz/raw/main/.github/badges/coverage.svg)
+[![R-CMD-check](https://github.com/pedrobtz/dazdiff/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/pedrobtz/dazdiff/actions/workflows/R-CMD-check.yaml)
+![Coverage](https://github.com/pedrobtz/dazdiff/raw/main/.github/badges/coverage.svg)
 <!-- badges: end -->
 
 `daffiz` compares two tables value by value. Its one main function,
@@ -29,7 +29,7 @@ Or the development version from GitHub:
 
 ```r
 # install.packages("pak")
-pak::pak("pedrobtz/daffiz")
+pak::pak("pedrobtz/dazdiff")
 ```
 
 ## Comparing against a benchmark

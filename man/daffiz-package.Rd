@@ -11,9 +11,9 @@ Compares two tables value by value. A candidate table can be checked against a b
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/pedrobtz/daffiz}
-  \item \url{https://pedrobtz.github.io/daffiz/}
-  \item Report bugs at \url{https://github.com/pedrobtz/daffiz/issues}
+  \item \url{https://github.com/pedrobtz/dazdiff}
+  \item \url{https://pedrobtz.github.io/dazdiff/}
+  \item Report bugs at \url{https://github.com/pedrobtz/dazdiff/issues}
 }
 
 }
