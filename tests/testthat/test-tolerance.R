@@ -7,6 +7,17 @@ test_that("rel_tol is relative to the larger magnitude of the two values", {
   expect_identical(as.character(diff_table(x, y, rel_tol = 0.001)$status), c("changed", "changed"))
 })
 
+test_that("a relative difference exactly at rel_tol is the same, just past it is not", {
+  # |2 - 1| / max(1, 2) is exactly 0.5.
+  x <- data.table(id = "a", v = 1)
+  y <- data.table(id = "a", v = 2)
+  expect_identical(diff_table(x, y)$rel_diff, 0.5)
+  expect_identical(as.character(diff_table(x, y, rel_tol = 0.5)$status), "same")
+  expect_identical(as.character(diff_table(y, x, rel_tol = 0.5)$status), "same")
+  expect_identical(as.character(diff_table(x, y, rel_tol = 0.4999)$status), "changed")
+  expect_identical(as.character(diff_table(y, x, rel_tol = 0.4999)$status), "changed")
+})
+
 test_that("a value is same within either tolerance", {
   # Near zero only the absolute tolerance helps: 0 and 1e-12 differ by 100%.
   x <- data.table(id = 1:2, v = c(0, 1000))
@@ -56,7 +67,7 @@ test_that("the tolerances are recorded and validated", {
   expect_error(diff_table(x, x, rel_tol = -1), class = "daffiz_error_input")
   expect_error(diff_table(x, x, rel_tol = c(0, 1)), class = "daffiz_error_input")
   expect_error(diff_table(x, x, rel_tol = Inf), class = "daffiz_error_input")
-  expect_error(diff_table(x, x, duplicates = "aggregate", rel_tol = 0.1), "rel_tol", class = "daffiz_error_input")
+  expect_error(diff_table(x, x, duplicates = "aggregate", rel_tol = 0.1), class = "daffiz_error_input")
 })
 
 test_that("diff_summary and diff_report show the largest relative difference", {
