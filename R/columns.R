@@ -5,6 +5,9 @@
 #' One row per column of `dt`: its name, type and number of unique values.
 #' The type is `col_type()`'s, the one vocabulary every other part of the
 #' package reads, so an IDate is a `Date` here as it is everywhere else.
+#' A column that is not an atomic vector (a list column) has no unique count:
+#' `uniqueN()` refuses it, and this is the view a caller reaches for when a
+#' comparison refuses to run, so it must not refuse in turn.
 #'
 #' @param dt A data.frame (or data.table).
 #' @return A data.table with one row per column of `dt` and columns
@@ -18,7 +21,11 @@ summarize_dt <- function(dt) {
   data.table(
     colname = names(dt),
     type = vapply(dt, col_type, character(1L)),
-    n_unique = vapply(dt, uniqueN, integer(1L))
+    n_unique = vapply(
+      dt,
+      function(v) if (is.atomic(v)) uniqueN(v) else NA_integer_,
+      integer(1L)
+    )
   )
 }
 
@@ -52,7 +59,8 @@ summarize_dt <- function(dt) {
 #'   `name_y`), the two types and whether they match, the two unique counts,
 #'   and the value overlap (`n_common`, `n_union`, `over_pct`). Rows follow
 #'   `x`'s column order, then whatever is only in `y`. A column missing from
-#'   one side has `NA` for that side.
+#'   one side has `NA` for that side. A list column has `NA` counts and no
+#'   overlap.
 #' @export
 #' @examples
 #' x <- data.frame(id = 1:3, amount = c(1, 2, 3))
@@ -81,7 +89,10 @@ compare_columns <- function(x, y) {
   # matching, so a numeric 1 would "match" the string "1" and report a full
   # overlap for two columns that are not the same thing. The rest are left out
   # here and pick up NA from the all.x merge below.
-  common <- out[!is.na(type_x) & !is.na(type_y) & type_x == type_y, colname]
+  common <- out[
+    !is.na(type_x) & !is.na(type_y) & type_x == type_y & !is.na(n_unique_x),
+    colname
+  ]
   overlap <- rbindlist(c(
     list(data.table(
       colname = character(),

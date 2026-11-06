@@ -21,6 +21,7 @@ utils::globalVariables(c(
   "metric",
   "n_changed",
   "n_rows",
+  "n_unique_x",
   "n_x",
   "n_y",
   "name",

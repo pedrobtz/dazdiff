@@ -15,7 +15,8 @@ normalized name \code{colname}, the names as written in each table (\code{name_x
 \code{name_y}), the two types and whether they match, the two unique counts,
 and the value overlap (\code{n_common}, \code{n_union}, \code{over_pct}). Rows follow
 \code{x}'s column order, then whatever is only in \code{y}. A column missing from
-one side has \code{NA} for that side.
+one side has \code{NA} for that side. A list column has \code{NA} counts and no
+overlap.
 }
 \description{
 The schema view of a comparison: which columns each table has, their types,
