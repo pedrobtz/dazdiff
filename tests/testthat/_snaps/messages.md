@@ -1,3 +1,171 @@
+# a message about a very wide table stays bounded
+
+    Code
+      diff_table(x, data.table(c01 = 1))
+    Condition
+      Error:
+      ! `y` is missing column(s) the benchmark `x` has: c02, c03, c04, c05, c06, c07, c08, c09, c10, c11, ... (4 more)
+
+# diff_table()'s argument errors
+
+    Code
+      diff_table(x, 1:3)
+    Condition
+      Error:
+      ! `x` and `y` must be data.frames
+
+---
+
+    Code
+      diff_table(x, x, tolerance = -1)
+    Condition
+      Error:
+      ! `tolerance` must be a single finite number >= 0
+
+---
+
+    Code
+      diff_table(x, x, rel_tol = NA)
+    Condition
+      Error:
+      ! `rel_tol` must be a single finite number >= 0
+
+---
+
+    Code
+      diff_table(x, x, truncate = NA)
+    Condition
+      Error:
+      ! `truncate` must be TRUE or FALSE
+
+---
+
+    Code
+      diff_table(x, x, nan_is_na = "yes")
+    Condition
+      Error:
+      ! `nan_is_na` must be TRUE or FALSE
+
+---
+
+    Code
+      diff_table(x, x, mode = "equal", cast = TRUE)
+    Condition
+      Error:
+      ! mode = "equal" never casts: neither table is the reference for the other
+
+---
+
+    Code
+      diff_table(x, x, cast = NA)
+    Condition
+      Error:
+      ! `cast` must be TRUE or FALSE
+
+---
+
+    Code
+      diff_table(x, x, by = NA_character_)
+    Condition
+      Error:
+      ! `by` must be NULL or column names
+
+---
+
+    Code
+      diff_table(x, x, duplicates = "aggregate", tolerance = 0.1)
+    Condition
+      Error:
+      ! duplicates = "aggregate" compares values exactly; `tolerance` and `rel_tol` must be 0
+
+# diff_table()'s column errors and messages
+
+    Code
+      diff_table(x, x[, .(id, v)])
+    Condition
+      Error:
+      ! `y` is missing column(s) the benchmark `x` has: note
+
+---
+
+    Code
+      invisible(diff_table(x[, .(id, v)], x))
+    Message
+      Dropped column(s) of `y` that the benchmark `x` does not have: note.
+
+---
+
+    Code
+      diff_table(x, data.table(id = "a", v = 1, w = 2), mode = "equal")
+    Condition
+      Error:
+      ! mode = "equal" needs the same columns in both tables
+        only in `x`: note
+        only in `y`: w
+
+---
+
+    Code
+      diff_table(x, x, by = c("id", "ID", "nope"))
+    Condition
+      Error:
+      ! `by` names a column more than once: id, ID; names column(s) not in the tables: nope
+
+---
+
+    Code
+      diff_table(x, x, by = "v", measures = "v")
+    Condition
+      Error:
+      ! `by` and `measures` both name: v
+
+---
+
+    Code
+      diff_table(x, x, mode = "equal", by = "id")
+    Condition
+      Error:
+      ! mode = "equal" compares every column, but these are in neither `by` nor `measures`: note; add them to `by` (matched exactly, as part of the row identity) or, if numeric, to `measures`
+
+---
+
+    Code
+      invisible(diff_table(x, x, by = "id"))
+    Message
+      Not compared, being in neither `by` nor `measures`: note.
+
+---
+
+    Code
+      invisible(diff_table(data.table(k = "a"), data.table(k = "a")))
+    Message
+      No measure columns (measures = "numeric"), so rows are compared as wholes: do the two tables have the same rows?
+
+# diff_table()'s type errors
+
+    Code
+      diff_table(data.table(t = stamp, f = factor("a"), v = 1), data.table(t = stamp,
+        f = "a", v = 1))
+    Condition
+      Error:
+      ! x has column(s) of unsupported type: t (POSIXct), f (factor); convert t, f with normalize_dt() first
+
+---
+
+    Code
+      diff_table(x, y, cast = FALSE)
+    Condition
+      Error:
+      ! cast = FALSE, but x and y disagree on the type of: id (character vs numeric), v (numeric vs character)
+
+---
+
+    Code
+      diff_table(x, x[, .(id, v = "1")], mode = "equal")
+    Condition
+      Error:
+      ! mode = "equal" does not cast, but x and y disagree on the type of: v (numeric vs character)
+
 # diff_table()'s key errors
 
     Code
@@ -5,6 +173,22 @@
     Condition
       Error:
       ! the tables are not well-formed: they have no key column, since every column is a measure, so rows cannot be aligned; name the key with `by`, leave some columns out of `measures`, or add a virtual key: row_key = "position" pairs the rows as they come, and row_key = "sorted" pairs them after sorting both tables by their values
+
+# diff_table()'s duplicate key warning and error
+
+    Code
+      invisible(diff_table(x, x))
+    Condition
+      Warning:
+      the id columns do not tell rows apart: 1 key(s) repeat (identity: id); rows within each were paired in arrival order (key_seq), which assumes both tables list them in the same order
+
+---
+
+    Code
+      diff_table(x, x, duplicates = "error")
+    Condition
+      Error:
+      ! the id columns do not tell rows apart: 1 key(s) repeat (identity: id); use duplicates = "disambiguate" or "aggregate"
 
 # diff_table()'s refusal of a comparison that aligns nothing
 
@@ -32,112 +216,32 @@
       Error:
       ! no row of `x` appears in `y`, so nothing can be compared
 
-# diff_table()'s type errors
+# diff_table() names columns in the caller's own spelling
 
     Code
-      diff_table(data.table(t = stamp, f = factor("a"), v = 1), data.table(t = stamp,
-        f = "a", v = 1))
+      diff_table(data.table(id = 1L, `unit price` = 1), data.table(id = 1L,
+        Unit.Price = "x"))
     Condition
       Error:
-      ! x has column(s) of unsupported type: t (POSIXct), f (factor); convert t, f with normalize_dt() first
+      ! column "Unit.Price" (UNIT_PRICE): character -> numeric, not a number: x
 
 ---
 
     Code
-      diff_table(x, y, cast = FALSE)
+      diff_table(data.table(a = 1, A = 2), data.table(a = 1))
     Condition
       Error:
-      ! cast = FALSE, but x and y disagree on the type of: id (character vs numeric), v (numeric vs character)
+      ! `x` has columns whose names are the same after normalization to A-Z, 0-9 and _:
+        A <- "a", "A"
+      Rename or drop these columns before comparing.
 
 ---
 
     Code
-      diff_table(x, x[, .(id, v = "1")], mode = "equal")
+      diff_table(data.table(`%` = 1, a = 2), data.table(a = 1))
     Condition
       Error:
-      ! mode = "equal" does not cast, but x and y disagree on the type of: v (numeric vs character)
-
-# the merge helpers' errors
-
-    Code
-      merge_dry_run(as.data.frame(kx), ky_fixture())
-    Condition
-      Error:
-      ! `x` and `y` must be data.tables
-
----
-
-    Code
-      merge_dry_run(data.table(a = 1), data.table(a = 1))
-    Condition
-      Error:
-      ! no columns to join on
-
----
-
-    Code
-      merge_dry_run(kx, ky_fixture(), on = "nope")
-    Condition
-      Error:
-      ! not in both tables: nope
-
----
-
-    Code
-      merge_dt(as.data.frame(kx), ky_fixture())
-    Condition
-      Error:
-      ! `x` and `y` must be data.tables
-
----
-
-    Code
-      merge_dt(setkey(data.table(id = c("a", "a"), v = 1:2), id), setkey(data.table(
-        id = c("a", "a"), w = 1:2), id))
-    Condition
-      Error:
-      ! keys are not one to one: 2 rows would become 4 (max fanout 4; 1 duplicate key(s) in x, 1 in y); number the duplicates or aggregate them first (`duplicates` in diff_table())
-
----
-
-    Code
-      merge_dt(setkey(data.table(id = 1L, a = 1, a_y = 5), id), setkey(data.table(id = 1L,
-        a = 7), id))
-    Condition
-      Error:
-      ! suffix "_y" would write over existing column(s): a_y; pick another suffix
-
-# converting integer64 needs bit64
-
-    Code
-      cast_value(v, "numeric", "col")
-    Condition
-      Error:
-      ! column col: converting integer64 needs the bit64 package
-
-# diff_table()'s duplicate key warning and error
-
-    Code
-      invisible(diff_table(x, x))
-    Condition
-      Warning:
-      the id columns do not tell rows apart: 1 key(s) repeat (identity: id); rows within each were paired in arrival order (key_seq), which assumes both tables list them in the same order
-
----
-
-    Code
-      diff_table(x, x, duplicates = "error")
-    Condition
-      Error:
-      ! the id columns do not tell rows apart: 1 key(s) repeat (identity: id); use duplicates = "disambiguate" or "aggregate"
-
-# a message about a very wide table stays bounded
-
-    Code
-      diff_table(x, data.table(c01 = 1))
-    Condition
-      Error:
-      ! `y` is missing column(s) the benchmark `x` has: c02, c03, c04, c05, c06, c07, c08, c09, c10, c11, ... (4 more)
+      ! `x` has column name(s) with no letter or digit, so nothing is left of them after normalization: "%"; rename these columns before comparing
 
 # cast_value()'s refusals say why
 
@@ -275,116 +379,21 @@
       Error:
       ! `date_format` must be a single format string
 
-# diff_table()'s column errors and messages
+# cast_value()'s refusals of integer64
 
     Code
-      diff_table(x, x[, .(id, v)])
+      cast_value(big, "numeric", "col")
     Condition
       Error:
-      ! `y` is missing column(s) the benchmark `x` has: note
+      ! column col: integer64 -> numeric, loses precision as a double (2^53 or more): 9007199254740993
 
----
-
-    Code
-      invisible(diff_table(x[, .(id, v)], x))
-    Message
-      Dropped column(s) of `y` that the benchmark `x` does not have: note.
-
----
+# converting integer64 needs bit64
 
     Code
-      diff_table(x, data.table(id = "a", v = 1, w = 2), mode = "equal")
+      cast_value(v, "numeric", "col")
     Condition
       Error:
-      ! mode = "equal" needs the same columns in both tables
-        only in `x`: note
-        only in `y`: w
-
----
-
-    Code
-      diff_table(x, x, by = c("id", "ID", "nope"))
-    Condition
-      Error:
-      ! `by` names a column more than once: id, ID; names column(s) not in the tables: nope
-
----
-
-    Code
-      diff_table(x, x, by = "v", measures = "v")
-    Condition
-      Error:
-      ! `by` and `measures` both name: v
-
----
-
-    Code
-      diff_table(x, x, mode = "equal", by = "id")
-    Condition
-      Error:
-      ! mode = "equal" compares every column, but these are in neither `by` nor `measures`: note; add them to `by` (matched exactly, as part of the row identity) or, if numeric, to `measures`
-
----
-
-    Code
-      invisible(diff_table(x, x, by = "id"))
-    Message
-      Not compared, being in neither `by` nor `measures`: note.
-
----
-
-    Code
-      invisible(diff_table(data.table(k = "a"), data.table(k = "a")))
-    Message
-      No measure columns (measures = "numeric"), so rows are compared as wholes: do the two tables have the same rows?
-
-# the key helpers' errors
-
-    Code
-      unique_by_key(data.frame(a = 1))
-    Condition
-      Error:
-      ! `dt` must be a data.table
-
----
-
-    Code
-      unique_by_key(data.table(a = 1))
-    Condition
-      Error:
-      ! `dt` has no key to check
-
----
-
-    Code
-      disambiguate_by_key(data.frame(a = 1))
-    Condition
-      Error:
-      ! `long` must be a data.table
-
----
-
-    Code
-      disambiguate_by_key(data.table(a = 1))
-    Condition
-      Error:
-      ! no key to disambiguate by
-
----
-
-    Code
-      aggregate_by_key(data.frame(a = 1))
-    Condition
-      Error:
-      ! `long` must be a data.table
-
----
-
-    Code
-      aggregate_by_key(data.table(a = 1))
-    Condition
-      Error:
-      ! no key to aggregate by
+      ! column col: converting integer64 needs the bit64 package
 
 # cast_dt()'s errors and its truncation message
 
@@ -419,93 +428,29 @@
         a: 1 (1.7 -> 1)
         b: 2 (3.2 -> 3)
 
-# diff_table()'s argument errors
+# normalize_dt()'s errors
 
     Code
-      diff_table(x, 1:3)
+      normalize_dt(1:3)
     Condition
       Error:
-      ! `x` and `y` must be data.frames
+      ! `dt` must be a data.frame
 
 ---
 
     Code
-      diff_table(x, x, tolerance = -1)
+      normalize_dt(stamps, cols = "nope")
     Condition
       Error:
-      ! `tolerance` must be a single finite number >= 0
+      ! unknown column(s): nope
 
 ---
 
     Code
-      diff_table(x, x, rel_tol = NA)
+      normalize_dt(stamps)
     Condition
       Error:
-      ! `rel_tol` must be a single finite number >= 0
-
----
-
-    Code
-      diff_table(x, x, truncate = NA)
-    Condition
-      Error:
-      ! `truncate` must be TRUE or FALSE
-
----
-
-    Code
-      diff_table(x, x, nan_is_na = "yes")
-    Condition
-      Error:
-      ! `nan_is_na` must be TRUE or FALSE
-
----
-
-    Code
-      diff_table(x, x, mode = "equal", cast = TRUE)
-    Condition
-      Error:
-      ! mode = "equal" never casts: neither table is the reference for the other
-
----
-
-    Code
-      diff_table(x, x, cast = NA)
-    Condition
-      Error:
-      ! `cast` must be TRUE or FALSE
-
----
-
-    Code
-      diff_table(x, x, by = NA_character_)
-    Condition
-      Error:
-      ! `by` must be NULL or column names
-
----
-
-    Code
-      diff_table(x, x, duplicates = "aggregate", tolerance = 0.1)
-    Condition
-      Error:
-      ! duplicates = "aggregate" compares values exactly; `tolerance` and `rel_tol` must be 0
-
-# cast_value()'s refusals of integer64
-
-    Code
-      cast_value(big, "numeric", "col")
-    Condition
-      Error:
-      ! column col: integer64 -> numeric, loses precision as a double (2^53 or more): 9007199254740993
-
-# a choice argument outside its choices is a classed input error
-
-    Code
-      diff_table(x, x, duplicates = "ignore")
-    Condition
-      Error:
-      ! `duplicates` must be one of "disambiguate", "aggregate", "error"
+      ! no conversion given for column(s): t (POSIXct), z (complex); name the target type for POSIXct in `to`; normalize_dt() cannot convert complex, so convert or drop z yourself (with as.numeric() or as.character(), say)
 
 # the helpers' input errors
 
@@ -555,29 +500,103 @@
       Error:
       ! `measures` not numeric or integer: id (character)
 
-# normalize_dt()'s errors
+# the key helpers' errors
 
     Code
-      normalize_dt(1:3)
+      unique_by_key(data.frame(a = 1))
     Condition
       Error:
-      ! `dt` must be a data.frame
+      ! `dt` must be a data.table
 
 ---
 
     Code
-      normalize_dt(stamps, cols = "nope")
+      unique_by_key(data.table(a = 1))
     Condition
       Error:
-      ! unknown column(s): nope
+      ! `dt` has no key to check
 
 ---
 
     Code
-      normalize_dt(stamps)
+      disambiguate_by_key(data.frame(a = 1))
     Condition
       Error:
-      ! no conversion given for column(s): t (POSIXct), z (complex); name the target type for POSIXct in `to`; normalize_dt() cannot convert complex, so convert or drop z yourself (with as.numeric() or as.character(), say)
+      ! `long` must be a data.table
+
+---
+
+    Code
+      disambiguate_by_key(data.table(a = 1))
+    Condition
+      Error:
+      ! no key to disambiguate by
+
+---
+
+    Code
+      aggregate_by_key(data.frame(a = 1))
+    Condition
+      Error:
+      ! `long` must be a data.table
+
+---
+
+    Code
+      aggregate_by_key(data.table(a = 1))
+    Condition
+      Error:
+      ! no key to aggregate by
+
+# the merge helpers' errors
+
+    Code
+      merge_dry_run(as.data.frame(kx), ky_fixture())
+    Condition
+      Error:
+      ! `x` and `y` must be data.tables
+
+---
+
+    Code
+      merge_dry_run(data.table(a = 1), data.table(a = 1))
+    Condition
+      Error:
+      ! no columns to join on
+
+---
+
+    Code
+      merge_dry_run(kx, ky_fixture(), on = "nope")
+    Condition
+      Error:
+      ! not in both tables: nope
+
+---
+
+    Code
+      merge_dt(as.data.frame(kx), ky_fixture())
+    Condition
+      Error:
+      ! `x` and `y` must be data.tables
+
+---
+
+    Code
+      merge_dt(setkey(data.table(id = c("a", "a"), v = 1:2), id), setkey(data.table(
+        id = c("a", "a"), w = 1:2), id))
+    Condition
+      Error:
+      ! keys are not one to one: 2 rows would become 4 (max fanout 4; 1 duplicate key(s) in x, 1 in y); number the duplicates or aggregate them first (`duplicates` in diff_table())
+
+---
+
+    Code
+      merge_dt(setkey(data.table(id = 1L, a = 1, a_y = 5), id), setkey(data.table(id = 1L,
+        a = 7), id))
+    Condition
+      Error:
+      ! suffix "_y" would write over existing column(s): a_y; pick another suffix
 
 # diff_summary() and diff_report()'s errors
 
@@ -636,30 +655,11 @@
       Error:
       ! expect_table_equal() requires the suggested package 'testthat'
 
-# diff_table() names columns in the caller's own spelling
+# a choice argument outside its choices is a classed input error
 
     Code
-      diff_table(data.table(id = 1L, `unit price` = 1), data.table(id = 1L,
-        Unit.Price = "x"))
+      diff_table(x, x, duplicates = "ignore")
     Condition
       Error:
-      ! column "Unit.Price" (UNIT_PRICE): character -> numeric, not a number: x
-
----
-
-    Code
-      diff_table(data.table(a = 1, A = 2), data.table(a = 1))
-    Condition
-      Error:
-      ! `x` has columns whose names are the same after normalization to A-Z, 0-9 and _:
-        A <- "a", "A"
-      Rename or drop these columns before comparing.
-
----
-
-    Code
-      diff_table(data.table(`%` = 1, a = 2), data.table(a = 1))
-    Condition
-      Error:
-      ! `x` has column name(s) with no letter or digit, so nothing is left of them after normalization: "%"; rename these columns before comparing
+      ! `duplicates` must be one of "disambiguate", "aggregate", "error"
 

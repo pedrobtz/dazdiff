@@ -1,38 +1,3 @@
-# the drawing of a change in one measure of several
-
-    Code
-      print(r, unicode = FALSE)
-    Output
-      +============================================================================+
-      |                               dazdiff report                               |
-      +============================================================================+
-         Identity: id
-         Mode:     benchmark: y is tested against x
-      
-       Columns
-       -------
-         Compared 4 columns: 1 key, 3 measures.
-      
-       Rows
-       ----
-         x rows               y rows
-           3     (no change)    3
-      
-         +=+=+=+=+=+...+=+=+=+=+=+......................+
-         | | | | | | = | | | | | |  2 same    (66.67%)  |
-         +-+-+-+-+-+...+-+-+-+-+-+......................+-  3 joined
-         | | | | | | ! | | | | | |  1 changed (33.33%)  |
-         +=+=+=+=+=+...+=+=+=+=+=+......................+
-      
-       Measures
-       --------
-         +---------+------------+------------+--------------+----------------------+
-         | Measure | Match rate | Max |diff| | Max rel diff | Top changes          |
-         +---------+------------+------------+--------------+----------------------+
-         | b       |     66.67% |         54 |          0.9 | 6 -> 60 (1x, e.g. 3) |
-         +---------+------------+------------+--------------+----------------------+
-         2 other measures match on every row found in both tables.
-
 # the drawing
 
     Code
@@ -214,38 +179,6 @@
          │ "d" │
          └─────┘
 
-# the drawing of a result filtered down to y's own rows
-
-    Code
-      print(r, unicode = FALSE)
-    Output
-      +=============================================================+
-      |                       dazdiff report                        |
-      +=============================================================+
-         Identity: id
-         Mode:     benchmark: y is tested against x
-      
-       Columns
-       -------
-         Compared 2 columns: 1 key, 1 measure.
-      
-       Rows
-       ----
-         x rows    y rows
-           0         1
-      
-       Measures
-       --------
-         Every measure matches on every row found in both tables (1).
-      
-       Rows only in y
-       --------------
-         +-----+
-         | id  |
-         +-----+
-         | "d" |
-         +-----+
-
 # the drawing of paired rows and a truncating cast
 
     Code
@@ -283,6 +216,41 @@
          | v       |     66.67% |          1 |         0.25 | 3 -> 4 (1x, e.g. ("b", 3)) |
          +---------+------------+------------+--------------+----------------------------+
 
+# the drawing of a change in one measure of several
+
+    Code
+      print(r, unicode = FALSE)
+    Output
+      +============================================================================+
+      |                               dazdiff report                               |
+      +============================================================================+
+         Identity: id
+         Mode:     benchmark: y is tested against x
+      
+       Columns
+       -------
+         Compared 4 columns: 1 key, 3 measures.
+      
+       Rows
+       ----
+         x rows               y rows
+           3     (no change)    3
+      
+         +=+=+=+=+=+...+=+=+=+=+=+......................+
+         | | | | | | = | | | | | |  2 same    (66.67%)  |
+         +-+-+-+-+-+...+-+-+-+-+-+......................+-  3 joined
+         | | | | | | ! | | | | | |  1 changed (33.33%)  |
+         +=+=+=+=+=+...+=+=+=+=+=+......................+
+      
+       Measures
+       --------
+         +---------+------------+------------+--------------+----------------------+
+         | Measure | Match rate | Max |diff| | Max rel diff | Top changes          |
+         +---------+------------+------------+--------------+----------------------+
+         | b       |     66.67% |         54 |          0.9 | 6 -> 60 (1x, e.g. 3) |
+         +---------+------------+------------+--------------+----------------------+
+         2 other measures match on every row found in both tables.
+
 # the drawing of an exact match that dropped a column
 
     Code
@@ -300,4 +268,36 @@
        -------
          Compared 2 columns: 1 key, 1 measure.
          Only in y, dropped: loaded_at.
+
+# the drawing of a result filtered down to y's own rows
+
+    Code
+      print(r, unicode = FALSE)
+    Output
+      +=============================================================+
+      |                       dazdiff report                        |
+      +=============================================================+
+         Identity: id
+         Mode:     benchmark: y is tested against x
+      
+       Columns
+       -------
+         Compared 2 columns: 1 key, 1 measure.
+      
+       Rows
+       ----
+         x rows    y rows
+           0         1
+      
+       Measures
+       --------
+         Every measure matches on every row found in both tables (1).
+      
+       Rows only in y
+       --------------
+         +-----+
+         | id  |
+         +-----+
+         | "d" |
+         +-----+
 
