@@ -2,8 +2,11 @@
 # runners plus R-hub's CRAN-like containers, all with --as-cran, and the
 # nosuggests leg (CRAN's NOSUGGESTS flavor). Pure R, so no native checks.
 on:
-  push:
-    branches: [main, master]
+  # No `push:`: a pull request already checks its merge with main,
+  # and the schedule checks main (r-actions README, "Pushes to main").
+  schedule:
+    - cron: "27 3 * * 6"
+  workflow_dispatch:
   # `labeled` so that adding `full-ci` to a pull request reruns it in full.
   pull_request:
     types: [opened, synchronize, reopened, labeled]
