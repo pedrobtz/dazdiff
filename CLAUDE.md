@@ -1,99 +1,114 @@
 # CLAUDE.md
 
+<!-- markdownlint-disable-next-line MD013 -->
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Shared conventions
+
+The portfolio's shared rules are synced into `.claude/shared/` from
+`pedrobtz/packages:claude/shared/`. Never edit them here. Where this file and
+a shared file disagree, this file wins for this package.
+
+@.claude/shared/workflow.md
+@.claude/shared/r-package.md
+@.claude/shared/ci.md
+@.claude/shared/correctness.md
+@.claude/shared/assurance.md
 
 ## What this is
 
 `dazdiff` is a small R package around one function, `diff_table()`, which
-compares two tables value by value, plus a few helpers (`diff_summary()`, `diff_report()`,
-`expect_table_equal()`, `compare_columns()`, `normalize_dt()`,
-`cast_rules()`).
+compares two tables value by value, plus a few helpers (`diff_summary()`,
+`diff_report()`, `expect_table_equal()`, `compare_columns()`,
+`normalize_dt()`, `cast_rules()`). `data.table` is the engine and the only
+hard dependency besides `utils`. Keep the public surface small; new features
+go through `.agents/roadmap.md` first.
 
 Version 0.1.0 was rebuilt around the core in `.agents/compare.R`. Its planning
-documents live in `.agents/`:
+documents live in `.agents/`, and they outrank this file:
 
 - `plan.md`: what 0.1.0 is;
 - `core-review.md`: the findings (F1–F8, D-a…D-h) the rebuild fixed;
 - `roadmap.md`: the features of the earlier draft that were dropped, where
-  their code lives, and how to re-add them.
+  their code lives, and how to re-add them;
+- `review.md`: the pre-release review.
 
 The draft is tagged `draft-0.1.0`; read any of its files with
-`git show draft-0.1.0:R/<file>`. `.agents/` is `.Rbuildignore`d.
+`git show draft-0.1.0:R/<file>`.
 
 Comments in `R/` carry reasoning that is not recoverable from the code. Read
 them before rewriting a function.
 
+The package was renamed from `daffiz` to `dazdiff` (#46, #59).
+
+## Current state
+
+Verified 2026-11-11. `DESCRIPTION` is at 0.1.0 and the package is not on CRAN
+yet (crandb has no record, and there is no `CRAN-SUBMISSION` file). Every
+sub-issue of the `v0.1.0` issue is closed (14 of 14).
+
 Do not claim the package "checks cleanly" without re-running
 `R CMD check --as-cran` on a fresh tarball; that claim was wrong once already.
-Two NOTEs are expected: "New submission", and "unable to verify current time"
-when the machine cannot reach a time server.
+Deviation from the shared definition of done: besides "New submission", a
+local check may show "unable to verify current time" when the machine cannot
+reach a time server. That NOTE is expected locally; it is not a package
+defect.
+
+## Versions and dependents
+
+The current version's parent issue is `#4` for `v0.1.0`. Sibling packages
+that depend on this one before CRAN does: none yet. RFC 0047 (`zufaode`, not
+started) plans to take it in `Suggests` for `expect_table_equal()`.
 
 ## Commands
 
-Standard `devtools` workflow, run from the package root:
-
-```r
-devtools::load_all()      # load without installing
-devtools::document()      # regenerate NAMESPACE + man/ from roxygen
-devtools::test()          # run the testthat suite
-devtools::check()         # full R CMD check
-```
-
-Run one test file:
-
-```r
-devtools::test(filter = "diff-table")         # tests/testthat/test-diff-table*.R
-testthat::test_file("tests/testthat/test-cast.R")
-```
-
-From the shell:
+Beyond the shared commands:
 
 ```sh
-R CMD build . && R CMD check --as-cran dazdiff_*.tar.gz
+Rscript -e 'devtools::test(filter = "diff-table")'   # test-diff-table*.R
+Rscript -e 'testthat::test_file("tests/testthat/test-cast.R")'
+R CMD build . && R CMD check --as-cran dazdiff_*.tar.gz   # the fresh-tarball check
 ```
+
+`benchmarks/` (`run-benchmarks.R`, `benchmark-worker.R`) still measures the
+draft's pipeline, not 0.1.0's.
 
 ## Architecture
 
 `diff_table()` runs a 13-step pipeline, numbered in its body. Each helper it
 calls lives in its own file and is tested on its own:
 
-| File | Responsibility |
-|---|---|
-| `R/diff-table.R` | `diff_table()`: arguments, names, columns per mode, roles, types (of the compared columns only), index, duplicates, alignment, melt, merge, classification |
-| `R/names.R` | `canonical_names()`, `name_map()`, `check_names()`, `shallow_dt()` |
-| `R/types.R` | `col_type()`, the only type vocabulary; `CAST_RULES`; `cast_rules()` |
-| `R/cast.R` | `cast_value()`, `cast_dt()` (truncation record and message), `normalize_dt()` |
-| `R/columns.R` | `summarize_dt()`, `compare_columns()` |
-| `R/melt.R` | `select_measures()`, `index_dt()` (row numbers and key), `melt_dt()` |
-| `R/keys.R` | `unique_by_key()`, `disambiguate_by_key()`, `aggregate_by_key()` |
-| `R/merge.R` | `merge_dry_run()` (index-only, exact), `merge_dt()` (one-to-one only) |
-| `R/summary.R` | `diff_summary()`, `is_finite_pair()`, `scaled_rmse()` |
-| `R/report.R` | `diff_report()` and its `format()`/`print()` methods: the text report |
-| `R/expect.R` | `expect_table_equal()` |
-| `R/conditions.R` | `dazdiff_abort()`, `dazdiff_warn()`, `dazdiff_inform()`, `fmt_names()` |
+- `R/diff-table.R`: `diff_table()`: arguments, names, columns per mode, roles,
+  types (of the compared columns only), index, duplicates, alignment, melt,
+  merge, classification.
+- `R/names.R`: `canonical_names()`, `name_map()`, `check_names()`,
+  `shallow_dt()`.
+- `R/types.R`: `col_type()`, the only type vocabulary; `CAST_RULES`;
+  `cast_rules()`.
+- `R/cast.R`: `cast_value()`, `cast_dt()` (truncation record and message),
+  `normalize_dt()`.
+- `R/columns.R`: `summarize_dt()`, `compare_columns()`.
+- `R/melt.R`: `select_measures()`, `index_dt()` (row numbers and key),
+  `melt_dt()`.
+- `R/keys.R`: `unique_by_key()`, `disambiguate_by_key()`, `aggregate_by_key()`.
+- `R/merge.R`: `merge_dry_run()` (index-only, exact), `merge_dt()` (one-to-one
+  only).
+- `R/summary.R`: `diff_summary()`, `is_finite_pair()`, `scaled_rmse()`.
+- `R/report.R`: `diff_report()` and its `format()`/`print()` methods: the text
+  report.
+- `R/expect.R`: `expect_table_equal()`.
+- `R/conditions.R`: `dazdiff_abort()`, `dazdiff_warn()`, `dazdiff_inform()`,
+  `fmt_names()`.
 
-The tests in `test-types.R`, `test-cast.R`, `test-columns.R`, `test-melt.R`,
-`test-keys.R`, `test-merge.R`, `test-diff-table.R` and
-`test-diff-table-cases.R` were ported from `.agents/test.R` and
-`.agents/test-cases.R`. They use the `check()` helpers in `helper-check.R`.
-New tests are ordinary testthat (`test-diff-table-modes.R`, `test-names.R`,
-`test-summary.R`, `test-expect.R`, `test-report.R`, whose drawings are
-snapshots in `_snaps/report.md`).
+Express comparisons as `data.table` joins and grouped operations; avoid
+row-wise R loops.
 
-The suite is shuffle-safe: it passes under `devtools::test(shuffle = TRUE)`,
-which reorders every top-level expression of a file. So setup lives inside
-the `test_that()` blocks, and shared fixtures are functions in
-`helper-fixtures.R` that build a fresh table each call; nothing runs at file
-level. Global state (seed, time zone, collation, mocks) goes through
-`withr::local_*()` or `testthat::local_mocked_bindings()`.
+Conditions carry a `dazdiff_*` class. An *error* means the question cannot be
+answered; a *warning* means the answer may be wrong; a *message* reports an
+expected consequence of the settings. Messages name columns in the caller's
+own spelling (`name_map()$label`).
 
-Error paths are asserted by condition class (`expect_error(class = )`,
-`check_error(label, expr, class)`) and the fields a condition carries, never
-by its wording. The wording of every `dazdiff_abort()`, `dazdiff_warn()` and
-`dazdiff_inform()` site is pinned once in `test-messages.R`
-(`_snaps/messages.md`); a new site needs a snapshot there.
-
-## Load-bearing details
+## Invariants that are easy to break
 
 Each is covered by a test.
 
@@ -179,20 +194,39 @@ Each is covered by a test.
 - **`NORMALIZE_TO` has no POSIXct default.** Turning a stamp into a Date
   drops the time and can make two keys one; the caller chooses.
 
-## Conventions
+## Testing
 
-- `data.table` is the engine. Express comparisons as joins and grouped
-  operations; avoid row-wise R loops.
-- Conditions carry a `dazdiff_*` class. An *error* means the question cannot
-  be answered; a *warning* means the answer may be wrong; a *message* reports
-  an expected consequence of the settings. Messages name columns in the
-  caller's own spelling (`name_map()$label`).
-- Keep the public surface small; new features go through `.agents/roadmap.md`
-  first.
-- `docs/`, `.claude/`, `.agents/`, `benchmarks/` and `inst/WORDLIST` are
-  listed in `.Rbuildignore`. `benchmarks/` still measures the draft's
-  pipeline.
-- This file lives in `.claude/`, not at the top level: pkgdown renders every
-  top-level `.md` file into the site, with no setting to exclude one.
-- `docs/` is the local pkgdown build and is git-ignored; the site is built
-  and deployed by `.github/workflows/pkgdown.yaml`.
+The tests in `test-types.R`, `test-cast.R`, `test-columns.R`, `test-melt.R`,
+`test-keys.R`, `test-merge.R`, `test-diff-table.R` and
+`test-diff-table-cases.R` were ported from `.agents/test.R` and
+`.agents/test-cases.R`. They use the `check()` helpers in `helper-check.R`,
+the scratch suites' checks reported through testthat. New tests are ordinary
+testthat (`test-diff-table-modes.R`, `test-names.R`, `test-summary.R`,
+`test-expect.R`, `test-report.R`, whose drawings are snapshots in
+`_snaps/report.md`).
+
+Shared fixtures are functions in `helper-fixtures.R` that build a fresh table
+each call; `helper-fake.R` generates fake tables from a column layout
+(`FAKE_COLS`). Mocks go through `testthat::local_mocked_bindings()`, and
+collation through `withr::local_*()` like the seed and time zone.
+
+Error paths are asserted by condition class (`expect_error(class = )`,
+`check_error(label, expr, class)`) and the fields a condition carries. The
+wording of every `dazdiff_abort()`, `dazdiff_warn()` and `dazdiff_inform()`
+site is pinned once in `test-messages.R` (`_snaps/messages.md`); a new site
+needs a snapshot there.
+
+## Continuous integration
+
+- `R-CMD-check.yaml` calls r-actions' `r-cmd-check.yml@v1`.
+- `coverage.yml` calls r-actions' `coverage.yml`, pinned to a commit
+  (`v1.21.0`).
+- `pkgdown.yaml` is the package's own: it builds the site and deploys it to
+  GitHub Pages. `docs/` is the local pkgdown build and is git-ignored.
+
+`docs/`, `.claude/`, `.agents/`, `benchmarks/`, `inst/WORDLIST` and
+`CLAUDE.md` are listed in `.Rbuildignore`. pkgdown does not read
+`.Rbuildignore`: it renders every top-level `.md` file other than the README,
+licence, NEWS and `cran-comments.md`, so this file reaches the site as
+`CLAUDE.html` unless the build excludes it. That is why it used to live in
+`.claude/`.

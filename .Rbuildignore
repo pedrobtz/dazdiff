@@ -9,3 +9,8 @@
 ^tests/testthat/Rplots\.pdf$
 ^inst/WORDLIST$
 ^\.agents$
+^\.superpowers$
+^\.worktrees$
+^CLAUDE\.md$
+^AGENTS\.md$
+^CRAN-SUBMISSION$
