@@ -6,10 +6,11 @@
 # `paths-ignore` is load-bearing: the workflow commits the badge back to the
 # repository, and without it that commit re-triggers this workflow in a loop.
 on:
-  push:
-    branches: [main, master]
-    paths-ignore:
-      - ".github/badges/coverage.svg"
+  # No `push:`: a pull request already checks its merge with main,
+  # and the schedule checks main (r-actions README, "Pushes to main").
+  schedule:
+    - cron: "32 3 * * 6"
+  workflow_dispatch:
   pull_request:
 
 name: coverage.yml
