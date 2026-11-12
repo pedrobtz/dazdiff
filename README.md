@@ -2,7 +2,7 @@
 
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/pedrobtz/dazdiff/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/pedrobtz/dazdiff/actions/workflows/R-CMD-check.yaml)
-![Coverage](https://github.com/pedrobtz/dazdiff/raw/main/.github/badges/coverage.svg)
+![Coverage](https://raw.githubusercontent.com/pedrobtz/dazdiff/gh-pages/badges/coverage.svg)
 <!-- badges: end -->
 
 `dazdiff` compares two tables value by value. Its one main function,
