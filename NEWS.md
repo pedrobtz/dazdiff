@@ -14,7 +14,9 @@ First release.
     both tables with the same type, nothing is cast, and the result is
     symmetric.
 * `exclude` leaves columns out of the comparison, in either mode: they are
-  removed from both tables, in either spelling, before anything else.
+  removed from both tables, in either spelling, before anything else. A name
+  in neither table is a warning, so one list of technical columns can serve
+  many tables.
 * A number of `y` cast to the benchmark's text is written with the decimals
   the benchmark uses, when they are the same for the whole column, so `2`
   meets `"2.0"`. A number that still matches only by value, not by text, is

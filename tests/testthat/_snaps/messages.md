@@ -130,10 +130,10 @@
 ---
 
     Code
-      diff_table(x, x, exclude = c("note", "nope"))
+      invisible(diff_table(x, x, exclude = c("note", "nope")))
     Condition
-      Error:
-      ! `exclude` names column(s) in neither table: nope
+      Warning:
+      `exclude` names column(s) in neither table, so nothing was excluded for them: nope
 
 ---
 

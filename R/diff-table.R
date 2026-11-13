@@ -121,6 +121,7 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #'   run id, a source tag), which usually belong in `exclude`.
 #' * `dazdiff_error_dependency`: a suggested package is needed but missing.
 #' * `dazdiff_warning_duplicates`: repeated keys paired in arrival order.
+#' * `dazdiff_warning_exclude`: `exclude` names a column in neither table.
 #' * `dazdiff_warning_cast_format`: a number of `y` cast to text does not
 #'   match `x`'s text for the same number (`"2.00"` against `"2"`).
 #' * `dazdiff_message_dropped_columns`, `dazdiff_message_ignored_columns`,
@@ -136,8 +137,9 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #'   spelling. They are removed from both tables before anything else, in
 #'   either mode: an excluded column need not be in both tables, is not
 #'   announced as dropped or ignored, and does not stop `mode = "equal"`
-#'   from calling the rest equal. Each name must be a column of `x` or `y`,
-#'   and not one that `by` or `measures` names.
+#'   from calling the rest equal. A name in neither table is a warning, not
+#'   an error, so one list of technical columns can serve many tables; a
+#'   name that `by` or `measures` also names is an error.
 #' @param row_key `"none"` (the default), `"position"` or `"sorted"`: add a
 #'   virtual `row_number` key column. See Well-formed tables.
 #' @param measures `"numeric"` (the default) compares the double columns;
@@ -289,12 +291,16 @@ diff_table <- function(
     exclude <- canonical_names(exclude)
     cols_x <- canonical_names(names(x))
     cols_y <- canonical_names(names(y))
+    # A warning, not an error: one list of technical columns (load stamps,
+    # run ids) is meant to serve many similar tables, not all of which have
+    # every one. Still a warning, since a typo leaves a column compared.
     unknown <- !exclude %in% c(cols_x, cols_y)
     if (any(unknown)) {
-      dazdiff_abort(
-        "dazdiff_error_columns",
+      dazdiff_warn(
+        "dazdiff_warning_exclude",
         paste0(
-          "`exclude` names column(s) in neither table: ",
+          "`exclude` names column(s) in neither table, so nothing was ",
+          "excluded for them: ",
           fmt_names(exclude_given[unknown])
         ),
         columns = exclude_given[unknown]

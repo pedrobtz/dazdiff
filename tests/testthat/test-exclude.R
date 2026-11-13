@@ -53,10 +53,22 @@ test_that("an empty exclude excludes nothing", {
   )
 })
 
-test_that("exclude refuses unknown names and names by or measures use", {
+test_that("exclude warns about a name in neither table, and excludes the rest", {
   x <- data.table(id = 1:2, v = c(1, 2), w = c(3, 4))
-  err <- expect_error(diff_table(x, x, exclude = c("w", "nope")), class = "dazdiff_error_columns")
-  expect_identical(err$columns, "nope")
+  w <- expect_warning(
+    d <- diff_table(x, x, exclude = c("w", "nope", "loaded_at")),
+    class = "dazdiff_warning_exclude"
+  )
+  expect_identical(w$columns, c("nope", "loaded_at"))
+  expect_identical(attr(d, "excluded"), "w")
+  expect_identical(unique(d$metric), "V")
+  # Nothing found at all: the comparison runs as without exclude.
+  expect_warning(d <- diff_table(x, x, exclude = "nope"), class = "dazdiff_warning_exclude")
+  expect_identical(attr(d, "excluded"), character())
+})
+
+test_that("exclude refuses names by or measures use", {
+  x <- data.table(id = 1:2, v = c(1, 2), w = c(3, 4))
   err <- expect_error(diff_table(x, x, by = "id", exclude = "ID"), class = "dazdiff_error_columns")
   expect_identical(err$columns, "ID")
   err <- expect_error(diff_table(x, x, measures = "v", exclude = "v"), class = "dazdiff_error_columns")

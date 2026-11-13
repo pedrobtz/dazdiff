@@ -78,7 +78,7 @@ test_that("diff_table()'s column errors and messages", {
   expect_snapshot(error = TRUE, diff_table(x, data.table(id = "a", v = 1, w = 2), mode = "equal"))
   expect_snapshot(error = TRUE, diff_table(x, x, by = c("id", "ID", "nope")))
   expect_snapshot(error = TRUE, diff_table(x, x, by = "v", measures = "v"))
-  expect_snapshot(error = TRUE, diff_table(x, x, exclude = c("note", "nope")))
+  expect_snapshot(invisible(diff_table(x, x, exclude = c("note", "nope"))))
   expect_snapshot(error = TRUE, diff_table(x, x, by = "id", exclude = "ID"))
   expect_snapshot(error = TRUE, diff_table(x, x, mode = "equal", by = "id"))
   expect_snapshot(invisible(diff_table(x, x, by = "id")))

@@ -35,8 +35,9 @@ default) uses every column that is not a measure.}
 spelling. They are removed from both tables before anything else, in
 either mode: an excluded column need not be in both tables, is not
 announced as dropped or ignored, and does not stop \code{mode = "equal"}
-from calling the rest equal. Each name must be a column of \code{x} or \code{y},
-and not one that \code{by} or \code{measures} names.}
+from calling the rest equal. A name in neither table is a warning, not
+an error, so one list of technical columns can serve many tables; a
+name that \code{by} or \code{measures} also names is an error.}
 
 \item{row_key}{\code{"none"} (the default), \code{"position"} or \code{"sorted"}: add a
 virtual \code{row_number} key column. See Well-formed tables.}
@@ -235,6 +236,7 @@ measured, or a column \code{by} names too.
 run id, a source tag), which usually belong in \code{exclude}.
 \item \code{dazdiff_error_dependency}: a suggested package is needed but missing.
 \item \code{dazdiff_warning_duplicates}: repeated keys paired in arrival order.
+\item \code{dazdiff_warning_exclude}: \code{exclude} names a column in neither table.
 \item \code{dazdiff_warning_cast_format}: a number of \code{y} cast to text does not
 match \code{x}'s text for the same number (\code{"2.00"} against \code{"2"}).
 \item \code{dazdiff_message_dropped_columns}, \code{dazdiff_message_ignored_columns},
