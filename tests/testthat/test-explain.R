@@ -1,21 +1,5 @@
 # diff_explain() ---------------------------------------------------------------
 
-explain_fixture <- function() {
-  x <- data.table(
-    id = 1:4,
-    region = c("north", "south", "east", "west"),
-    amount = c(100, 200, 300, 400),
-    units = c(10, 20, 30, 40)
-  )
-  y <- data.table(
-    id = c(1:3, 5L),
-    region = c("north", "south", "east", "north"),
-    amount = c(100, 200.5, 300, 500),
-    units = c(10, 20, 30, 50)
-  )
-  diff_table(x, y, by = c("id", "region"))
-}
-
 test_that("a row matches only when every measure does", {
   e <- diff_explain(explain_fixture(), "id")
   expect_identical(e$ID, c(2L, 4L, 5L, 1L, 3L))
