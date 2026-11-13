@@ -67,6 +67,7 @@ test_that("diff_table()'s argument errors", {
   expect_snapshot(error = TRUE, diff_table(x, x, mode = "equal", cast = TRUE))
   expect_snapshot(error = TRUE, diff_table(x, x, cast = NA))
   expect_snapshot(error = TRUE, diff_table(x, x, by = NA_character_))
+  expect_snapshot(error = TRUE, diff_table(x, x, exclude = 1))
   expect_snapshot(error = TRUE, diff_table(x, x, duplicates = "aggregate", tolerance = 0.1))
 })
 
@@ -77,6 +78,8 @@ test_that("diff_table()'s column errors and messages", {
   expect_snapshot(error = TRUE, diff_table(x, data.table(id = "a", v = 1, w = 2), mode = "equal"))
   expect_snapshot(error = TRUE, diff_table(x, x, by = c("id", "ID", "nope")))
   expect_snapshot(error = TRUE, diff_table(x, x, by = "v", measures = "v"))
+  expect_snapshot(error = TRUE, diff_table(x, x, exclude = c("note", "nope")))
+  expect_snapshot(error = TRUE, diff_table(x, x, by = "id", exclude = "ID"))
   expect_snapshot(error = TRUE, diff_table(x, x, mode = "equal", by = "id"))
   expect_snapshot(invisible(diff_table(x, x, by = "id")))
   expect_snapshot(invisible(diff_table(data.table(k = "a"), data.table(k = "a"))))
@@ -109,6 +112,20 @@ test_that("diff_table()'s refusal of a comparison that aligns nothing", {
   y <- data.table(id = c("A", "B"), v = c(1, 2))
   expect_snapshot(error = TRUE, diff_table(x, y))
   expect_snapshot(error = TRUE, diff_table(x, y[0]))
+  expect_snapshot(
+    error = TRUE,
+    diff_table(
+      data.table(src = "p", day = as.IDate("2024-01-01"), id = 1:5, v = 1),
+      data.table(src = "d", day = as.IDate("2024-01-02"), id = 6:9, v = 1)
+    )
+  )
+  expect_snapshot(
+    error = TRUE,
+    diff_table(
+      data.table(run = "r1", id = 1:2, v = 1),
+      data.table(run = "r2", id = 1:2, v = 1)
+    )
+  )
   expect_snapshot(error = TRUE, diff_table(data.table(k = "a"), data.table(k = "b")))
 })
 
@@ -223,7 +240,7 @@ test_that("diff_summary() and diff_report()'s errors", {
   d <- diff_table(x3_fixture(), y3_fixture())
   expect_snapshot(error = TRUE, diff_summary(data.table(a = 1)))
   expect_snapshot(error = TRUE, diff_report(d, x_name = ""))
-  expect_snapshot(error = TRUE, diff_report(d, top_k = 1.5))
+  expect_snapshot(error = TRUE, diff_report(d, sample_k = 1.5))
   expect_snapshot(error = TRUE, format(diff_report(d), unicode = NA))
 })
 

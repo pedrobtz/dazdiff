@@ -174,3 +174,71 @@ merge_dt <- function(
   x[y, on = on, (targets) := mget(paste0("i.", carried))]
   invisible(x)
 }
+
+#' Which key columns share no value between two tables?
+#'
+#' When no key aligns, the cause is often one column: a run id, a source tag
+#' or a load date that holds one value in `x` and another in `y`. Any column
+#' in `cols` whose distinct values share nothing between the tables is
+#' enough, alone, to make every key disjoint, so these are the ones to name.
+#' The values are matched with a join, as the comparison matches them, so
+#' NA meets NA and integer64 needs no method of `%in%`.
+#'
+#' `constant` marks a column that holds a single value in each table while
+#' at least one table has more than one row: it labels the table, not its
+#' rows, and is the usual case for `exclude`.
+#'
+#' @param x,y Two tables with the columns `cols`, of the same types.
+#' @param cols The key columns to look at.
+#' @return A data.table with one row per such column: `column`, the distinct
+#'   values on each side (`values_x`, `values_y`, list columns) and
+#'   `constant`. Zero rows when either table is empty.
+#' @noRd
+disjoint_columns <- function(x, y, cols) {
+  none <- data.table(
+    column = character(),
+    values_x = list(),
+    values_y = list(),
+    constant = logical()
+  )
+  if (!nrow(x) || !nrow(y)) {
+    return(none)
+  }
+  many <- max(nrow(x), nrow(y)) > 1L
+  hits <- list()
+  for (col in cols) {
+    ux <- unique(x[, col, with = FALSE])
+    uy <- unique(y[, col, with = FALSE])
+    if (!nrow(ux[uy, on = col, nomatch = NULL])) {
+      hits[[col]] <- list(x = ux[[col]], y = uy[[col]])
+    }
+  }
+  if (!length(hits)) {
+    return(none)
+  }
+  out <- data.table(
+    column = names(hits),
+    constant = many & vapply(
+      hits,
+      function(h) length(h$x) == 1L && length(h$y) == 1L,
+      logical(1L)
+    )
+  )
+  # Set after, so a column of one vector per row is never spread over rows.
+  set(out, j = "values_x", value = list(unname(lapply(hits, `[[`, "x"))))
+  set(out, j = "values_y", value = list(unname(lapply(hits, `[[`, "y"))))
+  setcolorder(out, c("column", "values_x", "values_y", "constant"))[]
+}
+
+# Up to `n` values of a key column for a message: text quoted, so `"1"` and
+# 1 read differently, and an ellipsis when there are more.
+fmt_examples <- function(v, n = 3L) {
+  shown <- head(v, n)
+  out <- if (is.character(shown)) {
+    encodeString(shown, quote = "\"")
+  } else {
+    format(shown)
+  }
+  out[is.na(shown)] <- "NA"
+  paste0(paste(out, collapse = ", "), if (length(v) > n) ", ...")
+}

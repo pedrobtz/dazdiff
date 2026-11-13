@@ -2,8 +2,7 @@
 #
 # The layout follows the summary of the Python package diffly (Quantco): a
 # section each for the columns, the rows and the measures, a picture of how
-# the rows of the two tables align, and the most frequent changes of each
-# measure with a key to look one up by. The report is computed first, as plain
+# the rows of the two tables align. The report is computed first, as plain
 # data, and drawn by format(), so the numbers can be tested apart from the
 # drawing.
 #
@@ -14,8 +13,7 @@
 #'
 #' A bounded, readable account of a [diff_table()] result: which columns were
 #' compared, how the rows of the two tables align, and, for each measure that
-#' changed, how often it matches and its most frequent changes, each with an
-#' example key. Printing the report draws it; the numbers are in the returned
+#' changed, how often it matches and by how much it differs. Printing the report draws it; the numbers are in the returned
 #' list.
 #'
 #' A row counts as `changed` when any of its measures changed. With
@@ -31,8 +29,6 @@
 #'
 #' @param d A result of [diff_table()].
 #' @param x_name,y_name The names the report gives the two tables.
-#' @param top_k The number of most frequent changes shown per measure; 0
-#'   hides them.
 #' @param sample_k The number of keys shown of the rows found in only one
 #'   table; 0 hides them.
 #' @return A `dazdiff_report`: a list holding the counts the report draws,
@@ -50,7 +46,6 @@ diff_report <- function(
   d,
   x_name = "x",
   y_name = "y",
-  top_k = 3L,
   sample_k = 5L
 ) {
   check_diff_result(d)
@@ -63,20 +58,17 @@ diff_report <- function(
       )
     }
   }
-  for (arg in c("top_k", "sample_k")) {
-    v <- get(arg)
-    if (
-      !is.numeric(v) ||
-        length(v) != 1L ||
-        !is.finite(v) ||
-        v < 0 ||
-        v != trunc(v)
-    ) {
-      dazdiff_abort(
-        "dazdiff_error_input",
-        sprintf("`%s` must be a single whole number >= 0", arg)
-      )
-    }
+  if (
+    !is.numeric(sample_k) ||
+      length(sample_k) != 1L ||
+      !is.finite(sample_k) ||
+      sample_k < 0 ||
+      sample_k != trunc(sample_k)
+  ) {
+    dazdiff_abort(
+      "dazdiff_error_input",
+      "`sample_k` must be a single whole number >= 0"
+    )
   }
 
   shape <- attr(d, "shape")
@@ -131,7 +123,6 @@ diff_report <- function(
 
   # Measures: the counts of diff_summary(), on the joined values only.
   by_measure <- NULL
-  changes <- NULL
   if (length(measures)) {
     s <- diff_summary(d)
     by_measure <- data.table(
@@ -147,19 +138,6 @@ diff_report <- function(
     if (shape == "cells") {
       set(by_measure, j = "max_abs_diff", value = s$max_abs_diff)
       set(by_measure, j = "max_rel_diff", value = s$max_rel_diff)
-      changes <- top_changes(d, ids, top_k)
-      distinct <- changes$distinct
-      set(
-        by_measure,
-        j = "n_distinct_changes",
-        value = distinct$n_distinct[match(
-          as.character(s$metric),
-          distinct$metric
-        )]
-      )
-      changes <- changes$top
-      changes[, metric := label_of(metric)]
-      setnames(changes, "metric", "measure")
     }
   }
 
@@ -183,43 +161,18 @@ diff_report <- function(
       identity = label_of(ids),
       measures = label_of(measures),
       dropped = attr(d, "dropped"),
+      excluded = attr(d, "excluded"),
       ignored = label_of(attr(d, "ignored")),
       truncated = attr(d, "truncated"),
       paired = "key_seq" %in% names(d),
       equal = all(d$status == "same"),
       rows = row_counts,
       by_measure = by_measure,
-      changes = changes,
       only_x = sample_keys("x"),
-      only_y = sample_keys("y"),
-      top_k = as.integer(top_k)
+      only_y = sample_keys("y")
     ),
     class = "dazdiff_report"
   )
-}
-
-# The `top_k` most frequent (value_x, value_y) pairs among the changed values
-# of each measure, the largest difference first among equally frequent ones,
-# each with the key of its first row as an example.
-top_changes <- function(d, ids, top_k) {
-  ch <- d[status == "changed"]
-  pairs <- ch[,
-    .(n = .N, at = .I[1L], abs_diff = abs(diff[1L])),
-    by = c("metric", "value_x", "value_y")
-  ]
-  n_distinct <- pairs[, .(n_distinct = .N), by = "metric"]
-  setorderv(
-    pairs,
-    c("metric", "n", "abs_diff"),
-    order = c(1L, -1L, -1L),
-    na.last = TRUE
-  )
-  top <- pairs[, head(.SD, top_k), by = "metric"]
-  top[, metric := as.character(metric)]
-  top[, example := fmt_keys(ch[at, ids, with = FALSE])]
-  top[, c("at", "abs_diff") := NULL]
-  n_distinct[, metric := as.character(metric)]
-  list(top = top[], distinct = n_distinct[])
 }
 
 #' @export
@@ -267,6 +220,9 @@ format.dazdiff_report <- function(x, unicode = l10n_info()[["UTF-8"]], ...) {
     if (length(x$dropped)) {
       sprintf("Only in %s, dropped: %s.", x$y_name, fmt_names(x$dropped))
     },
+    if (length(x$excluded)) {
+      sprintf("Excluded: %s.", fmt_names(x$excluded))
+    },
     if (length(x$ignored)) {
       sprintf(
         "In neither the identity nor the measures: %s.",
@@ -285,7 +241,10 @@ format.dazdiff_report <- function(x, unicode = l10n_info()[["UTF-8"]], ...) {
       )
     }
   )
-  notes <- length(x$dropped) || length(x$ignored) || nrow(x$truncated)
+  notes <- length(x$dropped) ||
+    length(x$excluded) ||
+    length(x$ignored) ||
+    nrow(x$truncated)
 
   body <- indent(intro)
   if (x$equal) {
@@ -475,12 +434,10 @@ measure_lines <- function(x, g) {
     ))
   }
   cells <- x$shape == "cells"
-  show_changes <- cells && x$top_k > 0L
   header <- c(
     "Measure",
     "Match rate",
-    if (cells) c("Max |diff|", "Max rel diff"),
-    if (show_changes) "Top changes"
+    if (cells) c("Max |diff|", "Max rel diff")
   )
   rows <- lapply(seq_len(nrow(changed)), function(i) {
     row <- list(changed$measure[i], fmt_pct(changed$match_rate[i]))
@@ -491,28 +448,6 @@ measure_lines <- function(x, g) {
         fmt_size(changed$max_rel_diff[i])
       )
     }
-    if (show_changes) {
-      ch <- x$changes[measure == changed$measure[i]]
-      lines <- sprintf(
-        "%s -> %s (%sx, e.g. %s)",
-        fmt_values(ch$value_x),
-        fmt_values(ch$value_y),
-        fmt_count(ch$n),
-        ch$example
-      )
-      more <- changed$n_distinct_changes[i] - nrow(ch)
-      if (more > 0) {
-        lines <- c(
-          lines,
-          sprintf(
-            "(...and %s %s)",
-            fmt_count(more),
-            if (more == 1) "other" else "others"
-          )
-        )
-      }
-      row <- c(row, list(lines))
-    }
     row
   })
   c(
@@ -522,8 +457,7 @@ measure_lines <- function(x, g) {
       c(
         "left",
         "right",
-        if (cells) c("right", "right"),
-        if (show_changes) "left"
+        if (cells) c("right", "right")
       ),
       g
     ),
@@ -655,19 +589,6 @@ fmt_cell <- function(v) {
 }
 
 fmt_size <- function(v) if (is.na(v)) "-" else format(v, digits = 4L)
-
-fmt_values <- function(v) {
-  vapply(seq_along(v), function(i) fmt_cell(v[i]), character(1L))
-}
-
-# Keys as text: the value of a single key column, a tuple of several.
-fmt_keys <- function(keys) {
-  if (!length(keys)) {
-    return(rep("", nrow(keys)))
-  }
-  out <- do.call(paste, c(lapply(keys, fmt_values), sep = ", "))
-  if (length(keys) > 1L) paste0("(", out, ")") else out
-}
 
 report_glyphs <- function(unicode) {
   if (unicode) {

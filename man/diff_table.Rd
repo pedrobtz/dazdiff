@@ -9,6 +9,7 @@ diff_table(
   y,
   mode = c("benchmark", "equal"),
   by = NULL,
+  exclude = NULL,
   row_key = c("none", "position", "sorted"),
   measures = "numeric",
   tolerance = 0,
@@ -29,6 +30,13 @@ diff_table(
 
 \item{by}{Identity columns, by name, in either spelling. \code{NULL} (the
 default) uses every column that is not a measure.}
+
+\item{exclude}{Columns to leave out of the comparison, by name, in either
+spelling. They are removed from both tables before anything else, in
+either mode: an excluded column need not be in both tables, is not
+announced as dropped or ignored, and does not stop \code{mode = "equal"}
+from calling the rest equal. Each name must be a column of \code{x} or \code{y},
+and not one that \code{by} or \code{measures} names.}
 
 \item{row_key}{\code{"none"} (the default), \code{"position"} or \code{"sorted"}: add a
 virtual \code{row_number} key column. See Well-formed tables.}
@@ -83,7 +91,8 @@ not with text stored on another platform) and \code{status}. Without measures on
 
 The attributes \code{mode}, \code{tolerance} (\code{abs} and \code{rel}), \code{name_map} (each
 column's name in \code{x} and \code{y}),
-\code{dropped} (columns of \code{y} dropped in benchmark mode), \code{ignored} (columns
+\code{dropped} (columns of \code{y} dropped in benchmark mode), \code{excluded} (the
+columns \code{exclude} removed, as named in \code{x} or \code{y}), \code{ignored} (columns
 not compared) and \code{truncated} (the casts that truncated, with the rows
 of \code{y} each one touched) record what was done on the way.
 }
@@ -216,7 +225,10 @@ types that differ where nothing is cast.
 \item \code{dazdiff_error_measures}: \code{measures} names something that cannot be
 measured, or a column \code{by} names too.
 \item \code{dazdiff_error_duplicates}: repeated keys under \code{duplicates = "error"}.
-\item \code{dazdiff_error_disjoint}: no key appears in both tables.
+\item \code{dazdiff_error_disjoint}: no key appears in both tables. Its field
+\code{disjoint_columns} names the key columns that alone share no value, and
+\code{constant_columns} those among them holding one value in each table (a
+run id, a source tag), which usually belong in \code{exclude}.
 \item \code{dazdiff_error_dependency}: a suggested package is needed but missing.
 \item \code{dazdiff_warning_duplicates}: repeated keys paired in arrival order.
 \item \code{dazdiff_message_dropped_columns}, \code{dazdiff_message_ignored_columns},
@@ -238,6 +250,9 @@ d[status != "same"]
 
 # Equal mode: no casting, every column in both tables.
 diff_table(benchmark, benchmark, mode = "equal")
+
+# Leave a column out of the comparison, in either table.
+diff_table(benchmark, tested, exclude = "loaded_at")
 
 # No key at all: align rows by sorting both tables by their values.
 diff_table(

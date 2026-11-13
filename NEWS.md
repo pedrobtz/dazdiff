@@ -13,6 +13,11 @@ First release.
   * `mode = "equal"` compares the two as peers. Every column must be in
     both tables with the same type, nothing is cast, and the result is
     symmetric.
+* `exclude` leaves columns out of the comparison, in either mode: they are
+  removed from both tables, in either spelling, before anything else.
+* When no key aligns, the error names the key columns that share no value
+  between the tables, with examples, and suggests `exclude` for those holding
+  one value in each table.
 * Casts that drop a fraction -- a double to an integer, a number or a
   timestamp to a whole day, a Date holding part of a day to its text -- are
   made by default, since storage such as Spark or Delta narrows types the
@@ -49,8 +54,7 @@ First release.
   `max_rel_diff`, and the tolerances are recorded in `attr(, "tolerance")`.
 * `diff_report()` draws a bounded text report of a comparison: the columns
   compared, a picture of how the rows of the two tables align, and per
-  measure its match rate and most frequent changes, each with an example
-  key. The layout follows the summary of the Python package diffly.
+  measure its match rate and largest differences. The layout follows the summary of the Python package diffly.
 * `diff_summary()` counts each status per measure and measures the size of
   the differences.
 * `expect_table_equal()` is a testthat expectation built on `diff_table()`.

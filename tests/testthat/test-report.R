@@ -8,34 +8,14 @@ test_that("diff_report counts rows by alignment, a row changed if any measure is
   )
   expect_identical(r$by_measure$measure, c("a", "b"))
   expect_identical(r$by_measure$match_rate, c(2 / 3, 1 / 3))
-  expect_identical(r$by_measure$n_distinct_changes, c(1L, 2L))
   expect_false(r$equal)
 })
 
-test_that("top changes are the most frequent pairs, each with an example key", {
-  x <- data.table(id = c("p", "q", "r", "s"), v = c(1, 1, 2, 3))
-  y <- data.table(id = c("p", "q", "r", "s"), v = c(5, 5, 9, 3))
-  r <- diff_report(diff_table(x, y), top_k = 1)
-  expect_identical(r$changes$value_x, 1)
-  expect_identical(r$changes$value_y, 5)
-  expect_identical(r$changes$n, 2L)
-  expect_identical(r$changes$example, "\"p\"")
-  expect_match(format(r, unicode = FALSE), "(...and 1 other)", fixed = TRUE, all = FALSE)
-})
-
-test_that("among equally frequent changes the largest comes first", {
-  x <- data.table(id = 1:2, v = c(1, 1))
-  y <- data.table(id = 1:2, v = c(2, 100))
-  r <- diff_report(diff_table(x, y), top_k = 1)
-  expect_identical(r$changes$value_y, 100)
-})
-
-test_that("example keys of several columns are tuples, in the caller's spelling", {
+test_that("the identity is named in the caller's spelling", {
   x <- data.table(Id = 1:2, `Sub Key` = c("u", "v"), v = c(1, 2))
   y <- data.table(id = 1:2, sub_key = c("u", "v"), v = c(1, 3))
   r <- diff_report(diff_table(x, y))
   expect_identical(r$identity, c("Id", "Sub Key"))
-  expect_identical(r$changes$example, "(2, \"v\")")
 })
 
 test_that("only-in-one-table keys are sampled, bounded by sample_k", {
@@ -62,7 +42,6 @@ test_that("diff_report works on every shape", {
   ))
   expect_identical(g$unit, "keys")
   expect_identical(c(g$rows$n_x, g$rows$n_changed), c(2L, 2L))
-  expect_null(g$changes)
 
   expect_message(
     rows <- diff_table(data.table(k = c("a", "b")), data.table(k = c("b", "c", "a"))),
@@ -88,7 +67,7 @@ test_that("counts past 2^31 are formatted", {
 test_that("diff_report validates its arguments", {
   d <- diff_table(report_x(), report_y())
   expect_error(diff_report(data.table(a = 1)), class = "dazdiff_error_input")
-  expect_error(diff_report(d, top_k = -1), class = "dazdiff_error_input")
+  expect_error(diff_report(d, sample_k = -1), class = "dazdiff_error_input")
   expect_error(diff_report(d, sample_k = 1.5), class = "dazdiff_error_input")
   expect_error(diff_report(d, x_name = NA_character_), class = "dazdiff_error_input")
   expect_error(format(diff_report(d), unicode = NA), class = "dazdiff_error_input")
@@ -115,7 +94,7 @@ test_that("the drawing", {
     ),
     class = "dazdiff_message_ignored_columns"
   )
-  expect_snapshot(print(diff_report(d, x_name = "bench", y_name = "tested", top_k = 1), unicode = FALSE))
+  expect_snapshot(print(diff_report(d, x_name = "bench", y_name = "tested"), unicode = FALSE))
 })
 
 test_that("the drawing, in box-drawing characters", {
@@ -155,6 +134,15 @@ test_that("the drawing of an exact match that dropped a column", {
   r <- diff_report(d)
   expect_true(r$equal)
   expect_identical(r$dropped, "loaded_at")
+  expect_snapshot(print(r, unicode = FALSE))
+})
+
+test_that("the drawing of an exact match with an excluded column", {
+  x <- data.table(id = 1:2, v = c(1, 2), note = c("p", "q"))
+  y <- data.table(id = 1:2, v = c(1, 2), note = c("r", "s"))
+  r <- diff_report(diff_table(x, y, mode = "equal", exclude = "note"))
+  expect_true(r$equal)
+  expect_identical(r$excluded, "note")
   expect_snapshot(print(r, unicode = FALSE))
 })
 
