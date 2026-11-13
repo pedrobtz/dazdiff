@@ -68,6 +68,7 @@ both tables.</p>
 <span>  <span class="va">y</span>,</span>
 <span>  mode <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"benchmark"</span>, <span class="st">"equal"</span><span class="op">)</span>,</span>
 <span>  by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  exclude <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  row_key <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"position"</span>, <span class="st">"sorted"</span><span class="op">)</span>,</span>
 <span>  measures <span class="op">=</span> <span class="st">"numeric"</span>,</span>
 <span>  tolerance <span class="op">=</span> <span class="fl">0</span>,</span>
@@ -99,6 +100,15 @@ both tables.</p>
 <dt id="arg-by">by<a class="anchor" aria-label="anchor" href="#arg-by"></a></dt>
 <dd><p>Identity columns, by name, in either spelling. <code>NULL</code> (the
 default) uses every column that is not a measure.</p></dd>
+
+
+<dt id="arg-exclude">exclude<a class="anchor" aria-label="anchor" href="#arg-exclude"></a></dt>
+<dd><p>Columns to leave out of the comparison, by name, in either
+spelling. They are removed from both tables before anything else, in
+either mode: an excluded column need not be in both tables, is not
+announced as dropped or ignored, and does not stop <code>mode = "equal"</code>
+from calling the rest equal. Each name must be a column of <code>x</code> or <code>y</code>,
+and not one that <code>by</code> or <code>measures</code> names.</p></dd>
 
 
 <dt id="arg-row-key">row_key<a class="anchor" aria-label="anchor" href="#arg-row-key"></a></dt>
@@ -169,7 +179,8 @@ not with text stored on another platform) and <code>status</code>. Without measu
 <code>changed</code>.</p></li>
 </ul><p>The attributes <code>mode</code>, <code>tolerance</code> (<code>abs</code> and <code>rel</code>), <code>name_map</code> (each
 column's name in <code>x</code> and <code>y</code>),
-<code>dropped</code> (columns of <code>y</code> dropped in benchmark mode), <code>ignored</code> (columns
+<code>dropped</code> (columns of <code>y</code> dropped in benchmark mode), <code>excluded</code> (the
+columns <code>exclude</code> removed, as named in <code>x</code> or <code>y</code>), <code>ignored</code> (columns
 not compared) and <code>truncated</code> (the casts that truncated, with the rows
 of <code>y</code> each one touched) record what was done on the way.</p>
     </div>
@@ -292,7 +303,10 @@ types that differ where nothing is cast.</p></li>
 <li><p><code>dazdiff_error_measures</code>: <code>measures</code> names something that cannot be
 measured, or a column <code>by</code> names too.</p></li>
 <li><p><code>dazdiff_error_duplicates</code>: repeated keys under <code>duplicates = "error"</code>.</p></li>
-<li><p><code>dazdiff_error_disjoint</code>: no key appears in both tables.</p></li>
+<li><p><code>dazdiff_error_disjoint</code>: no key appears in both tables. Its field
+<code>disjoint_columns</code> names the key columns that alone share no value, and
+<code>constant_columns</code> those among them holding one value in each table (a
+run id, a source tag), which usually belong in <code>exclude</code>.</p></li>
 <li><p><code>dazdiff_error_dependency</code>: a suggested package is needed but missing.</p></li>
 <li><p><code>dazdiff_warning_duplicates</code>: repeated keys paired in arrival order.</p></li>
 <li><p><code>dazdiff_message_dropped_columns</code>, <code>dazdiff_message_ignored_columns</code>,
@@ -354,6 +368,24 @@ measured, or a column <code>by</code> names too.</p></li>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2:   same</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 3:   same</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 4:   same</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Leave a column out of the comparison, in either table.</span></span></span>
+<span class="r-in"><span><span class="fu">diff_table</span><span class="op">(</span><span class="va">benchmark</span>, <span class="va">tested</span>, exclude <span class="op">=</span> <span class="st">"loaded_at"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Key: &lt;ID, metric&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       ID metric row_id_x row_id_y value_x value_y  diff abs_diff   rel_diff</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;int&gt; &lt;char&gt;    &lt;int&gt;    &lt;int&gt;   &lt;num&gt;   &lt;num&gt; &lt;num&gt;    &lt;num&gt;      &lt;num&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:     1 AMOUNT        1        1      10    10.0   0.0      0.0 0.00000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2:     2 AMOUNT        2        2      20    20.5   0.5      0.5 0.02439024</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3:     3 AMOUNT        3        3      30    30.0   0.0      0.0 0.00000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4:     4 AMOUNT        4       NA      40      NA    NA       NA         NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5:     5 AMOUNT       NA        4      NA    50.0    NA       NA         NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     status</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;fctr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:    same</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2: changed</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3:    same</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4:  only_x</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5:  only_y</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># No key at all: align rows by sorting both tables by their values.</span></span></span>
 <span class="r-in"><span><span class="fu">diff_table</span><span class="op">(</span></span></span>

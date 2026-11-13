@@ -148,7 +148,7 @@
 <span><span class="co">#&gt;    &lt;char&gt; &lt;int&gt;  &lt;int&gt;     &lt;int&gt;    &lt;int&gt;    &lt;int&gt;        &lt;num&gt;         &lt;num&gt;     &lt;num&gt;        &lt;num&gt;</span></span>
 <span><span class="co">#&gt; 1: AMOUNT     5      2         1        1        1          0.5     0.1666667 0.2886751  0.002493766</span></span>
 <span><span class="co">#&gt; 2:  UNITS     5      3         0        1        1          0.0     0.0000000 0.0000000  0.000000000</span></span></code></pre></div>
-<p><code><a href="reference/diff_report.html">diff_report()</a></code> draws the whole comparison as text: the columns compared, how the rows of the two tables align, and the most frequent changes of each measure, each with a key to look it up by:</p>
+<p><code><a href="reference/diff_report.html">diff_report()</a></code> draws the whole comparison as text: the columns compared, how the rows of the two tables align, and how much each measure differs:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/diff_report.html">diff_report</a></span><span class="op">(</span><span class="va">d</span>, x_name <span class="op">=</span> <span class="st">"benchmark"</span>, y_name <span class="op">=</span> <span class="st">"stored"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</span></span>
@@ -181,11 +181,11 @@
 <span><span class="co">#&gt;</span></span>
 <span><span class="co">#&gt;  Measures</span></span>
 <span><span class="co">#&gt;  ▔▔▔▔▔▔▔▔</span></span>
-<span><span class="co">#&gt;    ┌─────────┬────────────┬────────────┬──────────────┬──────────────────────────────────────┐</span></span>
-<span><span class="co">#&gt;    │ Measure │ Match rate │ Max |diff| │ Max rel diff │ Top changes                          │</span></span>
-<span><span class="co">#&gt;    ├─────────┼────────────┼────────────┼──────────────┼──────────────────────────────────────┤</span></span>
-<span><span class="co">#&gt;    │ amount  │     66.67% │        0.5 │     0.002494 │ 200 -&gt; 200.5 (1x, e.g. (2, "south")) │</span></span>
-<span><span class="co">#&gt;    └─────────┴────────────┴────────────┴──────────────┴──────────────────────────────────────┘</span></span>
+<span><span class="co">#&gt;    ┌─────────┬────────────┬────────────┬──────────────┐</span></span>
+<span><span class="co">#&gt;    │ Measure │ Match rate │ Max |diff| │ Max rel diff │</span></span>
+<span><span class="co">#&gt;    ├─────────┼────────────┼────────────┼──────────────┤</span></span>
+<span><span class="co">#&gt;    │ amount  │     66.67% │        0.5 │     0.002494 │</span></span>
+<span><span class="co">#&gt;    └─────────┴────────────┴────────────┴──────────────┘</span></span>
 <span><span class="co">#&gt;    1 other measure matches on every row found in both tables.</span></span>
 <span><span class="co">#&gt;</span></span>
 <span><span class="co">#&gt;  Rows only in benchmark</span></span>
