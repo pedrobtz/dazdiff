@@ -116,8 +116,9 @@ text, or a double stored as an integer, still compares. Columns that are
 not compared are neither cast nor type-checked. A number cast to text
 is written with the decimals \code{x} uses, when every value of \code{x}'s column
 uses the same number of them: \code{2} in \code{y} becomes \code{"2.0"} to meet \code{x}'s
-\code{"2.0"}. A value of \code{x} that equals one of \code{y}'s as a number but not as
-text is warned about, since those rows will not align.
+\code{"2.0"}, which a message announces. A value of \code{x} that equals one of
+\code{y}'s as a number but not as text is warned about, since those rows will
+not align.
 \item \code{"equal"}: are \code{x} and \code{y} equal? Every column must be in both tables and
 have the same type in both; nothing is cast. The result is symmetric:
 swapping \code{x} and \code{y} swaps \code{only_x} with \code{only_y} and negates \code{diff}.
@@ -240,8 +241,10 @@ run id, a source tag), which usually belong in \code{exclude}.
 \item \code{dazdiff_warning_cast_format}: a number of \code{y} cast to text does not
 match \code{x}'s text for the same number (\code{"2.00"} against \code{"2"}).
 \item \code{dazdiff_message_dropped_columns}, \code{dazdiff_message_ignored_columns},
-\code{dazdiff_message_no_measures}, \code{dazdiff_message_truncation}: columns of
-\code{y} dropped, columns not compared, no measures, values truncated.
+\code{dazdiff_message_no_measures}, \code{dazdiff_message_truncation},
+\code{dazdiff_message_cast_format}: columns of \code{y} dropped, columns not
+compared, no measures, values truncated, numbers written as text in
+\code{x}'s format.
 }
 }
 

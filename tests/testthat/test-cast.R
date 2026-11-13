@@ -454,7 +454,9 @@ test_that("text_decimals() reads one number of decimals off the whole column", {
 test_that("a number cast to text takes the benchmark's decimals", {
   x <- data.table(id = c("1.0", "2.0", "3.0", "4.0"), v = c(1, 2, 3, 4))
   y <- data.table(id = c(1, 2, 3, 5), v = c(1, 2, 3, 5))
-  d <- expect_no_warning(diff_table(x, y))
+  m <- expect_message(d <- diff_table(x, y), class = "dazdiff_message_cast_format")
+  expect_identical(c(m$decimals, m$n, m$n_kept), c(1L, 4L, 0L))
+  expect_identical(m$column, "id")
   expect_identical(
     as.character(d[order(row_id_x, row_id_y), status]),
     c("same", "same", "same", "only_x", "only_y")
@@ -469,7 +471,8 @@ test_that("a number cast to text takes the benchmark's decimals", {
 test_that("a value the benchmark's decimals cannot hold keeps its own text", {
   x <- data.table(id = c("1.2", "1.3"), v = c(1, 2))
   y <- data.table(id = c(1.2, 1.25), v = c(1, 2))
-  d <- expect_no_warning(diff_table(x, y))
+  m <- expect_message(d <- diff_table(x, y), class = "dazdiff_message_cast_format")
+  expect_identical(c(m$n, m$n_kept), c(1L, 1L))
   # 1.25 must not round to "1.3" and pair with x's 1.3.
   expect_identical(d[status == "only_y", ID], "1.25")
   expect_identical(d[status == "only_x", ID], "1.3")

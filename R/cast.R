@@ -64,7 +64,9 @@ text_decimals <- function(ref) {
 #'
 #' Whatever the format, a value of `x` that equals one of `y`'s as a number
 #' but not as text is warned about: those rows will not align, and the
-#' comparison may be reporting a format skew as missing rows.
+#' comparison may be reporting a format skew as missing rows. Otherwise a
+#' format that was applied is announced in a message, since it changes how
+#' `y`'s keys read.
 #'
 #' @param v `y`'s column before the cast, numeric or integer.
 #' @param out The same column cast to text by `cast_value()`.
@@ -75,10 +77,14 @@ text_decimals <- function(ref) {
 number_as_text_like <- function(v, out, ref, label) {
   fmt <- text_decimals(ref)
   k <- fmt$decimals
+  fits <- rep(FALSE, length(v))
+  kept <- rep(FALSE, length(v))
   if (!is.na(k) && k > 0L) {
     # `+ 0` turns -0 into 0, which sprintf() would write as "-0.0".
     txt <- sprintf("%.*f", k, as.double(v) + 0)
     fits <- is.finite(v) & suppressWarnings(as.numeric(txt)) == v
+    fits[is.na(fits)] <- FALSE
+    kept <- is.finite(v) & !fits
     out[fits] <- txt[fits]
   }
 
@@ -133,6 +139,41 @@ number_as_text_like <- function(v, out, ref, label) {
       column = label,
       decimals = k,
       n = sum(skew)
+    )
+  } else if (any(fits)) {
+    # The format changed how y's keys read, which the caller should know even
+    # when everything aligns: it is an expected consequence of the cast.
+    shown <- head(which(fits & !duplicated(v)), 3L)
+    dazdiff_inform(
+      "dazdiff_message_cast_format",
+      paste0(
+        "Wrote column ",
+        label,
+        " of `y` as text with ",
+        k,
+        if (k == 1L) " decimal place" else " decimal places",
+        ", as `x` writes it: ",
+        format(sum(fits), big.mark = ","),
+        if (sum(fits) == 1L) " value (" else " values (",
+        paste0(format(v[shown]), " -> \"", out[shown], "\"", collapse = ", "),
+        if (sum(fits) > length(shown)) ", ...",
+        ")",
+        if (any(kept)) {
+          paste0(
+            "; ",
+            format(sum(kept), big.mark = ","),
+            if (sum(kept) == 1L) " value needs" else " values need",
+            " more decimals and kept its own digits (",
+            paste0("\"", head(unique(out[kept]), 3L), "\"", collapse = ", "),
+            ")"
+          )
+        },
+        "."
+      ),
+      column = label,
+      decimals = k,
+      n = sum(fits),
+      n_kept = sum(kept)
     )
   }
   out

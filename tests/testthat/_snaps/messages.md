@@ -469,6 +469,20 @@
 ---
 
     Code
+      invisible(diff_table(num(c("1.0", "2.0")), num(c(1, 2))))
+    Message
+      Wrote column id of `y` as text with 1 decimal place, as `x` writes it: 2 values (1 -> "1.0", 2 -> "2.0").
+
+---
+
+    Code
+      invisible(diff_table(num(c("1.2", "1.3")), num(c(1.2, 1.25))))
+    Message
+      Wrote column id of `y` as text with 1 decimal place, as `x` writes it: 1 value (1.2 -> "1.2"); 1 value needs more decimals and kept its own digits ("1.25").
+
+---
+
+    Code
       cast_dt(x, data.frame(a = 1))
     Condition
       Error:

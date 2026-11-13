@@ -19,8 +19,9 @@ First release.
   many tables.
 * A number of `y` cast to the benchmark's text is written with the decimals
   the benchmark uses, when they are the same for the whole column, so `2`
-  meets `"2.0"`. A number that still matches only by value, not by text, is
-  a warning (`dazdiff_warning_cast_format`) that explains the format used.
+  meets `"2.0"`, and a message says so (`dazdiff_message_cast_format`). A
+  number that still matches only by value, not by text, is a warning
+  (`dazdiff_warning_cast_format`) that explains the format used.
 * When no key aligns, the error names the key columns that share no value
   between the tables, with examples, and suggests `exclude` for those holding
   one value in each table.

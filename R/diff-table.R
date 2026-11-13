@@ -21,8 +21,9 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #'   not compared are neither cast nor type-checked. A number cast to text
 #'   is written with the decimals `x` uses, when every value of `x`'s column
 #'   uses the same number of them: `2` in `y` becomes `"2.0"` to meet `x`'s
-#'   `"2.0"`. A value of `x` that equals one of `y`'s as a number but not as
-#'   text is warned about, since those rows will not align.
+#'   `"2.0"`, which a message announces. A value of `x` that equals one of
+#'   `y`'s as a number but not as text is warned about, since those rows will
+#'   not align.
 #' * `"equal"`: are `x` and `y` equal? Every column must be in both tables and
 #'   have the same type in both; nothing is cast. The result is symmetric:
 #'   swapping `x` and `y` swaps `only_x` with `only_y` and negates `diff`.
@@ -125,8 +126,10 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #' * `dazdiff_warning_cast_format`: a number of `y` cast to text does not
 #'   match `x`'s text for the same number (`"2.00"` against `"2"`).
 #' * `dazdiff_message_dropped_columns`, `dazdiff_message_ignored_columns`,
-#'   `dazdiff_message_no_measures`, `dazdiff_message_truncation`: columns of
-#'   `y` dropped, columns not compared, no measures, values truncated.
+#'   `dazdiff_message_no_measures`, `dazdiff_message_truncation`,
+#'   `dazdiff_message_cast_format`: columns of `y` dropped, columns not
+#'   compared, no measures, values truncated, numbers written as text in
+#'   `x`'s format.
 #'
 #' @param x The benchmark table (in `"equal"` mode, simply the first table).
 #' @param y The table to compare with it.
