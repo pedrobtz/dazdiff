@@ -5,13 +5,13 @@
 #
 # `paths-ignore` is load-bearing: the workflow commits the badge back to the
 # repository, and without it that commit re-triggers this workflow in a loop.
+#
+# Weekly and on demand only, not on every pull request: CI minutes are
+# limited, and the badge is measured on main.
 on:
-  # No `push:`: a pull request already checks its merge with main,
-  # and the schedule checks main (r-actions README, "Pushes to main").
   schedule:
     - cron: "32 3 * * 6"
   workflow_dispatch:
-  pull_request:
 
 name: coverage.yml
 

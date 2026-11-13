@@ -1,6 +1,9 @@
 # Reusable R CMD check from https://github.com/pedrobtz/r-actions: the default
-# runners plus R-hub's CRAN-like containers, all with --as-cran, and the
-# nosuggests leg (CRAN's NOSUGGESTS flavor). Pure R, so no native checks.
+# runners, all with --as-cran, and the nosuggests leg (CRAN's NOSUGGESTS
+# flavor). No R-hub compiler containers (clang23, ubuntu-clang, ubuntu-gcc16),
+# in either profile: they check how compiled code builds, the package is pure
+# R, and r-actions sets them to '[]' for exactly that case. CI minutes are
+# limited, and clang23 was the second leg of every pull request.
 on:
   # No `push:`: a pull request already checks its merge with main,
   # and the schedule checks main (r-actions README, "Pushes to main").
@@ -25,17 +28,20 @@ jobs:
   R-CMD-check:
     uses: pedrobtz/r-actions/.github/workflows/r-cmd-check.yml@v1
     with:
-      # Quick on each push to a pull request, full after merge. The
-      # `full-ci` label runs the full set on a pull request before merging.
+      # Quick on each push to a pull request (one Linux R-release leg), full
+      # on the schedule, on dispatch, and with the `full-ci` label.
       profile: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'full-ci') && 'quick' || 'full' }}
+      containers: "[]"
+      quick-containers: "[]"
       nosuggests: true
-      # The shared default runs R-devel only in the Linux containers; this
-      # adds CRAN's Windows R-devel flavor, and R 4.1, the floor DESCRIPTION
-      # declares. Runs in the full profile only.
+      # The shared default plus CRAN's Windows R-devel flavor, and R 4.1, the
+      # floor DESCRIPTION declares. With no containers, the Linux R-devel row
+      # comes back: nothing else checks on the R CRAN uses for new packages.
       runners: >-
         [{"os": "macos-latest", "r": "release"},
          {"os": "windows-latest", "r": "release"},
          {"os": "windows-latest", "r": "devel"},
          {"os": "ubuntu-latest", "r": "release"},
+         {"os": "ubuntu-latest", "r": "devel"},
          {"os": "ubuntu-latest", "r": "oldrel-1"},
          {"os": "ubuntu-latest", "r": "4.1"}]

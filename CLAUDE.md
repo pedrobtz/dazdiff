@@ -218,11 +218,18 @@ needs a snapshot there.
 
 ## Continuous integration
 
-- `R-CMD-check.yaml` calls r-actions' `r-cmd-check.yml@v1`.
+CI minutes are limited, so this package departs from the shared CI rules in
+three places, on purpose:
+
+- `R-CMD-check.yaml` calls r-actions' `r-cmd-check.yml@v1` with no R-hub
+  containers (`containers` and `quick-containers` are `[]`): they check
+  compiled code, and the package is pure R. A pull request runs one Linux
+  R-release leg; the full runner set, Linux R-devel included in place of the
+  containers, runs weekly, on dispatch and under `full-ci`.
 - `coverage.yml` calls r-actions' `coverage.yml`, pinned to a commit
-  (`v1.21.0`).
-- `pkgdown.yaml` is the package's own: it builds the site and deploys it to
-  GitHub Pages. `docs/` is the local pkgdown build and is git-ignored.
+  (`v1.21.0`), weekly and on dispatch only, not on pull requests.
+- `pkgdown.yaml` builds the site and deploys it to GitHub Pages from main and
+  from releases; a pull request builds it only under `full-ci`. `docs/` is the local pkgdown build and is git-ignored.
 
 `docs/`, `.claude/`, `.agents/`, `benchmarks/`, `inst/WORDLIST` and
 `CLAUDE.md` are listed in `.Rbuildignore`. pkgdown does not read
