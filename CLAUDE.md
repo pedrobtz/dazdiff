@@ -19,7 +19,7 @@ a shared file disagree, this file wins for this package.
 
 `dazdiff` is a small R package around one function, `diff_table()`, which
 compares two tables value by value, plus a few helpers (`diff_summary()`,
-`diff_report()`, `expect_table_equal()`, `compare_columns()`,
+`diff_report()`, `diff_explain()`, `is_matching()`, `expect_table_equal()`, `compare_columns()`,
 `normalize_dt()`, `cast_rules()`). `data.table` is the engine and the only
 hard dependency besides `utils`. Keep the public surface small; new features
 go through `.agents/roadmap.md` first.
@@ -93,7 +93,10 @@ calls lives in its own file and is tested on its own:
 - `R/keys.R`: `unique_by_key()`, `disambiguate_by_key()`, `aggregate_by_key()`.
 - `R/merge.R`: `merge_dry_run()` (index-only, exact), `merge_dt()` (one-to-one
   only), `disjoint_columns()` (the key columns named when nothing aligns).
-- `R/summary.R`: `diff_summary()`, `is_finite_pair()`, `scaled_rmse()`.
+- `R/summary.R`: `diff_summary()`, `is_matching()`, `is_finite_pair()`,
+  `scaled_rmse()`.
+- `R/explain.R`: `diff_explain()`: which key values split the result into
+  same and not same.
 - `R/report.R`: `diff_report()` and its `format()`/`print()` methods: the text
   report.
 - `R/expect.R`: `expect_table_equal()`.
@@ -177,6 +180,13 @@ Each is covered by a test.
 - **Counts that can pass 2^31 are doubles, and are never formatted with
   `%d`.** `sprintf("%d", 3e9)` is an error, so the message for exactly the
   fanout worth refusing would fail to build.
+- **A number cast to text follows the benchmark's decimals, read off the
+  whole column.** Every distinct value of `x` must be plain decimal text
+  with one number of decimals, or nothing is inferred: choosing between
+  `"1.0"` and `"1.00"` would be a guess. A sample would miss the one odd
+  value. A value is reformatted only when the text reads back exactly, so
+  1.25 never becomes `"1.3"` and joins `x`'s 1.3. What still matches only by
+  value is `dazdiff_warning_cast_format`.
 - **Text dates before the year 1000 are refused, by reading the year off the
   parsed date.** The format-back round trip alone is platform-dependent:
   glibc writes year 24 as `"24"` under `%Y` (macOS writes `"0024"`), so
@@ -202,7 +212,7 @@ The tests in `test-types.R`, `test-cast.R`, `test-columns.R`, `test-melt.R`,
 `.agents/test-cases.R`. They use the `check()` helpers in `helper-check.R`,
 the scratch suites' checks reported through testthat. New tests are ordinary
 testthat (`test-diff-table-modes.R`, `test-names.R`, `test-summary.R`,
-`test-expect.R`, `test-report.R`, whose drawings are snapshots in
+`test-expect.R`, `test-explain.R`, `test-report.R`, whose drawings are snapshots in
 `_snaps/report.md`).
 
 Shared fixtures are functions in `helper-fixtures.R` that build a fresh table

@@ -434,3 +434,65 @@ test_that("a short year is refused on every platform, not only where %Y pads", {
   expect_error(cast_value("0024-01-01", "Date", "col"), class = "dazdiff_error_cast")
   expect_equal(cast_value("1024-01-01", "Date", "col"), as.Date("1024-01-01"))
 })
+
+# Numbers cast to the benchmark's text -----------------------------------------
+
+test_that("text_decimals() reads one number of decimals off the whole column", {
+  expect_identical(text_decimals(c("1.0", "2.5", NA, "-3.0"))$decimals, 1L)
+  expect_identical(text_decimals(c("1", "20"))$decimals, 0L)
+  mixed <- text_decimals(c(rep("1.0", 1000), "1.00"))
+  expect_identical(mixed$decimals, NA_integer_)
+  expect_identical(mixed$seen, c(1L, 2L))
+  for (odd in c("007.0", "+1.0", "1,000.0", "1e3", " 1.0", "1.", ".5")) {
+    fmt <- text_decimals(c("1.0", odd))
+    expect_identical(fmt$decimals, NA_integer_, info = odd)
+    expect_false(fmt$plain, info = odd)
+  }
+  expect_identical(text_decimals(NA_character_)$decimals, NA_integer_)
+})
+
+test_that("a number cast to text takes the benchmark's decimals", {
+  x <- data.table(id = c("1.0", "2.0", "3.0", "4.0"), v = c(1, 2, 3, 4))
+  y <- data.table(id = c(1, 2, 3, 5), v = c(1, 2, 3, 5))
+  m <- expect_message(d <- diff_table(x, y), class = "dazdiff_message_cast_format")
+  expect_identical(c(m$decimals, m$n, m$n_kept), c(1L, 4L, 0L))
+  expect_identical(m$column, "id")
+  expect_identical(
+    as.character(d[order(row_id_x, row_id_y), status]),
+    c("same", "same", "same", "only_x", "only_y")
+  )
+  expect_identical(d[status == "only_y", ID], "5.0")
+  # Integers too, and -0 is written as 0.
+  expect_true(all(diff_table(x[1:2], data.table(id = 1:2, v = c(1, 2)))$status == "same"))
+  z <- data.table(id = c("0.00", "1.50"), v = c(1, 2))
+  expect_true(all(diff_table(z, data.table(id = c(-0, 1.5), v = c(1, 2)))$status == "same"))
+})
+
+test_that("a value the benchmark's decimals cannot hold keeps its own text", {
+  x <- data.table(id = c("1.2", "1.3"), v = c(1, 2))
+  y <- data.table(id = c(1.2, 1.25), v = c(1, 2))
+  m <- expect_message(d <- diff_table(x, y), class = "dazdiff_message_cast_format")
+  expect_identical(c(m$n, m$n_kept), c(1L, 1L))
+  # 1.25 must not round to "1.3" and pair with x's 1.3.
+  expect_identical(d[status == "only_y", ID], "1.25")
+  expect_identical(d[status == "only_x", ID], "1.3")
+})
+
+test_that("a number that matches by value but not by text is a warning", {
+  x <- data.table(id = c("1.0", "2.00", "3"), v = c(1, 2, 3))
+  y <- data.table(id = c(1, 2, 3), v = c(1, 2, 3))
+  w <- expect_warning(d <- diff_table(x, y), class = "dazdiff_warning_cast_format")
+  expect_identical(w$n, 2L)
+  expect_identical(w$decimals, NA_integer_)
+  expect_identical(sum(d$status == "same"), 1L)
+  # Not plain decimal text: still a number, still a skew.
+  x <- data.table(id = c("007", "2"), v = c(1, 2))
+  w <- expect_warning(
+    diff_table(x, data.table(id = c(7, 2), v = c(1, 2))),
+    class = "dazdiff_warning_cast_format"
+  )
+  expect_identical(w$n, 1L)
+  # Text ids that are not numbers are none of this check's business.
+  x <- data.table(id = c("a", "2"), v = c(1, 2))
+  expect_no_warning(diff_table(x, data.table(id = c(1, 2), v = c(1, 2))))
+})

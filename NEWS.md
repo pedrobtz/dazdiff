@@ -14,7 +14,14 @@ First release.
     both tables with the same type, nothing is cast, and the result is
     symmetric.
 * `exclude` leaves columns out of the comparison, in either mode: they are
-  removed from both tables, in either spelling, before anything else.
+  removed from both tables, in either spelling, before anything else. A name
+  in neither table is a warning, so one list of technical columns can serve
+  many tables.
+* A number of `y` cast to the benchmark's text is written with the decimals
+  the benchmark uses, when they are the same for the whole column, so `2`
+  meets `"2.0"`, and a message says so (`dazdiff_message_cast_format`). A
+  number that still matches only by value, not by text, is a warning
+  (`dazdiff_warning_cast_format`) that explains the format used.
 * When no key aligns, the error names the key columns that share no value
   between the tables, with examples, and suggests `exclude` for those holding
   one value in each table.
@@ -55,6 +62,13 @@ First release.
 * `diff_report()` draws a bounded text report of a comparison: the columns
   compared, a picture of how the rows of the two tables align, and per
   measure its match rate and largest differences. The layout follows the summary of the Python package diffly.
+* `diff_explain()` says which key values split the result into same and not
+  same: per key column (and per measure), how many of its values only match,
+  only differ or are mixed, and, for one column, the status counts of each
+  value. `among = "joined"` explains the changed values alone.
+* `is_matching()` answers `TRUE` or `FALSE`: do the two tables match? With
+  `tolerance` or `rel_tol` it re-judges the stored differences at other
+  thresholds, looser or stricter, without running the comparison again.
 * `diff_summary()` counts each status per measure and measures the size of
   the differences.
 * `expect_table_equal()` is a testthat expectation built on `diff_table()`.

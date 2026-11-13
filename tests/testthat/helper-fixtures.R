@@ -110,3 +110,21 @@ local_english_collation <- function(env = parent.frame()) {
     "en_US.UTF-8 sorts as the C locale does here"
   )
 }
+
+# The README's comparison, as test-explain.R explains it: ID 1 and 3 match,
+# 2 changed, 4 and 5 are in one table only, and REGION north is mixed.
+explain_fixture <- function() {
+  x <- data.table(
+    id = 1:4,
+    region = c("north", "south", "east", "west"),
+    amount = c(100, 200, 300, 400),
+    units = c(10, 20, 30, 40)
+  )
+  y <- data.table(
+    id = c(1:3, 5L),
+    region = c("north", "south", "east", "north"),
+    amount = c(100, 200.5, 300, 500),
+    units = c(10, 20, 30, 50)
+  )
+  diff_table(x, y, by = c("id", "region"))
+}
