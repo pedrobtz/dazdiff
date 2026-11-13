@@ -62,6 +62,13 @@ First release.
 * `diff_report()` draws a bounded text report of a comparison: the columns
   compared, a picture of how the rows of the two tables align, and per
   measure its match rate and largest differences. The layout follows the summary of the Python package diffly.
+* `diff_explain()` says which key values split the result into same and not
+  same: per key column (and per measure), how many of its values only match,
+  only differ or are mixed, and, for one column, the status counts of each
+  value. `among = "joined"` explains the changed values alone.
+* `is_matching()` answers `TRUE` or `FALSE`: do the two tables match? With
+  `tolerance` or `rel_tol` it re-judges the stored differences at other
+  thresholds, looser or stricter, without running the comparison again.
 * `diff_summary()` counts each status per measure and measures the size of
   the differences.
 * `expect_table_equal()` is a testthat expectation built on `diff_table()`.

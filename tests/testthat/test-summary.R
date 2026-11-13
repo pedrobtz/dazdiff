@@ -76,3 +76,60 @@ test_that("diff_summary of an empty rows-shape result is one row of zeros", {
 test_that("diff_summary refuses anything but a diff_table() result", {
   expect_error(diff_summary(data.table(a = 1)), class = "dazdiff_error_input")
 })
+
+# is_matching() ----------------------------------------------------------------
+
+test_that("is_matching() reads the status by default", {
+  x <- data.table(id = 1:3, v = c(100, 200, 300))
+  expect_true(is_matching(diff_table(x, x)))
+  expect_false(is_matching(diff_table(x, x[, .(id, v = v + c(0, 0.5, 0))])))
+  expect_false(is_matching(diff_table(x, x[1:2])))
+  expect_true(is_matching(diff_table(x[0], x[0])))
+  expect_true(is_matching(diff_table(x, x[, .(id, v = v + 0.5)], tolerance = 1)))
+})
+
+test_that("is_matching() re-judges the values at other thresholds, both ways", {
+  x <- data.table(id = 1:3, v = c(100, 200, 300))
+  y <- data.table(id = 1:3, v = c(100, 200.5, 300))
+  d <- diff_table(x, y)
+  expect_false(is_matching(d))
+  expect_true(is_matching(d, tolerance = 0.5))
+  expect_false(is_matching(d, tolerance = 0.4))
+  expect_true(is_matching(d, rel_tol = 0.01))
+  expect_false(is_matching(d, rel_tol = 0.001))
+  # Stricter than the comparison: same there, changed here.
+  loose <- diff_table(x, y, tolerance = 1)
+  expect_true(is_matching(loose))
+  expect_false(is_matching(loose, tolerance = 0))
+  # Agrees with running the comparison at the same threshold.
+  for (t in c(0, 0.4, 0.5, 1)) {
+    expect_identical(is_matching(d, tolerance = t), is_matching(diff_table(x, y, tolerance = t)), info = t)
+  }
+})
+
+test_that("no threshold matches a missing row, or a pair that is not finite", {
+  x <- data.table(id = 1:4, v = c(1, Inf, NA, NaN))
+  y <- data.table(id = 1:4, v = c(1, Inf, NA, NA))
+  # Equal or missing on both sides: same at any threshold.
+  expect_true(is_matching(diff_table(x, y), tolerance = 0))
+  expect_false(is_matching(diff_table(x, y[, .(id, v = c(1, 5, NA, NA))]), tolerance = 1e300))
+  expect_false(is_matching(diff_table(x, y[, .(id, v = c(1, Inf, 3, NA))]), rel_tol = 1e300))
+  expect_false(is_matching(diff_table(x, y[1:3]), tolerance = 1e300))
+  # Two finite values whose difference overflows.
+  big <- diff_table(data.table(id = 1L, v = -1e308), data.table(id = 1L, v = 1e308))
+  expect_false(is_matching(big, tolerance = 1e300))
+  expect_true(is_matching(big, rel_tol = 2))
+})
+
+test_that("is_matching() works on every shape, and refuses a tolerance on aggregates", {
+  x <- data.table(k = c("a", "b", "b"), v = c(1, 2, 2))
+  g <- diff_table(x, x, duplicates = "aggregate")
+  expect_true(is_matching(g, tolerance = 0))
+  expect_error(is_matching(g, tolerance = 1), class = "dazdiff_error_input")
+  rows <- suppressMessages(diff_table(data.table(k = "a"), data.table(k = c("a", "b"))))
+  expect_false(is_matching(rows, tolerance = 1))
+  d <- diff_table(x[1:2], x[1:2])
+  expect_error(is_matching(d, tolerance = -1), class = "dazdiff_error_input")
+  expect_error(is_matching(d, rel_tol = NA), class = "dazdiff_error_input")
+  expect_error(is_matching(data.table(a = 1)), class = "dazdiff_error_input")
+})

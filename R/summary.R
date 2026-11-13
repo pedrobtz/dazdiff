@@ -103,3 +103,78 @@ scaled_rmse <- function(z) {
   }
   m * sqrt(mean((z / m)^2))
 }
+
+#' Do the two tables match?
+#'
+#' `TRUE` when every record of a [diff_table()] result is `same`: no value
+#' changed and no row is found in only one table. Two empty tables match.
+#'
+#' With `tolerance` or `rel_tol` given, the values are judged again at those
+#' thresholds instead of the ones `diff_table()` used, from the `abs_diff`
+#' and `rel_diff` it stores. That works in both directions, looser or
+#' stricter, so one comparison can be asked at several thresholds without
+#' being run again. The rule is `diff_table()`'s: two equal or two missing
+#' values always match, and the tolerances apply to finite pairs only. A row
+#' found in only one table never matches, whatever the threshold.
+#'
+#' @param d A result of [diff_table()].
+#' @param tolerance,rel_tol `NULL` (the default) keeps the thresholds of the
+#'   comparison. A number re-judges the values: a value matches when within
+#'   either. When only one is given, the other is 0.
+#' @return `TRUE` or `FALSE`.
+#' @export
+#' @examples
+#' x <- data.frame(id = 1:3, amount = c(100, 200, 300))
+#' y <- data.frame(id = 1:3, amount = c(100, 200.5, 300))
+#' d <- diff_table(x, y)
+#' is_matching(d)
+#' is_matching(d, tolerance = 1)
+#' is_matching(d, rel_tol = 0.001)
+#' is_matching(d, rel_tol = 0.01)
+is_matching <- function(d, tolerance = NULL, rel_tol = NULL) {
+  check_diff_result(d)
+  for (arg in c("tolerance", "rel_tol")) {
+    v <- get(arg)
+    if (
+      !is.null(v) &&
+        (!is.numeric(v) || length(v) != 1L || !is.finite(v) || v < 0)
+    ) {
+      dazdiff_abort(
+        "dazdiff_error_input",
+        sprintf("`%s` must be NULL or a single finite number >= 0", arg)
+      )
+    }
+  }
+  status <- as.character(d$status)
+  if (is.null(tolerance) && is.null(rel_tol)) {
+    return(all(status == "same"))
+  }
+  tolerance <- if (is.null(tolerance)) 0 else tolerance
+  rel_tol <- if (is.null(rel_tol)) 0 else rel_tol
+
+  shape <- attr(d, "shape")
+  # The multisets of "aggregate" are compared exactly and hold no difference
+  # to re-judge, as diff_table() refuses a tolerance with them.
+  if (shape == "groups" && (tolerance > 0 || rel_tol > 0)) {
+    dazdiff_abort(
+      "dazdiff_error_input",
+      "a result of duplicates = \"aggregate\" compares values exactly; `tolerance` and `rel_tol` must be 0"
+    )
+  }
+  if (shape != "cells") {
+    return(all(status == "same"))
+  }
+
+  joined <- status %in% c("same", "changed")
+  # rel_diff is defined exactly where both values are finite, which is where
+  # the tolerances apply. Elsewhere a value matched by equality or by being
+  # missing on both sides, which no threshold changes.
+  finite <- !is.na(d$rel_diff)
+  same <- joined &
+    ifelse(
+      finite,
+      d$abs_diff <= tolerance | d$rel_diff <= rel_tol,
+      status == "same"
+    )
+  all(same)
+}
