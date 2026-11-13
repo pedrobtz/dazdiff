@@ -1,10 +1,12 @@
-# The pkgdown site, built on every pull request and deployed from main and
-# from each release. CLAUDE.md and AGENTS.md are kept off it; see
+# The pkgdown site, deployed from main and from each release. A pull request
+# builds it only when labelled `full-ci`: CI minutes are limited, and a
+# broken site shows on main's deploy. CLAUDE.md and AGENTS.md are kept off it; see
 # https://github.com/pedrobtz/r-actions#pkgdownyml--the-site-without-the-agent-instructions
 on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
   release:
     types: [published]
   workflow_dispatch:
@@ -13,14 +15,12 @@ name: pkgdown.yaml
 
 jobs:
   pkgdown:
-    # Decided without a runner. A documentation-only change still builds the
-    # site, so `ci:docs` is not tested here; `ci:minimal` and the workflow's
-    # own label skip it.
+    # Decided without a runner. On a pull request only with `full-ci`: the
+    # site builds and deploys on every push to main, which is where a broken
+    # build shows, and CI minutes are limited.
     if: >-
       github.event_name != 'pull_request'
       || contains(github.event.pull_request.labels.*.name, 'full-ci')
-      || !(contains(github.event.pull_request.labels.*.name, 'ci:minimal')
-        || contains(github.event.pull_request.labels.*.name, 'skip-ci:pkgdown'))
     # Deploys queue rather than cancel one another; pull requests run apart.
     concurrency:
       group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
