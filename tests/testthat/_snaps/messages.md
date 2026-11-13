@@ -718,6 +718,22 @@
 ---
 
     Code
+      is_matching(d, tolerance = -1)
+    Condition
+      Error:
+      ! `tolerance` must be NULL or a single finite number >= 0
+
+---
+
+    Code
+      is_matching(g, tolerance = 1)
+    Condition
+      Error:
+      ! a result of duplicates = "aggregate" compares values exactly; `tolerance` and `rel_tol` must be 0
+
+---
+
+    Code
       diff_report(d, sample_k = 1.5)
     Condition
       Error:
