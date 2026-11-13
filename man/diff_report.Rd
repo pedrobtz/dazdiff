@@ -4,15 +4,12 @@
 \alias{diff_report}
 \title{Report on a comparison, as text}
 \usage{
-diff_report(d, x_name = "x", y_name = "y", top_k = 3L, sample_k = 5L)
+diff_report(d, x_name = "x", y_name = "y", sample_k = 5L)
 }
 \arguments{
 \item{d}{A result of \code{\link[=diff_table]{diff_table()}}.}
 
 \item{x_name, y_name}{The names the report gives the two tables.}
-
-\item{top_k}{The number of most frequent changes shown per measure; 0
-hides them.}
 
 \item{sample_k}{The number of keys shown of the rows found in only one
 table; 0 hides them.}
@@ -26,8 +23,7 @@ encoding is UTF-8), and returns the lines of text.
 \description{
 A bounded, readable account of a \code{\link[=diff_table]{diff_table()}} result: which columns were
 compared, how the rows of the two tables align, and, for each measure that
-changed, how often it matches and its most frequent changes, each with an
-example key. Printing the report draws it; the numbers are in the returned
+changed, how often it matches and by how much it differs. Printing the report draws it; the numbers are in the returned
 list.
 }
 \details{

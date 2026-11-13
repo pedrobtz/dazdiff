@@ -414,6 +414,25 @@ test_that("a comparison in which nothing aligns is refused", {
   )
 })
 
+test_that("the refusal names a key column that labels each table, and exclude settles it", {
+  x <- data.table(Run = "r1", id = 1:3, v = c(1, 2, 3))
+  y <- data.table(Run = "r2", id = 1:3, v = c(1, 2, 3))
+  err <- expect_error(diff_table(x, y), class = "dazdiff_error_disjoint")
+  expect_identical(err$disjoint_columns, "RUN")
+  expect_identical(err$constant_columns, "RUN")
+  expect_true(all(diff_table(x, y, exclude = "Run")$status == "same"))
+})
+
+test_that("the refusal names a disjoint key without offering to exclude the only key", {
+  x <- data.table(id = c("a", "b"), v = c(1, 2))
+  y <- data.table(id = c("A", "B"), v = c(1, 2))
+  err <- expect_error(diff_table(x, y), class = "dazdiff_error_disjoint")
+  expect_identical(err$disjoint_columns, "ID")
+  expect_identical(err$constant_columns, character())
+  err <- expect_error(diff_table(x[1], y[1]), class = "dazdiff_error_disjoint")
+  expect_identical(err$constant_columns, character())
+})
+
 test_that("two empty tables are equal, not ill-formed", {
   x <- data.table(id = character(), v = numeric())
   d <- diff_table(x, x)

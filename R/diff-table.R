@@ -111,7 +111,10 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #' * `dazdiff_error_measures`: `measures` names something that cannot be
 #'   measured, or a column `by` names too.
 #' * `dazdiff_error_duplicates`: repeated keys under `duplicates = "error"`.
-#' * `dazdiff_error_disjoint`: no key appears in both tables.
+#' * `dazdiff_error_disjoint`: no key appears in both tables. Its field
+#'   `disjoint_columns` names the key columns that alone share no value, and
+#'   `constant_columns` those among them holding one value in each table (a
+#'   run id, a source tag), which usually belong in `exclude`.
 #' * `dazdiff_error_dependency`: a suggested package is needed but missing.
 #' * `dazdiff_warning_duplicates`: repeated keys paired in arrival order.
 #' * `dazdiff_message_dropped_columns`, `dazdiff_message_ignored_columns`,
@@ -123,6 +126,12 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #' @param mode `"benchmark"` (the default) or `"equal"`. See Modes.
 #' @param by Identity columns, by name, in either spelling. `NULL` (the
 #'   default) uses every column that is not a measure.
+#' @param exclude Columns to leave out of the comparison, by name, in either
+#'   spelling. They are removed from both tables before anything else, in
+#'   either mode: an excluded column need not be in both tables, is not
+#'   announced as dropped or ignored, and does not stop `mode = "equal"`
+#'   from calling the rest equal. Each name must be a column of `x` or `y`,
+#'   and not one that `by` or `measures` names.
 #' @param row_key `"none"` (the default), `"position"` or `"sorted"`: add a
 #'   virtual `row_number` key column. See Well-formed tables.
 #' @param measures `"numeric"` (the default) compares the double columns;
@@ -166,7 +175,8 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #'
 #'   The attributes `mode`, `tolerance` (`abs` and `rel`), `name_map` (each
 #'   column's name in `x` and `y`),
-#'   `dropped` (columns of `y` dropped in benchmark mode), `ignored` (columns
+#'   `dropped` (columns of `y` dropped in benchmark mode), `excluded` (the
+#'   columns `exclude` removed, as named in `x` or `y`), `ignored` (columns
 #'   not compared) and `truncated` (the casts that truncated, with the rows
 #'   of `y` each one touched) record what was done on the way.
 #' @export
@@ -184,6 +194,9 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #' # Equal mode: no casting, every column in both tables.
 #' diff_table(benchmark, benchmark, mode = "equal")
 #'
+#' # Leave a column out of the comparison, in either table.
+#' diff_table(benchmark, tested, exclude = "loaded_at")
+#'
 #' # No key at all: align rows by sorting both tables by their values.
 #' diff_table(
 #'   data.frame(a = c(3, 1, 2), b = c(30, 10, 20)),
@@ -198,6 +211,7 @@ diff_table <- function(
   y,
   mode = c("benchmark", "equal"),
   by = NULL,
+  exclude = NULL,
   row_key = c("none", "position", "sorted"),
   measures = "numeric",
   tolerance = 0,
@@ -244,6 +258,12 @@ diff_table <- function(
   if (!is.null(by) && (!is.character(by) || !length(by) || anyNA(by))) {
     dazdiff_abort("dazdiff_error_input", "`by` must be NULL or column names")
   }
+  if (!is.null(exclude) && (!is.character(exclude) || anyNA(exclude))) {
+    dazdiff_abort(
+      "dazdiff_error_input",
+      "`exclude` must be NULL or column names"
+    )
+  }
   # The multiset of a key's values is compared exactly; a tolerance would
   # silently do nothing, so it is refused instead.
   if (duplicates == "aggregate" && (tolerance > 0 || rel_tol > 0)) {
@@ -254,6 +274,54 @@ diff_table <- function(
   }
 
   # 2. Names --------------------------------------------------------------------
+  # Excluded columns leave both tables before anything looks at them, so they
+  # are neither required, dropped with a message, nor checked for collisions:
+  # excluding a name also settles two columns that normalize to it.
+  excluded <- character()
+  if (length(exclude)) {
+    exclude_given <- exclude
+    exclude <- canonical_names(exclude)
+    cols_x <- canonical_names(names(x))
+    cols_y <- canonical_names(names(y))
+    unknown <- !exclude %in% c(cols_x, cols_y)
+    if (any(unknown)) {
+      dazdiff_abort(
+        "dazdiff_error_columns",
+        paste0(
+          "`exclude` names column(s) in neither table: ",
+          fmt_names(exclude_given[unknown])
+        ),
+        columns = exclude_given[unknown]
+      )
+    }
+    # A keyword is lowercase and never a normalized name, so it is skipped.
+    named <- c(
+      character(),
+      by,
+      if (is.character(measures) && !all(measures %in% names(MEASURE_TYPES))) {
+        measures
+      }
+    )
+    both <- exclude_given[exclude %in% canonical_names(named)]
+    if (length(both)) {
+      dazdiff_abort(
+        "dazdiff_error_columns",
+        paste0(
+          "`exclude` names column(s) that `by` or `measures` also name: ",
+          fmt_names(both)
+        ),
+        columns = both
+      )
+    }
+    excluded <- unique(c(
+      names(x)[cols_x %in% exclude],
+      names(y)[cols_y %in% exclude]
+    ))
+    keep_x <- which(!cols_x %in% exclude)
+    keep_y <- which(!cols_y %in% exclude)
+    x <- shallow_dt(x, keep_x, names(x)[keep_x])
+    y <- shallow_dt(y, keep_y, names(y)[keep_y])
+  }
   map_x <- check_names(name_map(x), "x")
   map_y <- name_map(y)
   # In benchmark mode y's other columns are dropped below, so only a collision
@@ -560,6 +628,12 @@ diff_table <- function(
     dry <- merge_dry_run(wx, wy, on = ids)
     if (dry$keys_common == 0L) {
       whole_rows <- is.null(by) && !length(measure)
+      # Name the key columns that, alone, share no value: most often one
+      # that labels the table (a run id, a source) and belongs in `exclude`.
+      user_ids <- intersect(ids, names(label_x))
+      apart <- disjoint_columns(wx, wy, user_ids)
+      apart[, label := label_x[column]]
+      constant <- apart[constant == TRUE]
       dazdiff_abort(
         "dazdiff_error_disjoint",
         paste0(
@@ -574,9 +648,48 @@ diff_table <- function(
           },
           ", so nothing can be compared",
           if (!nrow(wx) || !nrow(wy)) " (one table is empty)",
-          if (!whole_rows) "; check `by`, and the format of the key values"
+          if (!whole_rows) "; check `by`, and the format of the key values",
+          if (nrow(apart)) {
+            paste0(
+              "; key column(s) that share no value between the tables: ",
+              paste(
+                sprintf(
+                  "%s (x: %s; y: %s)",
+                  apart$label,
+                  vapply(apart$values_x, fmt_examples, character(1L)),
+                  vapply(apart$values_y, fmt_examples, character(1L))
+                ),
+                collapse = ", "
+              )
+            )
+          },
+          # Only offered when a key is left once they are excluded.
+          if (nrow(constant) && nrow(constant) < length(user_ids)) {
+            paste0(
+              "; ",
+              fmt_names(constant$label),
+              if (nrow(constant) > 1L) {
+                paste0(
+                  " each hold one value in each table, so they label the ",
+                  "table rather than its rows: leave them out"
+                )
+              } else {
+                paste0(
+                  " holds one value in each table, so it labels the table ",
+                  "rather than its rows: leave it out"
+                )
+              },
+              " with exclude = ",
+              paste(
+                deparse(map_x$name[match(constant$column, map_x$column)]),
+                collapse = ""
+              )
+            )
+          }
         ),
-        dry_run = dry
+        dry_run = dry,
+        disjoint_columns = apart$column,
+        constant_columns = constant$column
       )
     }
   }
@@ -725,6 +838,7 @@ diff_table <- function(
     )
   )
   setattr(out, "dropped", only_y$name)
+  setattr(out, "excluded", excluded)
   setattr(out, "ignored", ignored)
   setattr(out, "truncated", truncated)
   out[]

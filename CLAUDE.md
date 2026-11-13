@@ -92,7 +92,7 @@ calls lives in its own file and is tested on its own:
   `melt_dt()`.
 - `R/keys.R`: `unique_by_key()`, `disambiguate_by_key()`, `aggregate_by_key()`.
 - `R/merge.R`: `merge_dry_run()` (index-only, exact), `merge_dt()` (one-to-one
-  only).
+  only), `disjoint_columns()` (the key columns named when nothing aligns).
 - `R/summary.R`: `diff_summary()`, `is_finite_pair()`, `scaled_rmse()`.
 - `R/report.R`: `diff_report()` and its `format()`/`print()` methods: the text
   report.

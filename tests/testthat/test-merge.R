@@ -164,3 +164,31 @@ test_that("the refusal of a fanout past 2^31 can still be written", {
   err <- expect_error(merge_dt(bx, copy(bx)), class = "dazdiff_error_keys")
   expect_match(conditionMessage(err), "46,341 rows would become 2,147,488,281", fixed = TRUE)
 })
+
+test_that("disjoint_columns() names the columns that alone share no value", {
+  x <- data.table(src = "p", id = 1:3, k = c(NA, 1L, 2L))
+  y <- data.table(src = "d", id = 3:5, k = NA_integer_)
+  out <- disjoint_columns(x, y, c("src", "id", "k"))
+  # id shares 3 and k shares NA, so only src is named.
+  expect_identical(out$column, "src")
+  expect_identical(out$values_x, list("p"))
+  expect_identical(out$values_y, list("d"))
+  expect_true(out$constant)
+})
+
+test_that("disjoint_columns() keeps each side's values whole, and marks constants", {
+  x <- data.table(id = c("a", "b"), run = 1L)
+  y <- data.table(id = c("A", "B", "C"), run = 2L)
+  out <- disjoint_columns(x, y, c("id", "run"))
+  expect_identical(out$values_x, list(c("a", "b"), 1L))
+  expect_identical(out$values_y, list(c("A", "B", "C"), 2L))
+  expect_identical(out$constant, c(FALSE, TRUE))
+  # One row a side: a single value says nothing about labelling the table.
+  expect_false(disjoint_columns(x[1], y[1], "run")$constant)
+})
+
+test_that("disjoint_columns() finds nothing against an empty table", {
+  x <- data.table(id = "a")
+  expect_identical(nrow(disjoint_columns(x, x[0], "id")), 0L)
+  expect_identical(nrow(disjoint_columns(x, x, "id")), 0L)
+})

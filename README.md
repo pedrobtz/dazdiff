@@ -100,8 +100,7 @@ diff_summary(d)
 ```
 
 `diff_report()` draws the whole comparison as text: the columns compared, how
-the rows of the two tables align, and the most frequent changes of each
-measure, each with a key to look it up by:
+the rows of the two tables align, and how much each measure differs:
 
 ```r
 diff_report(d, x_name = "benchmark", y_name = "stored")
@@ -135,11 +134,11 @@ diff_report(d, x_name = "benchmark", y_name = "stored")
 #>
 #>  Measures
 #>  ▔▔▔▔▔▔▔▔
-#>    ┌─────────┬────────────┬────────────┬──────────────┬──────────────────────────────────────┐
-#>    │ Measure │ Match rate │ Max |diff| │ Max rel diff │ Top changes                          │
-#>    ├─────────┼────────────┼────────────┼──────────────┼──────────────────────────────────────┤
-#>    │ amount  │     66.67% │        0.5 │     0.002494 │ 200 -> 200.5 (1x, e.g. (2, "south")) │
-#>    └─────────┴────────────┴────────────┴──────────────┴──────────────────────────────────────┘
+#>    ┌─────────┬────────────┬────────────┬──────────────┐
+#>    │ Measure │ Match rate │ Max |diff| │ Max rel diff │
+#>    ├─────────┼────────────┼────────────┼──────────────┤
+#>    │ amount  │     66.67% │        0.5 │     0.002494 │
+#>    └─────────┴────────────┴────────────┴──────────────┘
 #>    1 other measure matches on every row found in both tables.
 #>
 #>  Rows only in benchmark
