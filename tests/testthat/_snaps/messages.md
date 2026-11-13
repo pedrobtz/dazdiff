@@ -702,6 +702,22 @@
 ---
 
     Code
+      diff_explain(d, 1)
+    Condition
+      Error:
+      ! `column` must be NULL or a single column name
+
+---
+
+    Code
+      diff_explain(d, "v")
+    Condition
+      Error:
+      ! `column` must be a key column of the result or "metric"; got v; the key columns are ID
+
+---
+
+    Code
       diff_report(d, sample_k = 1.5)
     Condition
       Error:

@@ -247,6 +247,8 @@ test_that("diff_summary() and diff_report()'s errors", {
   d <- diff_table(x3_fixture(), y3_fixture())
   expect_snapshot(error = TRUE, diff_summary(data.table(a = 1)))
   expect_snapshot(error = TRUE, diff_report(d, x_name = ""))
+  expect_snapshot(error = TRUE, diff_explain(d, 1))
+  expect_snapshot(error = TRUE, diff_explain(d, "v"))
   expect_snapshot(error = TRUE, diff_report(d, sample_k = 1.5))
   expect_snapshot(error = TRUE, format(diff_report(d), unicode = NA))
 })

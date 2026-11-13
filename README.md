@@ -177,6 +177,26 @@ diff_table(benchmark, stored, by = c("id", "region"), measures = "numeric+intege
 #> 4:     5  north  UNITS       NA        4      NA      50    NA       NA       NA only_y
 ```
 
+`diff_explain()` says where the differences are: which key columns split the
+rows that match from the ones that do not, and then, value by value, which to
+look at:
+
+```r
+diff_explain(d)
+#>    column n_values same_only differ_only mixed separates identifies
+#>    <char>    <int>     <int>       <int> <int>    <lgcl>     <lgcl>
+#> 1: REGION        4         1           2     1     FALSE      FALSE
+#> 2: metric        2         0           0     2     FALSE      FALSE
+#> 3:     ID        5         2           3     0      TRUE       TRUE
+diff_explain(d, "region")
+#>    REGION     n n_same n_changed n_only_x n_only_y  class
+#>    <char> <int>  <int>     <int>    <int>    <int> <char>
+#> 1:  south     1      0         1        0        0 differ
+#> 2:   west     1      0         0        1        0 differ
+#> 3:  north     2      1         0        0        1  mixed
+#> 4:   east     1      1         0        0        0   same
+```
+
 ## Comparing two tables as equals
 
 In `mode = "equal"` nothing is cast or dropped, so the same two tables do not
