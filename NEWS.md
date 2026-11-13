@@ -15,6 +15,10 @@ First release.
     symmetric.
 * `exclude` leaves columns out of the comparison, in either mode: they are
   removed from both tables, in either spelling, before anything else.
+* A number of `y` cast to the benchmark's text is written with the decimals
+  the benchmark uses, when they are the same for the whole column, so `2`
+  meets `"2.0"`. A number that still matches only by value, not by text, is
+  a warning (`dazdiff_warning_cast_format`) that explains the format used.
 * When no key aligns, the error names the key columns that share no value
   between the tables, with examples, and suggests `exclude` for those holding
   one value in each table.

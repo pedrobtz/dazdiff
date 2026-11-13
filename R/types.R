@@ -42,7 +42,7 @@ CAST_RULES <- rbindlist(lapply(CAST_FROM, function(from) {
   note := "parsed from the text; a missing value must be NA, not the text \"NA\""
 ][
   from == "numeric" & to == "character",
-  note := "fixed notation, up to 15 significant digits (scientific outside [1e-15, 2^53)); refused when the text does not read back as the same number"
+  note := "fixed notation, up to 15 significant digits (scientific outside [1e-15, 2^53)); refused when the text does not read back as the same number. When every value of the reference column has the same number of decimals (\"2.0\"), written with that many wherever the text reads back exactly"
 ][
   from == "POSIXct" & to == "character",
   note := "\"%Y-%m-%d %H:%M:%S\", plus \".ffffff\" (to the microsecond, trailing zeros dropped) when the stamp has a fraction of a second: the local time in the stamp's own timezone, which the text does not record"

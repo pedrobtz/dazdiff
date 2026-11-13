@@ -178,6 +178,11 @@ test_that("converting integer64 needs bit64", {
 })
 
 test_that("cast_dt()'s errors and its truncation message", {
+  num <- function(id) data.table(id = id, v = seq_along(id) + 0.5)
+  expect_snapshot(invisible(diff_table(num(c("1.0", "2.00", "3")), num(c(1, 2, 3)))))
+  expect_snapshot(invisible(diff_table(num(c("-0.0", "1.0")), num(c(0, 1)))))
+  expect_snapshot(invisible(diff_table(num(c("007", "2")), num(c(7, 2)))))
+  expect_snapshot(invisible(diff_table(num(c("1", "2")), num(c(1, 2)))))
   x <- data.table(a = 1L, b = 1L, c = "k")
   expect_snapshot(error = TRUE, cast_dt(x, data.frame(a = 1)))
   expect_snapshot(error = TRUE, cast_dt(x, data.table(a = 1), cols = "nope"))

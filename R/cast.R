@@ -23,6 +23,121 @@ num_to_text <- function(v) {
   txt
 }
 
+#' The decimals a text column writes its numbers with
+#'
+#' Read off every distinct value, not a sample: one `"1.00"` among a million
+#' `"1.0"` is exactly the value a sample misses, and the format would then be
+#' wrong for its row. Only plain decimal text counts (`-?(0|[1-9][0-9]*)`,
+#' then optionally `.` and digits); a sign, leading zeros, separators or an
+#' exponent mean the column has no single number format to follow.
+#'
+#' @param ref A character vector, the benchmark's column.
+#' @return A list: `decimals`, the one number of decimal places every value
+#'   uses, or NA when there is none; `seen`, the counts of decimal places
+#'   found (sorted, for the message); and `plain`, whether every value is
+#'   plain decimal text.
+#' @noRd
+text_decimals <- function(ref) {
+  u <- unique(ref[!is.na(ref)])
+  plain <- grepl("^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$", u)
+  seen <- sort(unique(nchar(sub("^[^.]*\\.?", "", u[plain]))))
+  list(
+    decimals = if (length(u) && all(plain) && length(seen) == 1L) {
+      seen
+    } else {
+      NA_integer_
+    },
+    seen = seen,
+    plain = all(plain)
+  )
+}
+
+#' Write numbers as text the way the benchmark writes them
+#'
+#' A double cast to text is written as `num_to_text()` writes it, `"2"`, which
+#' never joins a benchmark that writes `"2.0"`. When every value of the
+#' benchmark's column has the same number of decimals, `y`'s numbers are
+#' written with that many instead. A value is reformatted only when the text
+#' reads back as the same number: 1.25 at one decimal would become `"1.3"`
+#' and join the benchmark's 1.3, a silent false match, so it keeps its own
+#' text and shows as unmatched instead.
+#'
+#' Whatever the format, a value of `x` that equals one of `y`'s as a number
+#' but not as text is warned about: those rows will not align, and the
+#' comparison may be reporting a format skew as missing rows.
+#'
+#' @param v `y`'s column before the cast, numeric or integer.
+#' @param out The same column cast to text by `cast_value()`.
+#' @param ref The benchmark's column.
+#' @param label The column as messages name it.
+#' @return `out`, with the values the benchmark's format fits rewritten.
+#' @noRd
+number_as_text_like <- function(v, out, ref, label) {
+  fmt <- text_decimals(ref)
+  k <- fmt$decimals
+  if (!is.na(k) && k > 0L) {
+    # `+ 0` turns -0 into 0, which sprintf() would write as "-0.0".
+    txt <- sprintf("%.*f", k, as.double(v) + 0)
+    fits <- is.finite(v) & suppressWarnings(as.numeric(txt)) == v
+    out[fits] <- txt[fits]
+  }
+
+  # x's values that are numbers y has, written differently.
+  u <- unique(ref[!is.na(ref)])
+  num <- suppressWarnings(as.numeric(u))
+  skew <- is.finite(num) & num %in% v & !u %in% out
+  if (any(skew)) {
+    at <- match(num[skew], v)
+    shown <- head(seq_len(sum(skew)), 3L)
+    dazdiff_warn(
+      "dazdiff_warning_cast_format",
+      paste0(
+        "column ",
+        label,
+        ": ",
+        format(sum(skew), big.mark = ","),
+        if (sum(skew) == 1L) {
+          " value of `x` equals a number of `y` but not its text ("
+        } else {
+          " values of `x` equal a number of `y` but not its text ("
+        },
+        paste0(
+          "\"",
+          u[skew][shown],
+          "\" vs \"",
+          out[at][shown],
+          "\"",
+          collapse = ", "
+        ),
+        if (sum(skew) > 3L) ", ...",
+        "), so those rows will not align; ",
+        if (!is.na(k) && k > 0L) {
+          sprintf(
+            "`y`'s numbers were written with %d decimal place%s, as `x` writes them",
+            k,
+            if (k == 1L) "" else "s"
+          )
+        } else if (!fmt$plain) {
+          "no decimal places were inferred, since not every value of `x` is plain decimal text"
+        } else if (length(fmt$seen) > 1L) {
+          paste0(
+            "no decimal places were inferred, since `x` writes them with ",
+            paste(fmt$seen, collapse = ", "),
+            " decimal places"
+          )
+        } else {
+          "`x` writes them with no decimal places"
+        },
+        "; cast the column of `x` to a number to compare by value"
+      ),
+      column = label,
+      decimals = k,
+      n = sum(skew)
+    )
+  }
+  out
+}
+
 #' Write timestamps as text in one fixed format
 #'
 #' `as.character()` cannot be used: since R 4.3 it drops the time from each
@@ -553,6 +668,9 @@ cast_dt <- function(
         truncate = truncate,
         nan_is_na = nan_is_na
       )
+      if (to == "character" && col_type(v) %in% c("numeric", "integer")) {
+        out <- number_as_text_like(v, out, ref, labels[[nm]])
+      }
       if (to == "Date") date_like(out, ref) else out
     },
     cols,

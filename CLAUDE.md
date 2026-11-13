@@ -177,6 +177,13 @@ Each is covered by a test.
 - **Counts that can pass 2^31 are doubles, and are never formatted with
   `%d`.** `sprintf("%d", 3e9)` is an error, so the message for exactly the
   fanout worth refusing would fail to build.
+- **A number cast to text follows the benchmark's decimals, read off the
+  whole column.** Every distinct value of `x` must be plain decimal text
+  with one number of decimals, or nothing is inferred: choosing between
+  `"1.0"` and `"1.00"` would be a guess. A sample would miss the one odd
+  value. A value is reformatted only when the text reads back exactly, so
+  1.25 never becomes `"1.3"` and joins `x`'s 1.3. What still matches only by
+  value is `dazdiff_warning_cast_format`.
 - **Text dates before the year 1000 are refused, by reading the year off the
   parsed date.** The format-back round trip alone is platform-dependent:
   glibc writes year 24 as `"24"` under `%Y` (macOS writes `"0024"`), so

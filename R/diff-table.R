@@ -18,7 +18,11 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #'   `y` is an error. Each compared column of `y` (in `by` or `measures`) is
 #'   cast to the type it has in `x` (see [cast_rules()]), so a number stored as
 #'   text, or a double stored as an integer, still compares. Columns that are
-#'   not compared are neither cast nor type-checked.
+#'   not compared are neither cast nor type-checked. A number cast to text
+#'   is written with the decimals `x` uses, when every value of `x`'s column
+#'   uses the same number of them: `2` in `y` becomes `"2.0"` to meet `x`'s
+#'   `"2.0"`. A value of `x` that equals one of `y`'s as a number but not as
+#'   text is warned about, since those rows will not align.
 #' * `"equal"`: are `x` and `y` equal? Every column must be in both tables and
 #'   have the same type in both; nothing is cast. The result is symmetric:
 #'   swapping `x` and `y` swaps `only_x` with `only_y` and negates `diff`.
@@ -117,6 +121,8 @@ STATUS_LEVELS <- c("same", "changed", "only_x", "only_y")
 #'   run id, a source tag), which usually belong in `exclude`.
 #' * `dazdiff_error_dependency`: a suggested package is needed but missing.
 #' * `dazdiff_warning_duplicates`: repeated keys paired in arrival order.
+#' * `dazdiff_warning_cast_format`: a number of `y` cast to text does not
+#'   match `x`'s text for the same number (`"2.00"` against `"2"`).
 #' * `dazdiff_message_dropped_columns`, `dazdiff_message_ignored_columns`,
 #'   `dazdiff_message_no_measures`, `dazdiff_message_truncation`: columns of
 #'   `y` dropped, columns not compared, no measures, values truncated.
