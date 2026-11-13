@@ -7,11 +7,13 @@
 <url><loc>/reference/cast_rules.html</loc></url>
 <url><loc>/reference/compare_columns.html</loc></url>
 <url><loc>/reference/dazdiff-package.html</loc></url>
+<url><loc>/reference/diff_explain.html</loc></url>
 <url><loc>/reference/diff_report.html</loc></url>
 <url><loc>/reference/diff_summary.html</loc></url>
 <url><loc>/reference/diff_table.html</loc></url>
 <url><loc>/reference/expect_table_equal.html</loc></url>
 <url><loc>/reference/index.html</loc></url>
+<url><loc>/reference/is_matching.html</loc></url>
 <url><loc>/reference/normalize_dt.html</loc></url>
 </urlset>
 

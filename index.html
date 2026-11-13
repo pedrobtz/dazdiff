@@ -217,18 +217,33 @@
 <span><span class="co">#&gt; 2:     4   west  UNITS        4       NA      40      NA    NA       NA       NA only_x</span></span>
 <span><span class="co">#&gt; 3:     5  north AMOUNT       NA        4      NA     500    NA       NA       NA only_y</span></span>
 <span><span class="co">#&gt; 4:     5  north  UNITS       NA        4      NA      50    NA       NA       NA only_y</span></span></code></pre></div>
+<p><code><a href="reference/diff_explain.html">diff_explain()</a></code> says where the differences are: which key columns split the rows that match from the ones that do not, and then, value by value, which to look at:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/diff_explain.html">diff_explain</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    column n_values same_only differ_only mixed separates identifies</span></span>
+<span><span class="co">#&gt;    &lt;char&gt;    &lt;int&gt;     &lt;int&gt;       &lt;int&gt; &lt;int&gt;    &lt;lgcl&gt;     &lt;lgcl&gt;</span></span>
+<span><span class="co">#&gt; 1: REGION        4         1           2     1     FALSE      FALSE</span></span>
+<span><span class="co">#&gt; 2: metric        2         0           0     2     FALSE      FALSE</span></span>
+<span><span class="co">#&gt; 3:     ID        5         2           3     0      TRUE       TRUE</span></span>
+<span><span class="fu"><a href="reference/diff_explain.html">diff_explain</a></span><span class="op">(</span><span class="va">d</span>, <span class="st">"region"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    REGION     n n_same n_changed n_only_x n_only_y  class</span></span>
+<span><span class="co">#&gt;    &lt;char&gt; &lt;int&gt;  &lt;int&gt;     &lt;int&gt;    &lt;int&gt;    &lt;int&gt; &lt;char&gt;</span></span>
+<span><span class="co">#&gt; 1:  south     1      0         1        0        0 differ</span></span>
+<span><span class="co">#&gt; 2:   west     1      0         0        1        0 differ</span></span>
+<span><span class="co">#&gt; 3:  north     2      1         0        0        1  mixed</span></span>
+<span><span class="co">#&gt; 4:   east     1      1         0        0        0   same</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="comparing-two-tables-as-equals">Comparing two tables as equals<a class="anchor" aria-label="anchor" href="#comparing-two-tables-as-equals"></a>
 </h2>
 <p>In <code>mode = "equal"</code> nothing is cast or dropped, so the same two tables do not even compare:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/diff_table.html">diff_table</a></span><span class="op">(</span><span class="va">benchmark</span>, <span class="va">stored</span>, mode <span class="op">=</span> <span class="st">"equal"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Error: mode = "equal" needs the same columns in both tables.</span></span>
 <span><span class="co">#&gt;   only in `x`: &lt;none&gt;</span></span>
 <span><span class="co">#&gt;   only in `y`: loaded_at</span></span></code></pre></div>
 <p>Row order never matters; rows are aligned on their identity:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/diff_table.html">diff_table</a></span><span class="op">(</span><span class="va">benchmark</span>, <span class="va">benchmark</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>, <span class="op">]</span>, mode <span class="op">=</span> <span class="st">"equal"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Key: &lt;ID, REGION, UNITS, metric&gt;</span></span>
 <span><span class="co">#&gt;       ID REGION UNITS metric row_id_x row_id_y value_x value_y  diff abs_diff rel_diff status</span></span>
@@ -242,7 +257,7 @@
 <h2 id="do-they-have-the-same-rows">Do they have the same rows?<a class="anchor" aria-label="anchor" href="#do-they-have-the-same-rows"></a>
 </h2>
 <p>With no numeric measures, rows are compared as wholes. A repeated row counts once per copy:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/diff_table.html">diff_table</a></span><span class="op">(</span></span>
 <span>  <span class="va">benchmark</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"region"</span><span class="op">)</span><span class="op">]</span>,</span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>ID <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3L</span>, <span class="fl">1L</span>, <span class="fl">2L</span>, <span class="fl">2L</span><span class="op">)</span>, REGION <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"east"</span>, <span class="st">"north"</span>, <span class="st">"south"</span>, <span class="st">"south"</span><span class="op">)</span><span class="op">)</span></span>
@@ -261,7 +276,7 @@
 <h2 id="in-tests">In tests<a class="anchor" aria-label="anchor" href="#in-tests"></a>
 </h2>
 <p><code><a href="reference/expect_table_equal.html">expect_table_equal()</a></code> is a testthat expectation built on <code><a href="reference/diff_table.html">diff_table()</a></code>. Its second argument, <code>expected</code>, is the benchmark:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">test_that</span><span class="op">(</span><span class="st">"the pipeline reproduces the reference output"</span>, <span class="op">{</span></span>
 <span>  <span class="fu"><a href="reference/expect_table_equal.html">expect_table_equal</a></span><span class="op">(</span><span class="fu">run_pipeline</span><span class="op">(</span><span class="op">)</span>, <span class="va">reference</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span></code></pre></div>

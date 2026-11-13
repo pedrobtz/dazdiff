@@ -107,8 +107,9 @@ default) uses every column that is not a measure.</p></dd>
 spelling. They are removed from both tables before anything else, in
 either mode: an excluded column need not be in both tables, is not
 announced as dropped or ignored, and does not stop <code>mode = "equal"</code>
-from calling the rest equal. Each name must be a column of <code>x</code> or <code>y</code>,
-and not one that <code>by</code> or <code>measures</code> names.</p></dd>
+from calling the rest equal. A name in neither table is a warning, not
+an error, so one list of technical columns can serve many tables; a
+name that <code>by</code> or <code>measures</code> also names is an error.</p></dd>
 
 
 <dt id="arg-row-key">row_key<a class="anchor" aria-label="anchor" href="#arg-row-key"></a></dt>
@@ -193,7 +194,12 @@ does not have are dropped, with a message. A column of <code>x</code> missing fr
 <code>y</code> is an error. Each compared column of <code>y</code> (in <code>by</code> or <code>measures</code>) is
 cast to the type it has in <code>x</code> (see <code><a href="cast_rules.html">cast_rules()</a></code>), so a number stored as
 text, or a double stored as an integer, still compares. Columns that are
-not compared are neither cast nor type-checked.</p></li>
+not compared are neither cast nor type-checked. A number cast to text
+is written with the decimals <code>x</code> uses, when every value of <code>x</code>'s column
+uses the same number of them: <code>2</code> in <code>y</code> becomes <code>"2.0"</code> to meet <code>x</code>'s
+<code>"2.0"</code>, which a message announces. A value of <code>x</code> that equals one of
+<code>y</code>'s as a number but not as text is warned about, since those rows will
+not align.</p></li>
 <li><p><code>"equal"</code>: are <code>x</code> and <code>y</code> equal? Every column must be in both tables and
 have the same type in both; nothing is cast. The result is symmetric:
 swapping <code>x</code> and <code>y</code> swaps <code>only_x</code> with <code>only_y</code> and negates <code>diff</code>.</p></li>
@@ -309,9 +315,14 @@ measured, or a column <code>by</code> names too.</p></li>
 run id, a source tag), which usually belong in <code>exclude</code>.</p></li>
 <li><p><code>dazdiff_error_dependency</code>: a suggested package is needed but missing.</p></li>
 <li><p><code>dazdiff_warning_duplicates</code>: repeated keys paired in arrival order.</p></li>
+<li><p><code>dazdiff_warning_exclude</code>: <code>exclude</code> names a column in neither table.</p></li>
+<li><p><code>dazdiff_warning_cast_format</code>: a number of <code>y</code> cast to text does not
+match <code>x</code>'s text for the same number (<code>"2.00"</code> against <code>"2"</code>).</p></li>
 <li><p><code>dazdiff_message_dropped_columns</code>, <code>dazdiff_message_ignored_columns</code>,
-<code>dazdiff_message_no_measures</code>, <code>dazdiff_message_truncation</code>: columns of
-<code>y</code> dropped, columns not compared, no measures, values truncated.</p></li>
+<code>dazdiff_message_no_measures</code>, <code>dazdiff_message_truncation</code>,
+<code>dazdiff_message_cast_format</code>: columns of <code>y</code> dropped, columns not
+compared, no measures, values truncated, numbers written as text in
+<code>x</code>'s format.</p></li>
 </ul></div>
 
     <div id="ref-examples">
