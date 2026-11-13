@@ -17,6 +17,7 @@ utils::globalVariables(c(
   "column",
   "example",
   "from",
+  "label",
   "measure",
   "metric",
   "n_changed",
