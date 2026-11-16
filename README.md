@@ -5,8 +5,10 @@
 
 <!-- badges: start -->
 
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![R-CMD-check](https://github.com/pedrobtz/dazdiff/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/pedrobtz/dazdiff/actions/workflows/R-CMD-check.yaml)
-![Coverage](https://raw.githubusercontent.com/pedrobtz/dazdiff/gh-pages/badges/coverage.svg)
+[![coverage](https://raw.githubusercontent.com/pedrobtz/dazdiff/gh-pages/badges/coverage.svg)](https://github.com/pedrobtz/dazdiff/actions/workflows/coverage.yaml)
 <!-- badges: end -->
 
 dazdiff compares two tables value by value and returns one row per
