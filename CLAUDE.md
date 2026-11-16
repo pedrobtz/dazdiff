@@ -235,7 +235,7 @@ departs from the shared CI rules in four places, on purpose:
   compiled code, and the package is pure R. A pull request runs one Linux
   R-release leg; the full runner set, Linux R-devel and R 4.1 (the declared
   floor) included, runs weekly, on dispatch and under `full-ci`.
-- `coverage.yml` calls r-actions' `coverage.yml`, pinned to a commit
+- `coverage.yaml` calls r-actions' `coverage.yml`, pinned to a commit
   (`v1.43.0`), weekly and on dispatch only, not on pull requests.
 - `pkgdown.yaml` builds the site and deploys it to GitHub Pages from main and
   from releases; a pull request builds it only under `full-ci`. `docs/` is
