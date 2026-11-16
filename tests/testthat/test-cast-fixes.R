@@ -75,7 +75,7 @@ test_that("a Date's fraction of a day is refused as text with truncate = FALSE",
     class = "dazdiff_error_cast"
   )
   expect_identical(
-    cast_value(as.Date(19723), "character", "d", truncate = FALSE),
+    cast_value(.Date(19723), "character", "d", truncate = FALSE),
     "2024-01-01"
   )
 })
