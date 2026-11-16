@@ -42,9 +42,10 @@ The package was renamed from `daffiz` to `dazdiff` (#46, #59).
 
 ## Current state
 
-Verified 2026-11-11. `DESCRIPTION` is at 0.1.0 and the package is not on CRAN
-yet (crandb has no record, and there is no `CRAN-SUBMISSION` file). Every
-sub-issue of the `v0.1.0` issue is closed (14 of 14).
+0.1.0 was submitted to CRAN on 2026-11-16 from `1925124` (`CRAN-SUBMISSION`)
+and is awaiting acceptance. Every sub-issue of the `v0.1.0` issue is closed
+(14 of 14). The `.9000` bump pull request from `cran-release.yaml` waits for
+acceptance; after it, run `pkg-post-cran`.
 
 Do not claim the package "checks cleanly" without re-running
 `R CMD check --as-cran` on a fresh tarball; that claim was wrong once already.
