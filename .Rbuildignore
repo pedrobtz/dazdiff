@@ -18,3 +18,5 @@
 ^_pkgdown\.yml$
 ^pkgdown$
 ^\.vscode$
+^README\.Rmd$
+^vignettes/articles$

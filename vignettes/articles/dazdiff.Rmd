@@ -1,0 +1,206 @@
+---
+title: "Get started with dazdiff"
+description: "Compare a table against a benchmark, read the result, and use the comparison in tests."
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+options(width = 120)
+```
+
+```{r setup}
+library(dazdiff)
+```
+
+We take one table through a round trip that changed it, compare it with the
+original, and find out what changed and where. By the end you can run a
+comparison, read its result, set a tolerance, compare two tables as equals,
+and turn the comparison into a test. Every argument is described in
+`?diff_table`.
+
+## Compare against a benchmark
+
+The benchmark is a small sales table. `stored` is the same data after a round
+trip through storage. On the way, the column names changed case, the ids
+became text, `units` came back as a double, a load timestamp was added, one
+row was lost and one was added:
+
+```{r}
+benchmark <- data.frame(
+  id     = c(1L, 2L, 3L, 4L),
+  region = c("north", "south", "east", "west"),
+  amount = c(100, 200, 300, 400),
+  units  = c(10L, 20L, 30L, 40L)
+)
+stored <- data.frame(
+  ID        = c("1", "2", "3", "5"),
+  Region    = c("north", "south", "east", "north"),
+  Amount    = c(100, 200.5, 300, 500),
+  Units     = c(10.4, 20, 30, 50),
+  loaded_at = "2026-09-29"
+)
+```
+
+`diff_table()` takes the benchmark first. Rows are paired on their
+**identity**, the `by` columns, and the **measures** are the numeric columns
+compared value by value. Measures default to `"numeric"`, the double
+columns; `"numeric+integer"` adds the integer `units`:
+
+```{r}
+d <- diff_table(benchmark, stored, by = c("id", "region"), measures = "numeric+integer")
+d
+```
+
+The messages say what the comparison did on the way. `loaded_at` is not in the
+benchmark, so it was dropped. `stored`'s columns were cast to the benchmark's
+types, and `Units`' `10.4` became the integer `10`. That cast is recorded,
+with the rows it touched, in `attr(d, "truncated")`; `truncate = FALSE`
+refuses it instead.
+
+The result is a `data.table`, with one row per compared value:
+
+- **`status`** is `same`, `changed`, `only_x` (the row is missing from the
+  tested table) or `only_y` (the row exists only there).
+- **`row_id_x` and `row_id_y`** are the row numbers in the two inputs, so
+  every difference traces back to its source.
+- **`diff`** is `value_y - value_x`, **`abs_diff`** its size, and
+  **`rel_diff`** the size relative to the larger of the two values.
+
+Column names are **normalized** in both tables, to upper case with other
+characters turned into `_`. That is why `id` and `ID` pair up.
+
+## Summarize the comparison
+
+`diff_summary()` condenses the result to one row per measure, with the counts
+of each status and the size of the differences:
+
+```{r}
+diff_summary(d)
+```
+
+`diff_report()` draws the whole comparison as text: the columns compared, how
+the rows of the two tables align, and how much each measure differs. Name the
+two tables for the drawing:
+
+```{r}
+diff_report(d, x_name = "benchmark", y_name = "stored")
+```
+
+## Allow a tolerance
+
+`diff_table()` is exact by default. A value is `same` when it is within
+`tolerance` (absolute) or `rel_tol` (relative to the larger magnitude). With
+`rel_tol = 0.01`, the half unit on 200 passes, and only the rows missing from
+one table remain:
+
+```{r}
+d_tol <- diff_table(benchmark, stored, by = c("id", "region"),
+                    measures = "numeric+integer", rel_tol = 0.01)
+d_tol[status != "same"]
+```
+
+To ask one comparison at several thresholds without running it again, use
+`is_matching()`. It is `TRUE` only when every value is `same`, so the rows
+found in one table keep it `FALSE` at any threshold. Among the rows found in
+both, the threshold decides:
+
+```{r}
+is_matching(d, rel_tol = 0.01)
+both <- d[status %in% c("same", "changed")]
+is_matching(both)
+is_matching(both, rel_tol = 0.01)
+```
+
+## Find where the differences are
+
+`diff_explain()` says which key columns split the rows that match from the
+ones that do not. A column **separates** them when none of its values is
+`mixed`: knowing the value tells whether the record matches. A column with a
+different value on every row, like `ID`, always separates and so explains
+nothing; it is marked **identifies** and listed last. Here no other column
+separates:
+
+```{r}
+diff_explain(d)
+```
+
+Given a column, it lists that column's values, with each classed as `same`,
+`differ` or `mixed`:
+
+```{r}
+diff_explain(d, "region")
+```
+
+## Compare two tables as equals
+
+The default `mode = "benchmark"` takes the first table's types as the truth.
+`mode = "equal"` compares the two tables as peers: nothing is cast or
+dropped, and every column must be in both with the same type. So `stored`
+does not compare with the benchmark at all:
+
+```{r, error = TRUE}
+diff_table(benchmark, stored, mode = "equal")
+```
+
+Row order never matters, because rows are aligned on their identity. With no
+`by`, the identity is every column that is not a measure:
+
+```{r}
+diff_table(benchmark, benchmark[c(4, 1, 2, 3), ], mode = "equal")
+```
+
+In either mode, a comparison with no measures compares rows as wholes,
+which answers "do the two tables have the same rows?". A repeated row counts once per copy, numbered by
+`key_seq`:
+
+```{r}
+diff_table(
+  benchmark[c("id", "region")],
+  data.frame(ID = c(3L, 1L, 2L, 2L), REGION = c("east", "north", "south", "south"))
+)
+```
+
+A key that repeats in a comparison with measures is paired in arrival order,
+with a warning. `duplicates = "aggregate"` compares the repeats as multisets
+instead, and `duplicates = "error"` refuses them. A table with no key column
+at all can get a virtual one: `row_key = "position"` pairs rows as they come,
+and `row_key = "sorted"` pairs them after sorting both tables by their
+values.
+
+## Use it in tests
+
+`expect_table_equal()` is a testthat expectation built on `diff_table()`. Its
+second argument, `expected`, is the benchmark, as in testthat's
+`expect_equal()`. Like any expectation, it is silent when it passes, here on
+the same rows in another order:
+
+```{r}
+reference <- benchmark
+expect_table_equal(benchmark[c(4, 1, 2, 3), ], reference)
+```
+
+Unlike `diff_table()`, it allows a relative difference of
+`sqrt(.Machine$double.eps)` (about `1.5e-8`) by default, as `expect_equal()`
+does, so floating-point noise does not fail a test. Pass `rel_tol = 0` to
+compare exactly. A failure shows `diff_summary()` and the first records that
+differ. A key that repeats is an error rather than a guess, unless you pass
+`duplicates = "disambiguate"` or `duplicates = "aggregate"`.
+
+In a test file it reads like any other expectation:
+
+```{r, eval = FALSE}
+test_that("the pipeline reproduces the reference output", {
+  expect_table_equal(run_pipeline(), reference)
+})
+```
+
+## Where next
+
+- [`diff_table()`](../reference/diff_table.html): every argument, including
+  `exclude`, `nan_is_na` and `truncate`, and how values are classified.
+- [`normalize_dt()`](../reference/normalize_dt.html): prepare columns of a
+  type other than character, logical, Date, numeric and integer.
+- [`cast_rules()`](../reference/cast_rules.html) and
+  [`compare_columns()`](../reference/compare_columns.html): the casts
+  `diff_table()` makes, and how the columns of two tables line up.
+- [Reference](../reference/index.html): every function.
