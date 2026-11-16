@@ -1,0 +1,30 @@
+# CRAN's post-acceptance "Additional issues" checks from
+# https://github.com/pedrobtz/r-actions: rlibro (writes into its own
+# installation) and vnu (invalid HTML in the manual). rcnst skips itself, as
+# the package has no src/. Full profile only, so weekly and on dispatch; a
+# pull request runs it only when labelled `full-ci`, since CI minutes are
+# limited.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  schedule:
+    - cron: "47 3 * * 6"
+  workflow_dispatch:
+
+name: cran-special
+
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  cran-special:
+    # Decided without a runner: on a pull request only with `full-ci`.
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(github.event.pull_request.labels.*.name, 'full-ci')
+    uses: pedrobtz/r-actions/.github/workflows/cran-special.yml@v1
+    with:
+      profile: full

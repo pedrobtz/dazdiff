@@ -227,18 +227,30 @@ needs a snapshot there.
 
 ## Continuous integration
 
-CI minutes are limited, so this package departs from the shared CI rules in
-three places, on purpose:
+Every workflow calls r-actions. CI minutes are limited, so this package
+departs from the shared CI rules in four places, on purpose:
 
 - `R-CMD-check.yaml` calls r-actions' `r-cmd-check.yml@v1` with no R-hub
   containers (`containers` and `quick-containers` are `[]`): they check
   compiled code, and the package is pure R. A pull request runs one Linux
-  R-release leg; the full runner set, Linux R-devel included in place of the
-  containers, runs weekly, on dispatch and under `full-ci`.
+  R-release leg; the full runner set, Linux R-devel and R 4.1 (the declared
+  floor) included, runs weekly, on dispatch and under `full-ci`.
 - `coverage.yml` calls r-actions' `coverage.yml`, pinned to a commit
-  (`v1.21.0`), weekly and on dispatch only, not on pull requests.
+  (`v1.43.0`), weekly and on dispatch only, not on pull requests.
 - `pkgdown.yaml` builds the site and deploys it to GitHub Pages from main and
-  from releases; a pull request builds it only under `full-ci`. `docs/` is the local pkgdown build and is git-ignored.
+  from releases; a pull request builds it only under `full-ci`. `docs/` is
+  the local pkgdown build and is git-ignored.
+- `cran-special.yaml` (CRAN's `rlibro` and `vnu`; `rcnst` skips a package
+  with no `src/`) runs weekly, on dispatch and under `full-ci` only.
+
+`cran-release.yaml`, pinned to a commit (`v1.43.0`), runs on the push of
+`CRAN-SUBMISSION`: it tags the submitted commit, publishes the release and
+opens the `.9000` bump.
+
+There is no `assurance.yml` and no `.agents/assurance.md`: the package is
+none of the standard's kinds (no `src/`, no byte parsing, no published spec,
+no long-lived objects, nothing written for another program), and the
+validator refuses a file that declares none.
 
 `docs/`, `.claude/`, `.agents/`, `benchmarks/`, `inst/WORDLIST` and
 `CLAUDE.md` are listed in `.Rbuildignore`. pkgdown does not read

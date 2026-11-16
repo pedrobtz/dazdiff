@@ -29,7 +29,7 @@ test_that("duplicates across -0 and 0 are seen before the merge", {
 })
 
 test_that("Date keys at -0 and 0 aggregate as one key", {
-  x <- data.frame(k = as.Date(c(0, -0)), v = 1)
+  x <- data.frame(k = .Date(c(0, -0)), v = 1)
   d <- diff_table(x, x, by = "k", measures = "V", duplicates = "aggregate")
   expect_identical(nrow(d), 1L)
   expect_identical(d$n_rows_x, 2L)

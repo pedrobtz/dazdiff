@@ -10,9 +10,10 @@ on:
   schedule:
     - cron: "27 3 * * 6"
   workflow_dispatch:
-  # `labeled` so that adding `full-ci` to a pull request reruns it in full.
+  # `labeled`/`unlabeled` so that adding or removing a CI label (`full-ci`,
+  # `ci:docs`, `skip-ci:R-CMD-check`) reruns it.
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 name: R-CMD-check
 
@@ -26,11 +27,18 @@ concurrency:
 
 jobs:
   R-CMD-check:
+    # Decided without a runner: `ci:docs` and `skip-ci:R-CMD-check` skip it;
+    # `ci:minimal` still runs it (shared ci.md, Labels).
+    if: >-
+      github.event_name != 'pull_request'
+      || contains(github.event.pull_request.labels.*.name, 'full-ci')
+      || !(contains(github.event.pull_request.labels.*.name, 'ci:docs')
+        || contains(github.event.pull_request.labels.*.name, 'skip-ci:R-CMD-check'))
     uses: pedrobtz/r-actions/.github/workflows/r-cmd-check.yml@v1
     with:
       # Quick on each push to a pull request (one Linux R-release leg), full
       # on the schedule, on dispatch, and with the `full-ci` label.
-      profile: ${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'full-ci') && 'quick' || 'full' }}
+      profile: auto
       containers: "[]"
       quick-containers: "[]"
       nosuggests: true

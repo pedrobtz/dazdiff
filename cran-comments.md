@@ -9,12 +9,12 @@
 * local: macOS arm64, R 4.5.2, `R CMD check --as-cran` on the source tarball.
 * GitHub Actions (pedrobtz/r-actions `r-cmd-check.yml`), all with `--as-cran`:
   * macOS, Windows and Ubuntu (latest): R release;
-  * Windows (latest): R-devel;
-  * Ubuntu (latest): R oldrel-1;
-  * R-hub containers `clang23`, `ubuntu-clang` and `ubuntu-gcc16` (R-devel,
-    CRAN's compilers);
+  * Windows and Ubuntu (latest): R-devel;
+  * Ubuntu (latest): R oldrel-1, and R 4.1, the declared minimum;
   * R-hub `nosuggests` container: R-devel with only the hard dependencies
     installed.
+* GitHub Actions (pedrobtz/r-actions `cran-special.yml`): CRAN's `rlibro`
+  and `vnu` checks.
 
 ## Method references
 
