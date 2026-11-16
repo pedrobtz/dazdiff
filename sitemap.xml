@@ -1,19 +1,20 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
-<url><loc>/404.html</loc></url>
-<url><loc>/LICENSE-text.html</loc></url>
-<url><loc>/authors.html</loc></url>
-<url><loc>/index.html</loc></url>
-<url><loc>/news/index.html</loc></url>
-<url><loc>/reference/cast_rules.html</loc></url>
-<url><loc>/reference/compare_columns.html</loc></url>
-<url><loc>/reference/dazdiff-package.html</loc></url>
-<url><loc>/reference/diff_explain.html</loc></url>
-<url><loc>/reference/diff_report.html</loc></url>
-<url><loc>/reference/diff_summary.html</loc></url>
-<url><loc>/reference/diff_table.html</loc></url>
-<url><loc>/reference/expect_table_equal.html</loc></url>
-<url><loc>/reference/index.html</loc></url>
-<url><loc>/reference/is_matching.html</loc></url>
-<url><loc>/reference/normalize_dt.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/404.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/LICENSE-text.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/LICENSE.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/authors.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/index.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/news/index.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/reference/cast_rules.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/reference/compare_columns.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/reference/dazdiff-package.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/reference/diff_explain.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/reference/diff_report.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/reference/diff_summary.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/reference/diff_table.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/reference/expect_table_equal.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/reference/index.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/reference/is_matching.html</loc></url>
+<url><loc>https://pedrobtz.github.io/dazdiff/reference/normalize_dt.html</loc></url>
 </urlset>
 

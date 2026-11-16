@@ -1,0 +1,109 @@
+# Changelog
+
+## dazdiff 0.1.0
+
+First release.
+
+- [`diff_table()`](https://pedrobtz.github.io/dazdiff/reference/diff_table.md)
+  compares two tables value by value, returning a `data.table` with one
+  row per compared value, traceable to its source row in both inputs
+  (`row_id_x`, `row_id_y`), and a `status` of `same`, `changed`,
+  `only_x` or `only_y`.
+- Two modes:
+  - `mode = "benchmark"` (the default) tests `y` against the benchmark
+    `x`. `y`’s columns are cast to `x`’s types, its extra columns are
+    dropped with a message, and a column it lacks is an error.
+  - `mode = "equal"` compares the two as peers. Every column must be in
+    both tables with the same type, nothing is cast, and the result is
+    symmetric.
+- `exclude` leaves columns out of the comparison, in either mode: they
+  are removed from both tables, in either spelling, before anything
+  else. A name in neither table is a warning, so one list of technical
+  columns can serve many tables.
+- A number of `y` cast to the benchmark’s text is written with the
+  decimals the benchmark uses, when they are the same for the whole
+  column, so `2` meets `"2.0"`, and a message says so
+  (`dazdiff_message_cast_format`). A number that still matches only by
+  value, not by text, is a warning (`dazdiff_warning_cast_format`) that
+  explains the format used.
+- When no key aligns, the error names the key columns that share no
+  value between the tables, with examples, and suggests `exclude` for
+  those holding one value in each table.
+- Casts that drop a fraction – a double to an integer, a number or a
+  timestamp to a whole day, a Date holding part of a day to its text –
+  are made by default, since storage such as Spark or Delta narrows
+  types the same way. Each one is announced and recorded;
+  `truncate = FALSE` refuses them.
+- A timestamp cast to text is always written `"%Y-%m-%d %H:%M:%S"`,
+  midnight included, with its fraction of a second (to the microsecond)
+  when it has one, so the text does not depend on the values or the R
+  version.
+- A logical column of nothing but `NA`, which is how
+  [`read.csv()`](https://rdrr.io/r/utils/read.table.html) and `fread()`
+  type a column with no values, casts to any type, a Date included.
+- Column names in both tables are normalized to upper-case letters,
+  digits and `_`, so `amount` and `Amount` are one column. Letters
+  outside ASCII are kept. Two names in one table that normalize to the
+  same thing are an error.
+- `by` names the row identity. `measures` chooses the compared columns,
+  by type (`"numeric"`, `"numeric+integer"`) or by name. With no
+  measures,
+  [`diff_table()`](https://pedrobtz.github.io/dazdiff/reference/diff_table.md)
+  compares whole rows.
+- A table must have at least one key column. When it has none,
+  `row_key = "position"` adds the row number as a virtual key, and
+  `row_key = "sorted"` adds it after sorting both tables by their
+  values, so row order does not matter.
+- Duplicate keys are paired in arrival order with a warning, compared as
+  exact multisets with `duplicates = "aggregate"`, or refused with
+  `duplicates = "error"`.
+- `nan_is_na = TRUE` treats NaN as NA, in values and in key columns
+  alike.
+- A comparison in which no row aligns is an error, not a report of two
+  unrelated tables.
+- `rel_tol` adds a relative tolerance to the absolute `tolerance`: a
+  value is `same` when it is within either. The relative difference is
+  taken against the larger magnitude of the two values, so it is
+  symmetric, and both tolerances apply to finite pairs only. The result
+  carries `abs_diff` and `rel_diff` beside `diff`,
+  [`diff_summary()`](https://pedrobtz.github.io/dazdiff/reference/diff_summary.md)
+  reports `max_rel_diff`, and the tolerances are recorded in
+  `attr(, "tolerance")`.
+- [`diff_report()`](https://pedrobtz.github.io/dazdiff/reference/diff_report.md)
+  draws a bounded text report of a comparison: the columns compared, a
+  picture of how the rows of the two tables align, and per measure its
+  match rate and largest differences. The layout follows the summary of
+  the Python package diffly.
+- [`diff_explain()`](https://pedrobtz.github.io/dazdiff/reference/diff_explain.md)
+  says which key values split the result into same and not same: per key
+  column (and per measure), how many of its values only match, only
+  differ or are mixed, and, for one column, the status counts of each
+  value. `among = "joined"` explains the changed values alone.
+- [`is_matching()`](https://pedrobtz.github.io/dazdiff/reference/is_matching.md)
+  answers `TRUE` or `FALSE`: do the two tables match? With `tolerance`
+  or `rel_tol` it re-judges the stored differences at other thresholds,
+  looser or stricter, without running the comparison again.
+- [`diff_summary()`](https://pedrobtz.github.io/dazdiff/reference/diff_summary.md)
+  counts each status per measure and measures the size of the
+  differences.
+- [`expect_table_equal()`](https://pedrobtz.github.io/dazdiff/reference/expect_table_equal.md)
+  is a testthat expectation built on
+  [`diff_table()`](https://pedrobtz.github.io/dazdiff/reference/diff_table.md).
+  It allows a relative difference of `sqrt(.Machine$double.eps)` by
+  default, as testthat’s `expect_equal()` does, where
+  [`diff_table()`](https://pedrobtz.github.io/dazdiff/reference/diff_table.md)
+  is exact. Duplicate keys are an error unless `duplicates` accepts
+  them, and tables that share no key fail the expectation.
+- [`compare_columns()`](https://pedrobtz.github.io/dazdiff/reference/compare_columns.md)
+  shows how the columns of two tables line up,
+  [`normalize_dt()`](https://pedrobtz.github.io/dazdiff/reference/normalize_dt.md)
+  converts other types (factors, timestamps, `integer64`) to the ones
+  [`diff_table()`](https://pedrobtz.github.io/dazdiff/reference/diff_table.md)
+  compares, and
+  [`cast_rules()`](https://pedrobtz.github.io/dazdiff/reference/cast_rules.md)
+  lists the conversions it makes. A factor becomes its labels by
+  default, and the mappings given in `normalize_dt(to = )` are added to
+  that default.
+- Every error, warning and message has a class, listed under Conditions
+  in
+  [`?diff_table`](https://pedrobtz.github.io/dazdiff/reference/diff_table.md).
