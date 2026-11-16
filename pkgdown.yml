@@ -1,8 +1,9 @@
 pandoc: 3.8.3
 pkgdown: 2.2.1
 pkgdown_sha: ~
-articles: {}
-last_built: 2026-11-16T13:28Z
+articles:
+  articles/dazdiff: dazdiff.html
+last_built: 2026-11-16T13:55Z
 urls:
   reference: https://pedrobtz.github.io/dazdiff/reference
   article: https://pedrobtz.github.io/dazdiff/articles

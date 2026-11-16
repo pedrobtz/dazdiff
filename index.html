@@ -31,6 +31,7 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
+<li class="nav-item"><a class="nav-link" href="articles/dazdiff.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
@@ -51,14 +52,12 @@
 </h1></div>
 <!-- badges: start -->
 
-<p><code>dazdiff</code> compares two tables value by value. Its one main function, <code><a href="reference/diff_table.html">diff_table()</a></code>, answers one of two questions:</p>
+<p>dazdiff compares two tables value by value and returns one row per compared value, traced back to its source row in both tables.</p>
 <ul>
-<li>
-<strong>Does this table match the benchmark?</strong> (<code>mode = "benchmark"</code>, the default.) The benchmark’s column types are the truth. The tested table’s columns are cast to them, and its extra columns are dropped.</li>
-<li>
-<strong>Are these two tables equal?</strong> (<code>mode = "equal"</code>.) The tables are peers: every column must be in both, with the same type, and nothing is cast.</li>
+<li>It can test a table against a benchmark whose column types are the truth: the tested table’s columns are cast to those types and its column names normalized, so a table that went through a database or Spark compares with the one that went in.</li>
+<li>Rows are paired on their identity columns, never by position, and a key that repeats is reported rather than silently paired.</li>
+<li>Its one dependency outside base R is <a href="https://rdatatable.gitlab.io/data.table/" class="external-link">data.table</a>.</li>
 </ul>
-<p>The result is a <code>data.table</code> with one row per compared value. Each row traces back to its source row in both tables.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -71,215 +70,37 @@
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"pedrobtz/dazdiff"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="comparing-against-a-benchmark">Comparing against a benchmark<a class="anchor" aria-label="anchor" href="#comparing-against-a-benchmark"></a>
+<h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
 </h2>
-<p>A benchmark table, and the same data after a round trip through storage. On the way, the column names changed case, the ids became text, <code>units</code> came back as a double, a load timestamp was added, one row was lost and one was added:</p>
+<p>A table, and the same data after a round trip through storage: the names changed case, the ids became text, one amount moved and one row was replaced. <code><a href="reference/diff_table.html">diff_table()</a></code> pairs the rows on <code>id</code> and compares <code>amount</code>:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/pedrobtz/dazdiff" class="external-link">dazdiff</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">benchmark</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  id     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fl">2L</span>, <span class="fl">3L</span>, <span class="fl">4L</span><span class="op">)</span>,</span>
-<span>  region <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"north"</span>, <span class="st">"south"</span>, <span class="st">"east"</span>, <span class="st">"west"</span><span class="op">)</span>,</span>
-<span>  amount <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">200</span>, <span class="fl">300</span>, <span class="fl">400</span><span class="op">)</span>,</span>
-<span>  units  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10L</span>, <span class="fl">20L</span>, <span class="fl">30L</span>, <span class="fl">40L</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="va">stored</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  ID        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"5"</span><span class="op">)</span>,</span>
-<span>  Region    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"north"</span>, <span class="st">"south"</span>, <span class="st">"east"</span>, <span class="st">"north"</span><span class="op">)</span>,</span>
-<span>  Amount    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">200.5</span>, <span class="fl">300</span>, <span class="fl">500</span><span class="op">)</span>,</span>
-<span>  Units     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">10.4</span>, <span class="fl">20</span>, <span class="fl">30</span>, <span class="fl">50</span><span class="op">)</span>,</span>
-<span>  loaded_at <span class="op">=</span> <span class="st">"2026-09-29"</span></span>
-<span><span class="op">)</span></span>
+<span><span class="va">benchmark</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, amount <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">200</span>, <span class="fl">300</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">stored</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>ID <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"4"</span><span class="op">)</span>, Amount <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">200.5</span>, <span class="fl">400</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/diff_table.html">diff_table</a></span><span class="op">(</span><span class="va">benchmark</span>, <span class="va">stored</span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"region"</span><span class="op">)</span>, measures <span class="op">=</span> <span class="st">"numeric+integer"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Dropped column(s) of `y` that the benchmark `x` does not have: loaded_at.</span></span>
-<span><span class="co">#&gt; Truncated 1 value(s) while casting to the reference types:</span></span>
-<span><span class="co">#&gt;   Units: 1 (10.4 -&gt; 10)</span></span>
-<span><span class="va">d</span></span>
-<span><span class="co">#&gt; Key: &lt;ID, REGION, metric&gt;</span></span>
-<span><span class="co">#&gt;        ID REGION metric row_id_x row_id_y value_x value_y  diff abs_diff    rel_diff  status</span></span>
-<span><span class="co">#&gt;     &lt;int&gt; &lt;char&gt; &lt;char&gt;    &lt;int&gt;    &lt;int&gt;   &lt;num&gt;   &lt;num&gt; &lt;num&gt;    &lt;num&gt;       &lt;num&gt;  &lt;fctr&gt;</span></span>
-<span><span class="co">#&gt;  1:     1  north AMOUNT        1        1     100   100.0   0.0      0.0 0.000000000    same</span></span>
-<span><span class="co">#&gt;  2:     1  north  UNITS        1        1      10    10.0   0.0      0.0 0.000000000    same</span></span>
-<span><span class="co">#&gt;  3:     2  south AMOUNT        2        2     200   200.5   0.5      0.5 0.002493766 changed</span></span>
-<span><span class="co">#&gt;  4:     2  south  UNITS        2        2      20    20.0   0.0      0.0 0.000000000    same</span></span>
-<span><span class="co">#&gt;  5:     3   east AMOUNT        3        3     300   300.0   0.0      0.0 0.000000000    same</span></span>
-<span><span class="co">#&gt;  6:     3   east  UNITS        3        3      30    30.0   0.0      0.0 0.000000000    same</span></span>
-<span><span class="co">#&gt;  7:     4   west AMOUNT        4       NA     400      NA    NA       NA          NA  only_x</span></span>
-<span><span class="co">#&gt;  8:     4   west  UNITS        4       NA      40      NA    NA       NA          NA  only_x</span></span>
-<span><span class="co">#&gt;  9:     5  north AMOUNT       NA        4      NA   500.0    NA       NA          NA  only_y</span></span>
-<span><span class="co">#&gt; 10:     5  north  UNITS       NA        4      NA    50.0    NA       NA          NA  only_y</span></span></code></pre></div>
-<p>Reading the result:</p>
-<ul>
-<li>
-<strong><code>status</code></strong> is <code>same</code>, <code>changed</code>, <code>only_x</code> (the row is missing from the tested table) or <code>only_y</code> (the row exists only there).</li>
-<li>
-<strong><code>row_id_x</code> and <code>row_id_y</code></strong> are the row numbers in the two inputs.</li>
-<li>
-<strong><code>diff</code></strong> is <code>value_y - value_x</code>; <strong><code>abs_diff</code></strong> is its size, and <strong><code>rel_diff</code></strong> the size relative to the larger of the two values.</li>
-<li>
-<strong>Column names are normalized</strong> in both tables: upper case, with other characters turned into <code>_</code>. That is why <code>id</code> and <code>ID</code> pair up.</li>
-<li>
-<strong><code>units</code> was cast to the benchmark’s integer type.</strong> Its <code>10.4</code> was truncated to <code>10</code>, which is announced in a message and recorded, with the rows it touched, in <code>attr(d, "truncated")</code>. Pass <code>truncate = FALSE</code> to refuse such casts instead.</li>
-</ul>
-<p><code><a href="reference/diff_summary.html">diff_summary()</a></code> condenses the result per measure:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/diff_summary.html">diff_summary</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    metric     n n_same n_changed n_only_x n_only_y max_abs_diff mean_abs_diff      rmse max_rel_diff</span></span>
-<span><span class="co">#&gt;    &lt;char&gt; &lt;int&gt;  &lt;int&gt;     &lt;int&gt;    &lt;int&gt;    &lt;int&gt;        &lt;num&gt;         &lt;num&gt;     &lt;num&gt;        &lt;num&gt;</span></span>
-<span><span class="co">#&gt; 1: AMOUNT     5      2         1        1        1          0.5     0.1666667 0.2886751  0.002493766</span></span>
-<span><span class="co">#&gt; 2:  UNITS     5      3         0        1        1          0.0     0.0000000 0.0000000  0.000000000</span></span></code></pre></div>
-<p><code><a href="reference/diff_report.html">diff_report()</a></code> draws the whole comparison as text: the columns compared, how the rows of the two tables align, and how much each measure differs:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/diff_report.html">diff_report</a></span><span class="op">(</span><span class="va">d</span>, x_name <span class="op">=</span> <span class="st">"benchmark"</span>, y_name <span class="op">=</span> <span class="st">"stored"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</span></span>
-<span><span class="co">#&gt; ┃                                       dazdiff report                                        ┃</span></span>
-<span><span class="co">#&gt; ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</span></span>
-<span><span class="co">#&gt;    Identity: id, region</span></span>
-<span><span class="co">#&gt;    Mode:     benchmark: stored is tested against benchmark</span></span>
-<span><span class="co">#&gt;</span></span>
-<span><span class="co">#&gt;  Columns</span></span>
-<span><span class="co">#&gt;  ▔▔▔▔▔▔▔</span></span>
-<span><span class="co">#&gt;    Compared 4 columns: 2 keys, 2 measures.</span></span>
-<span><span class="co">#&gt;    Only in stored, dropped: loaded_at.</span></span>
-<span><span class="co">#&gt;    Truncated by the cast to benchmark's types:</span></span>
-<span><span class="co">#&gt;      Units: 1 value (10.4 -&gt; 10)</span></span>
-<span><span class="co">#&gt;</span></span>
-<span><span class="co">#&gt;  Rows</span></span>
-<span><span class="co">#&gt;  ▔▔▔▔</span></span>
-<span><span class="co">#&gt;    benchmark rows               stored rows</span></span>
-<span><span class="co">#&gt;          4         (no change)       4</span></span>
-<span><span class="co">#&gt;</span></span>
-<span><span class="co">#&gt;    ┏━┯━┯━┯━┯━┓</span></span>
-<span><span class="co">#&gt;    ┃-│-│-│-│-┃                1 only in benchmark (25.00%)</span></span>
-<span><span class="co">#&gt;    ┠─┼─┼─┼─┼─┨╌╌╌┏━┯━┯━┯━┯━┓╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╮</span></span>
-<span><span class="co">#&gt;    ┃ │ │ │ │ ┃ = ┃ │ │ │ │ ┃  2 same              (66.67%)  │</span></span>
-<span><span class="co">#&gt;    ┠─┼─┼─┼─┼─┨╌╌╌┠─┼─┼─┼─┼─┨╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌├╴  3 joined</span></span>
-<span><span class="co">#&gt;    ┃ │ │ │ │ ┃ ≠ ┃ │ │ │ │ ┃  1 changed           (33.33%)  │</span></span>
-<span><span class="co">#&gt;    ┗━┷━┷━┷━┷━┛╌╌╌┠─┼─┼─┼─┼─┨╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╯</span></span>
-<span><span class="co">#&gt;                  ┃+│+│+│+│+┃  1 only in stored    (25.00%)</span></span>
-<span><span class="co">#&gt;                  ┗━┷━┷━┷━┷━┛</span></span>
-<span><span class="co">#&gt;</span></span>
-<span><span class="co">#&gt;  Measures</span></span>
-<span><span class="co">#&gt;  ▔▔▔▔▔▔▔▔</span></span>
-<span><span class="co">#&gt;    ┌─────────┬────────────┬────────────┬──────────────┐</span></span>
-<span><span class="co">#&gt;    │ Measure │ Match rate │ Max |diff| │ Max rel diff │</span></span>
-<span><span class="co">#&gt;    ├─────────┼────────────┼────────────┼──────────────┤</span></span>
-<span><span class="co">#&gt;    │ amount  │     66.67% │        0.5 │     0.002494 │</span></span>
-<span><span class="co">#&gt;    └─────────┴────────────┴────────────┴──────────────┘</span></span>
-<span><span class="co">#&gt;    1 other measure matches on every row found in both tables.</span></span>
-<span><span class="co">#&gt;</span></span>
-<span><span class="co">#&gt;  Rows only in benchmark</span></span>
-<span><span class="co">#&gt;  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔</span></span>
-<span><span class="co">#&gt;    ┌────┬────────┐</span></span>
-<span><span class="co">#&gt;    │ id │ region │</span></span>
-<span><span class="co">#&gt;    ├────┼────────┤</span></span>
-<span><span class="co">#&gt;    │ 4  │ "west" │</span></span>
-<span><span class="co">#&gt;    └────┴────────┘</span></span>
-<span><span class="co">#&gt;</span></span>
-<span><span class="co">#&gt;  Rows only in stored</span></span>
-<span><span class="co">#&gt;  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔</span></span>
-<span><span class="co">#&gt;    ┌────┬─────────┐</span></span>
-<span><span class="co">#&gt;    │ id │ region  │</span></span>
-<span><span class="co">#&gt;    ├────┼─────────┤</span></span>
-<span><span class="co">#&gt;    │ 5  │ "north" │</span></span>
-<span><span class="co">#&gt;    └────┴─────────┘</span></span></code></pre></div>
-<p>A value is <code>same</code> when it is within <code>tolerance</code> (absolute) or <code>rel_tol</code> (relative to the larger magnitude). With <code>rel_tol = 0.01</code> the half unit on 200 passes, and only the rows missing from one table remain:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/diff_table.html">diff_table</a></span><span class="op">(</span><span class="va">benchmark</span>, <span class="va">stored</span>, by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"region"</span><span class="op">)</span>, measures <span class="op">=</span> <span class="st">"numeric+integer"</span>,</span>
-<span>           rel_tol <span class="op">=</span> <span class="fl">0.01</span><span class="op">)</span><span class="op">[</span><span class="va">status</span> <span class="op">!=</span> <span class="st">"same"</span><span class="op">]</span></span>
-<span><span class="co">#&gt; Dropped column(s) of `y` that the benchmark `x` does not have: loaded_at.</span></span>
-<span><span class="co">#&gt; Truncated 1 value(s) while casting to the reference types:</span></span>
-<span><span class="co">#&gt;   Units: 1 (10.4 -&gt; 10)</span></span>
-<span><span class="co">#&gt; Key: &lt;ID, REGION, metric&gt;</span></span>
-<span><span class="co">#&gt;       ID REGION metric row_id_x row_id_y value_x value_y  diff abs_diff rel_diff status</span></span>
-<span><span class="co">#&gt;    &lt;int&gt; &lt;char&gt; &lt;char&gt;    &lt;int&gt;    &lt;int&gt;   &lt;num&gt;   &lt;num&gt; &lt;num&gt;    &lt;num&gt;    &lt;num&gt; &lt;fctr&gt;</span></span>
-<span><span class="co">#&gt; 1:     4   west AMOUNT        4       NA     400      NA    NA       NA       NA only_x</span></span>
-<span><span class="co">#&gt; 2:     4   west  UNITS        4       NA      40      NA    NA       NA       NA only_x</span></span>
-<span><span class="co">#&gt; 3:     5  north AMOUNT       NA        4      NA     500    NA       NA       NA only_y</span></span>
-<span><span class="co">#&gt; 4:     5  north  UNITS       NA        4      NA      50    NA       NA       NA only_y</span></span></code></pre></div>
-<p><code><a href="reference/diff_explain.html">diff_explain()</a></code> says where the differences are: which key columns split the rows that match from the ones that do not, and then, value by value, which to look at:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/diff_explain.html">diff_explain</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    column n_values same_only differ_only mixed separates identifies</span></span>
-<span><span class="co">#&gt;    &lt;char&gt;    &lt;int&gt;     &lt;int&gt;       &lt;int&gt; &lt;int&gt;    &lt;lgcl&gt;     &lt;lgcl&gt;</span></span>
-<span><span class="co">#&gt; 1: REGION        4         1           2     1     FALSE      FALSE</span></span>
-<span><span class="co">#&gt; 2: metric        2         0           0     2     FALSE      FALSE</span></span>
-<span><span class="co">#&gt; 3:     ID        5         2           3     0      TRUE       TRUE</span></span>
-<span><span class="fu"><a href="reference/diff_explain.html">diff_explain</a></span><span class="op">(</span><span class="va">d</span>, <span class="st">"region"</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    REGION     n n_same n_changed n_only_x n_only_y  class</span></span>
-<span><span class="co">#&gt;    &lt;char&gt; &lt;int&gt;  &lt;int&gt;     &lt;int&gt;    &lt;int&gt;    &lt;int&gt; &lt;char&gt;</span></span>
-<span><span class="co">#&gt; 1:  south     1      0         1        0        0 differ</span></span>
-<span><span class="co">#&gt; 2:   west     1      0         0        1        0 differ</span></span>
-<span><span class="co">#&gt; 3:  north     2      1         0        0        1  mixed</span></span>
-<span><span class="co">#&gt; 4:   east     1      1         0        0        0   same</span></span></code></pre></div>
+<span><span class="fu"><a href="reference/diff_table.html">diff_table</a></span><span class="op">(</span><span class="va">benchmark</span>, <span class="va">stored</span>, by <span class="op">=</span> <span class="st">"id"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Key: &lt;ID, metric&gt;</span></span>
+<span><span class="co">#&gt;       ID metric row_id_x row_id_y value_x value_y  diff abs_diff    rel_diff  status</span></span>
+<span><span class="co">#&gt;    &lt;int&gt; &lt;char&gt;    &lt;int&gt;    &lt;int&gt;   &lt;num&gt;   &lt;num&gt; &lt;num&gt;    &lt;num&gt;       &lt;num&gt;  &lt;fctr&gt;</span></span>
+<span><span class="co">#&gt; 1:     1 AMOUNT        1        1     100   100.0   0.0      0.0 0.000000000    same</span></span>
+<span><span class="co">#&gt; 2:     2 AMOUNT        2        2     200   200.5   0.5      0.5 0.002493766 changed</span></span>
+<span><span class="co">#&gt; 3:     3 AMOUNT        3       NA     300      NA    NA       NA          NA  only_x</span></span>
+<span><span class="co">#&gt; 4:     4 AMOUNT       NA        3      NA   400.0    NA       NA          NA  only_y</span></span></code></pre></div>
+<p>Column names are normalized to upper case, which is how <code>id</code> pairs with <code>ID</code>. <code>status</code> says what happened to each value, and <code>row_id_x</code> and <code>row_id_y</code> are its rows in the two tables.</p>
+<p>dazdiff also summarizes and draws a comparison, finds which keys hold the differences, compares two tables as equals, and works as a testthat expectation. Get started shows each of these.</p>
 </div>
 <div class="section level2">
-<h2 id="comparing-two-tables-as-equals">Comparing two tables as equals<a class="anchor" aria-label="anchor" href="#comparing-two-tables-as-equals"></a>
-</h2>
-<p>In <code>mode = "equal"</code> nothing is cast or dropped, so the same two tables do not even compare:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/diff_table.html">diff_table</a></span><span class="op">(</span><span class="va">benchmark</span>, <span class="va">stored</span>, mode <span class="op">=</span> <span class="st">"equal"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Error: mode = "equal" needs the same columns in both tables.</span></span>
-<span><span class="co">#&gt;   only in `x`: &lt;none&gt;</span></span>
-<span><span class="co">#&gt;   only in `y`: loaded_at</span></span></code></pre></div>
-<p>Row order never matters; rows are aligned on their identity:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/diff_table.html">diff_table</a></span><span class="op">(</span><span class="va">benchmark</span>, <span class="va">benchmark</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span>, <span class="op">]</span>, mode <span class="op">=</span> <span class="st">"equal"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Key: &lt;ID, REGION, UNITS, metric&gt;</span></span>
-<span><span class="co">#&gt;       ID REGION UNITS metric row_id_x row_id_y value_x value_y  diff abs_diff rel_diff status</span></span>
-<span><span class="co">#&gt;    &lt;int&gt; &lt;char&gt; &lt;int&gt; &lt;char&gt;    &lt;int&gt;    &lt;int&gt;   &lt;num&gt;   &lt;num&gt; &lt;num&gt;    &lt;num&gt;    &lt;num&gt; &lt;fctr&gt;</span></span>
-<span><span class="co">#&gt; 1:     1  north    10 AMOUNT        1        2     100     100     0        0        0   same</span></span>
-<span><span class="co">#&gt; 2:     2  south    20 AMOUNT        2        3     200     200     0        0        0   same</span></span>
-<span><span class="co">#&gt; 3:     3   east    30 AMOUNT        3        4     300     300     0        0        0   same</span></span>
-<span><span class="co">#&gt; 4:     4   west    40 AMOUNT        4        1     400     400     0        0        0   same</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="do-they-have-the-same-rows">Do they have the same rows?<a class="anchor" aria-label="anchor" href="#do-they-have-the-same-rows"></a>
-</h2>
-<p>With no numeric measures, rows are compared as wholes. A repeated row counts once per copy:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/diff_table.html">diff_table</a></span><span class="op">(</span></span>
-<span>  <span class="va">benchmark</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"region"</span><span class="op">)</span><span class="op">]</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>ID <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3L</span>, <span class="fl">1L</span>, <span class="fl">2L</span>, <span class="fl">2L</span><span class="op">)</span>, REGION <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"east"</span>, <span class="st">"north"</span>, <span class="st">"south"</span>, <span class="st">"south"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt; No measure columns (measures = "numeric"), so rows are compared as wholes: do the two tables have the same rows?</span></span>
-<span><span class="co">#&gt; Key: &lt;ID, REGION, key_seq&gt;</span></span>
-<span><span class="co">#&gt;       ID REGION key_seq row_id_x row_id_y status</span></span>
-<span><span class="co">#&gt;    &lt;int&gt; &lt;char&gt;   &lt;int&gt;    &lt;int&gt;    &lt;int&gt; &lt;fctr&gt;</span></span>
-<span><span class="co">#&gt; 1:     1  north       1        1        2   same</span></span>
-<span><span class="co">#&gt; 2:     2  south       1        2        3   same</span></span>
-<span><span class="co">#&gt; 3:     2  south       2       NA        4 only_y</span></span>
-<span><span class="co">#&gt; 4:     3   east       1        3        1   same</span></span>
-<span><span class="co">#&gt; 5:     4   west       1        4       NA only_x</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="in-tests">In tests<a class="anchor" aria-label="anchor" href="#in-tests"></a>
-</h2>
-<p><code><a href="reference/expect_table_equal.html">expect_table_equal()</a></code> is a testthat expectation built on <code><a href="reference/diff_table.html">diff_table()</a></code>. Its second argument, <code>expected</code>, is the benchmark:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">test_that</span><span class="op">(</span><span class="st">"the pipeline reproduces the reference output"</span>, <span class="op">{</span></span>
-<span>  <span class="fu"><a href="reference/expect_table_equal.html">expect_table_equal</a></span><span class="op">(</span><span class="fu">run_pipeline</span><span class="op">(</span><span class="op">)</span>, <span class="va">reference</span><span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
-<p>Unlike <code><a href="reference/diff_table.html">diff_table()</a></code>, which is exact, it allows a relative difference of <code>sqrt(.Machine$double.eps)</code> (about <code>1.5e-8</code>) by default, as testthat’s <code>expect_equal()</code> does, so floating-point noise does not fail a test. Pass <code>rel_tol = 0</code> to compare exactly.</p>
-<p>A failure shows <code><a href="reference/diff_summary.html">diff_summary()</a></code> and the first records that differ. A key that repeats fails the expectation instead of being paired by arrival order, unless you pass <code>duplicates = "disambiguate"</code> or <code>duplicates = "aggregate"</code>.</p>
-</div>
-<div class="section level2">
-<h2 id="more">More<a class="anchor" aria-label="anchor" href="#more"></a>
+<h2 id="learn-more">Learn more<a class="anchor" aria-label="anchor" href="#learn-more"></a>
 </h2>
 <ul>
 <li>
-<strong>Measures</strong> are the numeric columns compared value by value. They default to the double columns; <code>measures</code> takes <code>"numeric+integer"</code> or column names.</li>
+<a href="https://pedrobtz.github.io/dazdiff/articles/dazdiff.html">Get started</a>: one comparison taken from the first call to a test.</li>
 <li>
-<strong>The row identity</strong> is <code>by</code>, or every column that is not a measure. A table needs at least one key column. When every column is a measure, add a virtual one: <code>row_key = "position"</code> pairs rows as they come, and <code>row_key = "sorted"</code> pairs them after sorting both tables by their values.</li>
+<a href="https://pedrobtz.github.io/dazdiff/reference/diff_table.html"><code>diff_table()</code></a>: every argument, the result’s columns and how values are classified.</li>
 <li>
-<strong>Duplicate keys</strong> are paired in arrival order with a warning, compared as multisets (<code>duplicates = "aggregate"</code>), or refused (<code>duplicates = "error"</code>).</li>
-<li>
-<strong>NaN and NA</strong> are the same missing value unless <code>nan_is_na = FALSE</code>.</li>
-<li>
-<strong>Types other than character, logical, Date, numeric and integer</strong> go through <code><a href="reference/normalize_dt.html">normalize_dt()</a></code> first. <code><a href="reference/cast_rules.html">cast_rules()</a></code> lists the conversions <code><a href="reference/diff_table.html">diff_table()</a></code> will make, and <code><a href="reference/compare_columns.html">compare_columns()</a></code> shows how the columns of two tables line up.</li>
+<a href="https://pedrobtz.github.io/dazdiff/reference/index.html">Reference</a>: every function.</li>
 </ul>
-<p>See <code><a href="reference/diff_table.html">?diff_table</a></code> for the details.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">
@@ -316,7 +137,9 @@
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
+<li><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt="Lifecycle: experimental"></a></li>
 <li><a href="https://github.com/pedrobtz/dazdiff/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/pedrobtz/dazdiff/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
+<li><a href="https://github.com/pedrobtz/dazdiff/actions/workflows/coverage.yaml" class="external-link"><img src="https://raw.githubusercontent.com/pedrobtz/dazdiff/gh-pages/badges/coverage.svg" alt="coverage"></a></li>
 </ul>
 </div>
 
