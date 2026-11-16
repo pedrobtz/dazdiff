@@ -1,13 +1,11 @@
 # Reusable coverage workflow from https://github.com/pedrobtz/r-actions
 #
 # Measures coverage with covr, writes a per-file breakdown to the job summary,
-# and commits a self-hosted badge to .github/badges/coverage.svg on push.
-#
-# `paths-ignore` is load-bearing: the workflow commits the badge back to the
-# repository, and without it that commit re-triggers this workflow in a loop.
+# and commits a self-hosted badge to badges/coverage.svg on gh-pages.
 #
 # Weekly and on demand only, not on every pull request: CI minutes are
-# limited, and the badge is measured on main.
+# limited, and the badge is measured on main. Pinned to a commit, not a tag:
+# it holds a write token (shared ci.md).
 on:
   schedule:
     - cron: "32 3 * * 6"
@@ -15,8 +13,11 @@ on:
 
 name: coverage.yml
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.run_id }}
+
 jobs:
   coverage:
-    uses: pedrobtz/r-actions/.github/workflows/coverage.yml@70cdfd7c6d62f42828e931a7f061ce998bb0e8f5 # v1.21.0
+    uses: pedrobtz/r-actions/.github/workflows/coverage.yml@d53e033699ab3fb2fa48a156156e2f142ff68fbc # v1.43.0
     permissions:
       contents: write

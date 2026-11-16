@@ -231,7 +231,7 @@ test_that("truncate = FALSE refuses every cast that drops a fraction", {
     class = "dazdiff_error_cast"
   )
   expect_error(
-    cast_value(as.POSIXct(90.5, tz = "UTC"), "integer", "S", truncate = FALSE),
+    cast_value(.POSIXct(90.5, tz = "UTC"), "integer", "S", truncate = FALSE),
     class = "dazdiff_error_cast"
   )
   # Exact values pass either way.

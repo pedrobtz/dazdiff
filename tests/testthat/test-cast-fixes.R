@@ -61,7 +61,7 @@ test_that("normalize_dt() writes timestamps as text in the same format", {
 # A Date written as text ----------------------------------------------------
 
 test_that("a Date's fraction of a day is recorded when written as text", {
-  out <- cast_value(as.Date(c(19723.5, 19724, NA)), "character", "d")
+  out <- cast_value(.Date(c(19723.5, 19724, NA)), "character", "d")
   expect_identical(as.vector(out), c("2024-01-01", "2024-01-02", NA))
   rec <- attr(out, "truncated")
   expect_identical(rec$n, 1L)
@@ -71,7 +71,7 @@ test_that("a Date's fraction of a day is recorded when written as text", {
 
 test_that("a Date's fraction of a day is refused as text with truncate = FALSE", {
   expect_error(
-    cast_value(as.Date(19723.5), "character", "d", truncate = FALSE),
+    cast_value(.Date(19723.5), "character", "d", truncate = FALSE),
     class = "dazdiff_error_cast"
   )
   expect_identical(
@@ -84,7 +84,7 @@ test_that("diff_table() announces the day a text benchmark truncates", {
   expect_message(
     out <- diff_table(
       data.frame(d = "2024-01-01", v = 1),
-      data.frame(d = as.Date(19723.5), v = 1)
+      data.frame(d = .Date(19723.5), v = 1)
     ),
     class = "dazdiff_message_truncation"
   )
@@ -99,7 +99,7 @@ test_that("a fractional Date is floored onto an IDate benchmark", {
     d = data.table::as.IDate(c("2024-01-01", "2024-01-02")),
     v = c(1, 2)
   )
-  y <- data.table::data.table(d = as.Date(c(19723.5, 19724)), v = c(1, 2))
+  y <- data.table::data.table(d = .Date(c(19723.5, 19724)), v = c(1, 2))
   expect_message(
     out <- expect_no_warning(diff_table(x, y)),
     class = "dazdiff_message_truncation"
@@ -114,7 +114,7 @@ test_that("a fractional Date is floored onto an IDate benchmark", {
 
 test_that("a fractional Date onto an IDate is refused with truncate = FALSE", {
   x <- data.table::data.table(d = data.table::as.IDate("2024-01-01"), v = 1)
-  y <- data.table::data.table(d = as.Date(19723.5), v = 1)
+  y <- data.table::data.table(d = .Date(19723.5), v = 1)
   expect_error(
     diff_table(x, y, truncate = FALSE),
     class = "dazdiff_error_cast"
@@ -130,7 +130,7 @@ test_that("a whole Date onto an IDate benchmark takes the IDate storage", {
 })
 
 test_that("an IDate onto a Date benchmark becomes a double Date", {
-  x <- data.table::data.table(d = as.Date(c(19723.5, 19724)), v = c(1, 2))
+  x <- data.table::data.table(d = .Date(c(19723.5, 19724)), v = c(1, 2))
   y <- data.table::data.table(
     d = data.table::as.IDate(c("2024-01-01", "2024-01-02")),
     v = c(1, 2)
@@ -148,7 +148,7 @@ test_that("equal mode widens an IDate against a fractional Date", {
     d = data.table::as.IDate(c("2024-01-01", "2024-01-02")),
     v = c(1, 2)
   )
-  y <- data.table::data.table(d = as.Date(c(19723.5, 19724)), v = c(1, 2))
+  y <- data.table::data.table(d = .Date(c(19723.5, 19724)), v = c(1, 2))
   out <- expect_no_warning(diff_table(x, y, mode = "equal"))
   expect_true(is.double(out$D))
   expect_identical(sort(unclass(out$D)), c(19723, 19723.5, 19724))
