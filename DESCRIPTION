@@ -1,6 +1,6 @@
 Package: dazdiff
 Title: Value-by-Value Comparison of Two Tables
-Version: 0.1.0
+Version: 0.1.0.9000
 Authors@R:
     person("Pedro", "Baltazar", email = "pedrobtz@gmail.com",
            role = c("aut", "cre", "cph"))
