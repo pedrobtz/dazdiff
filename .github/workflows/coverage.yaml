@@ -4,20 +4,23 @@
 # and commits a self-hosted badge to badges/coverage.svg on gh-pages.
 #
 # Weekly and on demand only, not on every pull request: CI minutes are
-# limited, and the badge is measured on main. Pinned to a commit, not a tag:
-# it holds a write token (shared ci.md).
+# limited, and the badge is measured on main.
 on:
   schedule:
     - cron: "32 3 * * 6"
   workflow_dispatch:
 
-name: coverage.yml
+name: coverage
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.run_id }}
 
 jobs:
   coverage:
+    # Pinned to a commit because it holds a write token (ci.md).
     uses: pedrobtz/r-actions/.github/workflows/coverage.yml@d53e033699ab3fb2fa48a156156e2f142ff68fbc # v1.43.0
     permissions:
       contents: write
+    with:
+      badge-branch: gh-pages
+      badge-path: badges/coverage.svg
